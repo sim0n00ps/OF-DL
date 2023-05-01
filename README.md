@@ -13,7 +13,9 @@ First you need to fill out the auth.json file.
 1. Go to www.onlyfans.com and login.
 2. Press F12 to open dev tools and select the 'Network' tab.
 3. In the search box type 'api'
+
 ![image](https://user-images.githubusercontent.com/132307467/235547370-5ef8e273-ebf7-4783-a13a-225f5959c606.png)
+
 4. Click on one of the requests (if nothing shows up refresh the page or click on one of the tabs such as messages to make something appear).
 5. After clicking on a request, kake sure the headers tab is selected and then scroll down to find the 'Request Headers' section, this is where you should be able to find the information you need.
 6. Copy the values of `cookie`, `user-agent`, `user-id` and `x-bc` to the auth.json file.
@@ -32,6 +34,7 @@ If you're logged in successfully then you will be greeted with a selection promp
 
 The Select All option will go through every account you are currently subscribed to and grab all of the media from the users.
 The Custom option allows you to select 1 or more accounts you want to scrape media from so if you only want to get media from a select number of accounts then you can do that. To navigate the menu the can use the &#8593; & &#8595; arrows, to select/deselect an account press the `space` key and after you are happy with your selection(s) press `enter` to start downloading.
+
 ![image](https://user-images.githubusercontent.com/132307467/235549855-dd6efa98-24d5-479a-89c9-d89dbd3c01cc.png)
 
 After you have made your selection the content should start downloading.
