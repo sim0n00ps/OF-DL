@@ -648,7 +648,7 @@ namespace OF_DL.Helpers
 							{
 								foreach (Messages.Medium medium in list.media)
 								{
-									if (medium.canView)
+									if (medium.canView && medium.source.source != null)
 									{
 										return_urls.Add(medium.source.source.ToString());
 									}
