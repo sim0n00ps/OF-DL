@@ -17,7 +17,7 @@ First you need to fill out the auth.json file.
 ![image](https://user-images.githubusercontent.com/132307467/235547370-5ef8e273-ebf7-4783-a13a-225f5959c606.png)
 
 4. Click on one of the requests (if nothing shows up refresh the page or click on one of the tabs such as messages to make something appear).
-5. After clicking on a request, kake sure the headers tab is selected and then scroll down to find the 'Request Headers' section, this is where you should be able to find the information you need.
+5. After clicking on a request, make sure the headers tab is selected and then scroll down to find the 'Request Headers' section, this is where you should be able to find the information you need.
 6. Copy the values of `cookie`, `user-agent`, `user-id` and `x-bc` to the auth.json file.
 7. Save the file and you should be ready to go!
 
