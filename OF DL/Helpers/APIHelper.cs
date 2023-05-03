@@ -176,13 +176,13 @@ namespace OF_DL.Helpers
 						response.EnsureSuccessStatusCode();
 						var body = await response.Content.ReadAsStringAsync();
 						List<Subscription> subscriptions = JsonConvert.DeserializeObject<List<Subscription>>(body);
-						if(subscriptions != null)
+						if (subscriptions != null)
 						{
 							foreach (Subscription sub in subscriptions)
 							{
 								users.Add(sub.username, sub.id);
 							}
-							if(subscriptions.Count >= 50) 
+							if (subscriptions.Count >= 50)
 							{
 								offset = offset + 50;
 								GetParams["offset"] = Convert.ToString(offset);
@@ -401,14 +401,14 @@ namespace OF_DL.Helpers
 									if (previewids.Count > 0)
 									{
 										bool has = previewids.Any(cus => cus.Equals(medium.id));
-										if (!has && medium.canView)
+										if (!has && medium.canView && !medium.source.source.Contains("upload"))
 										{
 											return_urls.Add(medium.source.source);
 										}
 									}
 									else
 									{
-										if (medium.canView)
+										if (medium.canView && !medium.source.source.Contains("upload"))
 										{
 											return_urls.Add(medium.source.source);
 										}
@@ -472,7 +472,7 @@ namespace OF_DL.Helpers
 									if (medium.canView)
 									{
 										bool has = program.paid_post_ids.Any(cus => cus.Equals(medium.id));
-										if (!has)
+										if (!has && !medium.source.source.Contains("upload"))
 										{
 											return_urls.Add(medium.source.source);
 										}
@@ -490,7 +490,7 @@ namespace OF_DL.Helpers
 							{
 								foreach (Archived.Medium medium in archive.media)
 								{
-									if (medium.canView)
+									if (medium.canView && !medium.source.source.Contains("upload"))
 									{
 										return_urls.Add(medium.source.source);
 									}
@@ -507,7 +507,7 @@ namespace OF_DL.Helpers
 							{
 								foreach (Stories.Medium medium in story.media)
 								{
-									if (medium.canView)
+									if (medium.canView && !medium.files.source.url.Contains("upload"))
 									{
 										return_urls.Add(medium.files.source.url);
 									}
@@ -592,7 +592,10 @@ namespace OF_DL.Helpers
 								{
 									foreach (var item in highlightMedia.stories)
 									{
-										return_urls.Add(item.media[0].files.source.url);
+										if (!item.media[0].files.source.url.Contains("upload"))
+										{
+											return_urls.Add(item.media[0].files.source.url);
+										}
 									}
 								}
 							}
@@ -648,7 +651,7 @@ namespace OF_DL.Helpers
 							{
 								foreach (Messages.Medium medium in list.media)
 								{
-									if (medium.canView && medium.source.source != null)
+									if (medium.canView && medium.source.source != null && !medium.source.source.Contains("upload"))
 									{
 										return_urls.Add(medium.source.source.ToString());
 									}
@@ -726,14 +729,14 @@ namespace OF_DL.Helpers
 									if (previewids.Count > 0)
 									{
 										bool has = previewids.Any(cus => cus.Equals(medium.id));
-										if (!has && medium.canView)
+										if (!has && medium.canView && !medium.source.source.Contains("upload"))
 										{
 											return_urls.Add(medium.source.source);
 										}
 									}
 									else
 									{
-										if (medium.canView)
+										if (medium.canView && !medium.source.source.Contains("upload"))
 										{
 											return_urls.Add(medium.source.source);
 										}

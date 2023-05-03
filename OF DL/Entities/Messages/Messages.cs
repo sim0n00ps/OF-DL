@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace OF_DL.Entities.Messages
 {
-    public class Messages
-    {
+	public class Messages
+	{
 		public List<List> list { get; set; }
 		public bool hasMore { get; set; }
 		public class Dash
@@ -36,7 +36,7 @@ namespace OF_DL.Entities.Messages
 
 		public class FromUser
 		{
-			public int id { get; set; }
+			public int? id { get; set; }
 			public string _view { get; set; }
 		}
 
@@ -63,33 +63,33 @@ namespace OF_DL.Entities.Messages
 			public string responseType { get; set; }
 			public string text { get; set; }
 			public object giphyId { get; set; }
-			public bool lockedText { get; set; }
-			public bool isFree { get; set; }
-			public int price { get; set; }
-			public bool isMediaReady { get; set; }
-			public int mediaCount { get; set; }
+			public bool? lockedText { get; set; }
+			public bool? isFree { get; set; }
+			public string? price { get; set; }
+			public bool? isMediaReady { get; set; }
+			public int? mediaCount { get; set; }
 			public List<Medium> media { get; set; }
 			public List<object> previews { get; set; }
-			public bool isTip { get; set; }
-			public bool isReportedByMe { get; set; }
-			public bool isCouplePeopleMedia { get; set; }
-			public long queueId { get; set; }
+			public bool? isTip { get; set; }
+			public bool? isReportedByMe { get; set; }
+			public bool? isCouplePeopleMedia { get; set; }
+			public object queueId { get; set; }
 			public FromUser fromUser { get; set; }
-			public bool isFromQueue { get; set; }
-			public bool canUnsendQueue { get; set; }
-			public int unsendSecondsQueue { get; set; }
-			public long id { get; set; }
-			public bool isOpened { get; set; }
-			public bool isNew { get; set; }
-			public DateTime createdAt { get; set; }
-			public DateTime changedAt { get; set; }
-			public int cancelSeconds { get; set; }
-			public bool isLiked { get; set; }
-			public bool canPurchase { get; set; }
+			public bool? isFromQueue { get; set; }
+			public bool? canUnsendQueue { get; set; }
+			public int? unsendSecondsQueue { get; set; }
+			public object id { get; set; }
+			public bool? isOpened { get; set; }
+			public bool? isNew { get; set; }
+			public DateTime? createdAt { get; set; }
+			public DateTime? changedAt { get; set; }
+			public int? cancelSeconds { get; set; }
+			public bool? isLiked { get; set; }
+			public bool? canPurchase { get; set; }
 			public string canPurchaseReason { get; set; }
-			public bool canReport { get; set; }
-			public bool canBePinned { get; set; }
-			public bool isPinned { get; set; }
+			public bool? canReport { get; set; }
+			public bool? canBePinned { get; set; }
+			public bool? isPinned { get; set; }
 		}
 
 		public class Manifest
@@ -100,15 +100,15 @@ namespace OF_DL.Entities.Messages
 
 		public class Medium
 		{
-			public long id { get; set; }
+			public object id { get; set; }
 			public bool canView { get; set; }
 			public string type { get; set; }
-			public object src { get; set; }
+			public string src { get; set; }
 			public string preview { get; set; }
 			public string thumb { get; set; }
 			public object locked { get; set; }
-			public int duration { get; set; }
-			public bool hasError { get; set; }
+			public int? duration { get; set; }
+			public bool? hasError { get; set; }
 			public string squarePreview { get; set; }
 			public Video video { get; set; }
 			public VideoSources videoSources { get; set; }
@@ -119,9 +119,9 @@ namespace OF_DL.Entities.Messages
 
 		public class Preview
 		{
-			public int width { get; set; }
-			public int height { get; set; }
-			public int size { get; set; }
+			public int? width { get; set; }
+			public int? height { get; set; }
+			public int? size { get; set; }
 		}
 
 		public class Signature
@@ -132,24 +132,24 @@ namespace OF_DL.Entities.Messages
 
 		public class Source
 		{
-			public object source { get; set; }
-			public int width { get; set; }
-			public int height { get; set; }
-			public int size { get; set; }
+			public string source { get; set; }
+			public int? width { get; set; }
+			public int? height { get; set; }
+			public int? size { get; set; }
 		}
 
 		public class Video
 		{
-			public object mp4 { get; set; }
+			public string mp4 { get; set; }
 		}
 
 		public class VideoSources
 		{
 			[JsonProperty("720")]
-			public object _720 { get; set; }
+			public string _720 { get; set; }
 
 			[JsonProperty("240")]
-			public object _240 { get; set; }
+			public string _240 { get; set; }
 		}
 	}
 }
