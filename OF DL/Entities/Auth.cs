@@ -12,5 +12,8 @@ namespace OF_DL.Entities
         public string? USER_AGENT { get; set; } = string.Empty;
         public string? X_BC { get; set; } = string.Empty;
         public string? COOKIE { get; set; } = string.Empty;
+        public string? YTDLP_PATH { get; set; } = string.Empty;
+        public string? FFMPEG_PATH { get; set;} = string.Empty;
+        public string? MP4DECRYPT_PATH { get; set;} = string.Empty;
 	}
 }

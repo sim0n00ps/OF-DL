@@ -161,7 +161,7 @@ namespace OF_DL.Entities
             public int id { get; set; }
             public int discount { get; set; }
             public int duration { get; set; }
-            public double price { get; set; }
+            public string? price { get; set; }
             public bool canBuy { get; set; }
         }
     }

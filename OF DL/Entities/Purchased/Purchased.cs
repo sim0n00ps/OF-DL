@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static OF_DL.Entities.Messages.Messages;
 
 namespace OF_DL.Entities.Purchased
 {
@@ -115,11 +116,48 @@ namespace OF_DL.Entities.Purchased
             public string c50 { get; set; }
             public string c144 { get; set; }
         }
+		public class Drm
+		{
+			public Manifest manifest { get; set; }
+			public Signature signature { get; set; }
+		}
+		public class Dash
+		{
+			[JsonProperty("CloudFront-Policy")]
+			public string CloudFrontPolicy { get; set; }
 
-        public class Files
+			[JsonProperty("CloudFront-Signature")]
+			public string CloudFrontSignature { get; set; }
+
+			[JsonProperty("CloudFront-Key-Pair-Id")]
+			public string CloudFrontKeyPairId { get; set; }
+		}
+		public class Hls
+		{
+			[JsonProperty("CloudFront-Policy")]
+			public string CloudFrontPolicy { get; set; }
+
+			[JsonProperty("CloudFront-Signature")]
+			public string CloudFrontSignature { get; set; }
+
+			[JsonProperty("CloudFront-Key-Pair-Id")]
+			public string CloudFrontKeyPairId { get; set; }
+		}
+		public class Manifest
+		{
+			public string hls { get; set; }
+			public string dash { get; set; }
+		}
+		public class Signature
+		{
+			public Hls hls { get; set; }
+			public Dash dash { get; set; }
+		}
+		public class Files
         {
             public Preview preview { get; set; }
-        }
+			public Drm drm { get; set; }
+		}
 
         public class FromUser
         {

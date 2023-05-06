@@ -24,6 +24,40 @@ namespace OF_DL
 			AnsiConsole.Write(new FigletText("Welcome to OF-DL").Color(Color.Red));
 			Program program = new Program(new APIHelper(), new DownloadHelper());
 			DateTime startTime = DateTime.Now;
+
+			//Check if yt-dlp, ffmpeg and mp4decrypt paths are valid
+			if(!File.Exists(program.auth.YTDLP_PATH))
+			{
+				AnsiConsole.Markup($"[red]Cannot locate yt-dlp.exe with specified path {program.auth.YTDLP_PATH}, please modify auth.json with the correct path, press any key to exit[/]");
+				Console.ReadKey();
+				Environment.Exit(0);
+			}
+			else
+			{
+				AnsiConsole.Markup($"[green]yt-dlp.exe located successfully![/]\n");
+			}
+			if (!File.Exists(program.auth.FFMPEG_PATH))
+			{
+				AnsiConsole.Markup($"[red]Cannot locate ffmpeg.exe with specified path {program.auth.FFMPEG_PATH}, please modify auth.json with the correct path, press any key to exit[/]");
+				Console.ReadKey();
+				Environment.Exit(0);
+			}
+			else
+			{
+				AnsiConsole.Markup($"[green]ffmpeg.exe located successfully![/]\n");
+			}
+			if (!File.Exists(program.auth.MP4DECRYPT_PATH))
+			{
+				AnsiConsole.Markup($"[red]Cannot locate mp4decrypt.exe with specified path {program.auth.MP4DECRYPT_PATH}, please modify auth.json with the correct path, press any key to exit[/]");
+				Console.ReadKey();
+				Environment.Exit(0);
+			}
+			else
+			{
+				AnsiConsole.Markup($"[green]mp4decrypt.exe located successfully![/]\n");
+			}
+
+			//Check if auth is valid
 			User validate = await program.apiHelper.GetUserInfo($"/users/me");
 			if (validate.name == null && validate.username == null)
 			{
@@ -65,6 +99,7 @@ namespace OF_DL
 					selectedUsers = users.Where(x => selectedNames.Contains($"[red]{x.Key}[/]")).ToDictionary(x => x.Key, x => x.Value);
 				}
 
+				//Iterate over each user in the list of users
 				foreach (KeyValuePair<string, int> user in selectedUsers)
 				{
 					int paidPostCount = 0;
@@ -75,7 +110,6 @@ namespace OF_DL
 					int messagesCount = 0;
 					int paidMessagesCount = 0;
 					AnsiConsole.Markup($"[red]\nScraping Data for {user.Key}\n[/]");
-
 
 					string path = $"__user_data__/sites/OnlyFans/{user.Key}"; // specify the path for the new folder
 
@@ -111,16 +145,47 @@ namespace OF_DL
 							task.StartTask();
 							foreach (string purchasedPosturl in purchasedPosts)
 							{
-								bool isNew = await program.downloadHelper.DownloadPurchasedPostMedia(purchasedPosturl, path);
-								task.Increment(1.0);
-								if (isNew)
+								bool isNew;
+								if (purchasedPosturl.Contains("cdn3.onlyfans.com/dash/files"))
 								{
-									newPaidPostCount++;
+									string[] messageUrlParsed = purchasedPosturl.Split(',');
+									string mpdURL = messageUrlParsed[0];
+									string policy = messageUrlParsed[1];
+									string signature = messageUrlParsed[2];
+									string kvp = messageUrlParsed[3];
+									string mediaId = messageUrlParsed[4];
+									string postId = messageUrlParsed[5];
+									string? licenseURL = null;
+									string? pssh = await program.apiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp);
+									if (pssh != null)
+									{
+										DateTime lastModified = await program.apiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
+										Dictionary<string, string> drmHeaders = await program.apiHelper.Headers($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
+										string decryptionKey = await program.apiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
+										isNew = await program.downloadHelper.DownloadPurchasedPostDRMVideo(program.auth.YTDLP_PATH, program.auth.MP4DECRYPT_PATH, program.auth.FFMPEG_PATH, program.auth.USER_AGENT, policy, signature, kvp, program.auth.COOKIE, mpdURL, decryptionKey, path, lastModified);
+										if (isNew)
+										{
+											newPaidPostCount++;
+										}
+										else
+										{
+											oldPaidPostCount++;
+										}
+									}
 								}
 								else
 								{
-									oldPaidPostCount++;
+									isNew = await program.downloadHelper.DownloadPurchasedPostMedia(purchasedPosturl, path);
+									if (isNew)
+									{
+										newPaidPostCount++;
+									}
+									else
+									{
+										oldPaidPostCount++;
+									}
 								}
+								task.Increment(1.0);
 							}
 							task.StopTask();
 						});
@@ -148,14 +213,45 @@ namespace OF_DL
 							task.StartTask();
 							foreach (string postUrl in posts)
 							{
-								bool isNew = await program.downloadHelper.DownloadPostMedia(postUrl, path);
-								if (isNew)
+								bool isNew;
+								if (postUrl.Contains("cdn3.onlyfans.com/dash/files"))
 								{
-									newPostCount++;
+									string[] messageUrlParsed = postUrl.Split(',');
+									string mpdURL = messageUrlParsed[0];
+									string policy = messageUrlParsed[1];
+									string signature = messageUrlParsed[2];
+									string kvp = messageUrlParsed[3];
+									string mediaId = messageUrlParsed[4];
+									string postId = messageUrlParsed[5];
+									string? licenseURL = null;
+									string? pssh = await program.apiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp);
+									if (pssh != null)
+									{
+										DateTime lastModified = await program.apiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
+										Dictionary<string, string> drmHeaders = await program.apiHelper.Headers($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
+										string decryptionKey = await program.apiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
+										isNew = await program.downloadHelper.DownloadPostDRMVideo(program.auth.YTDLP_PATH, program.auth.MP4DECRYPT_PATH, program.auth.FFMPEG_PATH, program.auth.USER_AGENT, policy, signature, kvp, program.auth.COOKIE, mpdURL, decryptionKey, path, lastModified);
+										if (isNew)
+										{
+											newPostCount++;
+										}
+										else
+										{
+											oldPostCount++;
+										}
+									}
 								}
 								else
 								{
-									oldPostCount++;
+									isNew = await program.downloadHelper.DownloadPostMedia(postUrl, path);
+									if (isNew)
+									{
+										newPostCount++;
+									}
+									else
+									{
+										oldPostCount++;
+									}
 								}
 								task.Increment(1.0);
 							}
@@ -301,16 +397,47 @@ namespace OF_DL
 							task.StartTask();
 							foreach (string messageUrl in messages)
 							{
-								bool isNew = await program.downloadHelper.DownloadMessageMedia(messageUrl, path);
-								task.Increment(1.0);
-								if (isNew)
+								bool isNew;
+								if (messageUrl.Contains("cdn3.onlyfans.com/dash/files"))
 								{
-									newMessagesCount++;
+									string[] messageUrlParsed = messageUrl.Split(',');
+									string mpdURL = messageUrlParsed[0];
+									string policy = messageUrlParsed[1];
+									string signature = messageUrlParsed[2];
+									string kvp = messageUrlParsed[3];
+									string mediaId = messageUrlParsed[4];
+									string messageId = messageUrlParsed[5];
+									string? licenseURL = null;
+									string? pssh = await program.apiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp);
+									if(pssh != null)
+									{
+										DateTime lastModified = await program.apiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
+										Dictionary<string, string> drmHeaders = await program.apiHelper.Headers($"/api2/v2/users/media/{mediaId}/drm/message/{messageId}", "?type=widevine");
+										string decryptionKey = await program.apiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
+										isNew = await program.downloadHelper.DownloadMessageDRMVideo(program.auth.YTDLP_PATH, program.auth.MP4DECRYPT_PATH, program.auth.FFMPEG_PATH, program.auth.USER_AGENT, policy, signature, kvp, program.auth.COOKIE, mpdURL, decryptionKey, path, lastModified);
+										if (isNew)
+										{
+											newMessagesCount++;
+										}
+										else
+										{
+											oldMessagesCount++;
+										}
+									}
 								}
 								else
 								{
-									oldMessagesCount++;
+									isNew = await program.downloadHelper.DownloadMessageMedia(messageUrl, path);
+									if (isNew)
+									{
+										newMessagesCount++;
+									}
+									else
+									{
+										oldMessagesCount++;
+									}
 								}
+								task.Increment(1.0);
 							}
 							task.StopTask();
 						});
@@ -340,16 +467,47 @@ namespace OF_DL
 							task.StartTask();
 							foreach (string paidmessagesUrl in purchased)
 							{
-								bool isNew = await program.downloadHelper.DownloadPurchasedMedia(paidmessagesUrl, path);
-								task.Increment(1.0);
-								if (isNew)
+								bool isNew;
+								if (paidmessagesUrl.Contains("cdn3.onlyfans.com/dash/files"))
 								{
-									newPaidMessagesCount++;
+									string[] messageUrlParsed = paidmessagesUrl.Split(',');
+									string mpdURL = messageUrlParsed[0];
+									string policy = messageUrlParsed[1];
+									string signature = messageUrlParsed[2];
+									string kvp = messageUrlParsed[3];
+									string mediaId = messageUrlParsed[4];
+									string messageId = messageUrlParsed[5];
+									string? licenseURL = null;
+									string? pssh = await program.apiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp);
+									if (pssh != null)
+									{
+										DateTime lastModified = await program.apiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
+										Dictionary<string, string> drmHeaders = await program.apiHelper.Headers($"/api2/v2/users/media/{mediaId}/drm/message/{messageId}", "?type=widevine");
+										string decryptionKey = await program.apiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
+										isNew = await program.downloadHelper.DownloadPurchasedMessageDRMVideo(program.auth.YTDLP_PATH, program.auth.MP4DECRYPT_PATH, program.auth.FFMPEG_PATH, program.auth.USER_AGENT, policy, signature, kvp, program.auth.COOKIE, mpdURL, decryptionKey, path, lastModified);
+										if (isNew)
+										{
+											newPaidMessagesCount++;
+										}
+										else
+										{
+											oldPaidMessagesCount++;
+										}
+									}
 								}
 								else
 								{
-									oldPaidMessagesCount++;
+									isNew = await program.downloadHelper.DownloadPurchasedMedia(paidmessagesUrl, path);
+									if (isNew)
+									{
+										newPaidMessagesCount++;
+									}
+									else
+									{
+										oldPaidMessagesCount++;
+									}
 								}
+								task.Increment(1.0);
 							}
 							task.StopTask();
 						});

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static OF_DL.Entities.Messages.Messages;
 
 namespace OF_DL.Entities.Post
 {
@@ -102,7 +103,8 @@ namespace OF_DL.Entities.Post
         public class Files
         {
             public Preview preview { get; set; }
-        }
+			public Drm drm { get; set; }
+		}
 
         public class HeaderSize
         {
@@ -164,5 +166,37 @@ namespace OF_DL.Entities.Post
             [JsonProperty("240")]
             public object _240 { get; set; }
         }
-    }
+		public class Signature
+		{
+			public Hls hls { get; set; }
+			public Dash dash { get; set; }
+		}
+		public class Drm
+		{
+			public Manifest manifest { get; set; }
+			public Signature signature { get; set; }
+		}
+		public class Dash
+		{
+			[JsonProperty("CloudFront-Policy")]
+			public string CloudFrontPolicy { get; set; }
+
+			[JsonProperty("CloudFront-Signature")]
+			public string CloudFrontSignature { get; set; }
+
+			[JsonProperty("CloudFront-Key-Pair-Id")]
+			public string CloudFrontKeyPairId { get; set; }
+		}
+		public class Hls
+		{
+			[JsonProperty("CloudFront-Policy")]
+			public string CloudFrontPolicy { get; set; }
+
+			[JsonProperty("CloudFront-Signature")]
+			public string CloudFrontSignature { get; set; }
+
+			[JsonProperty("CloudFront-Key-Pair-Id")]
+			public string CloudFrontKeyPairId { get; set; }
+		}
+	}
 }

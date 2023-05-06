@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using HtmlAgilityPack;
+using Newtonsoft.Json;
 using OF_DL.Entities;
 using OF_DL.Entities.Archived;
 using OF_DL.Entities.Highlights;
@@ -9,11 +10,19 @@ using OF_DL.Entities.Stories;
 using OF_DL.Enumurations;
 using System;
 using System.Collections.Generic;
+using System.Data.SqlTypes;
 using System.Linq;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.Linq;
+using static OF_DL.Entities.Highlights.Highlights;
 using static OF_DL.Entities.Messages.Messages;
+using static OF_DL.Entities.Post.Post;
 
 namespace OF_DL.Helpers
 {
@@ -401,16 +410,24 @@ namespace OF_DL.Helpers
 									if (previewids.Count > 0)
 									{
 										bool has = previewids.Any(cus => cus.Equals(medium.id));
-										if (!has && medium.canView && !medium.source.source.Contains("upload"))
+										if (!has && medium.canView && medium.source != null && medium.source.source != null && !medium.source.source.Contains("upload"))
 										{
 											return_urls.Add(medium.source.source);
+										}
+										else if(!has && medium.canView && medium.files != null && medium.files.drm != null)
+										{
+											return_urls.Add($"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{purchase.id}");
 										}
 									}
 									else
 									{
-										if (medium.canView && !medium.source.source.Contains("upload"))
+										if (medium.canView && medium.source != null && medium.source.source != null && !medium.source.source.Contains("upload"))
 										{
 											return_urls.Add(medium.source.source);
+										}
+										else if (medium.canView && medium.files != null && medium.files.drm != null)
+										{
+											return_urls.Add($"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{purchase.id}");
 										}
 									}
 								}
@@ -469,7 +486,7 @@ namespace OF_DL.Helpers
 							{
 								foreach (Post.Medium medium in post.media)
 								{
-									if (medium.canView)
+									if (medium.canView && medium.files.drm == null)
 									{
 										bool has = program.paid_post_ids.Any(cus => cus.Equals(medium.id));
 										if (!has && !medium.source.source.Contains("upload"))
@@ -477,8 +494,17 @@ namespace OF_DL.Helpers
 											return_urls.Add(medium.source.source);
 										}
 									}
+									else if (medium.canView && medium.files != null && medium.files.drm != null)
+									{
+										bool has = program.paid_post_ids.Any(cus => cus.Equals(medium.id));
+										if (!has && medium.files != null && medium.files.drm != null)
+										{
+											return_urls.Add($"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{post.id}");
+										}
+									}
 								}
 							}
+
 						}
 					}
 					else if (isArchived)
@@ -645,7 +671,7 @@ namespace OF_DL.Helpers
 								GetParams["id"] = newmessages.list[newmessages.list.Count - 1].id.ToString();
 							}
 						}
-						foreach (List list in messages.list)
+						foreach (Messages.List list in messages.list)
 						{
 							if (list.canPurchaseReason != "opened" && list.media != null && list.media.Count > 0)
 							{
@@ -654,6 +680,10 @@ namespace OF_DL.Helpers
 									if (medium.canView && medium.source.source != null && !medium.source.source.Contains("upload"))
 									{
 										return_urls.Add(medium.source.source.ToString());
+									}
+									else if(medium.canView && medium.files != null && medium.files.drm != null)
+									{
+										return_urls.Add($"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{list.id}");
 									}
 								}
 							}
@@ -729,16 +759,24 @@ namespace OF_DL.Helpers
 									if (previewids.Count > 0)
 									{
 										bool has = previewids.Any(cus => cus.Equals(medium.id));
-										if (!has && medium.canView && !medium.source.source.Contains("upload"))
+										if (!has && medium.canView && medium.source != null && medium.source.source != null && !medium.source.source.Contains("upload"))
 										{
 											return_urls.Add(medium.source.source);
+										}
+										else if(!has && medium.canView && medium.files != null && medium.files.drm != null)
+										{
+											return_urls.Add($"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{purchase.id}");
 										}
 									}
 									else
 									{
-										if (medium.canView && !medium.source.source.Contains("upload"))
+										if (medium.canView && medium.source != null && medium.source.source != null && !medium.source.source.Contains("upload"))
 										{
 											return_urls.Add(medium.source.source);
+										}
+										else if (medium.canView && medium.files != null && medium.files.drm != null)
+										{
+											return_urls.Add($"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{purchase.id}");
 										}
 									}
 								}
@@ -747,6 +785,118 @@ namespace OF_DL.Helpers
 					}
 				}
 				return return_urls;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex.Message);
+			}
+			return null;
+		}
+		public async Task<string> GetDRMMPDPSSH(string mpdUrl, string policy, string signature, string kvp)
+		{
+			try
+			{
+				string pssh = null;
+				Program program = new Program(new APIHelper(), new DownloadHelper());
+				HttpClient client = new HttpClient();
+				HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, mpdUrl);
+				request.Headers.Add("user-agent", program.auth.USER_AGENT);
+				request.Headers.Add("Accept", "*/*");
+				request.Headers.Add("Cookie", $"CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {program.auth.COOKIE};");
+				using (var response = await client.SendAsync(request))
+				{
+					response.EnsureSuccessStatusCode();
+					var body = await response.Content.ReadAsStringAsync();
+					XNamespace ns = "urn:mpeg:dash:schema:mpd:2011";
+					XNamespace cenc = "urn:mpeg:cenc:2013";
+					XDocument xmlDoc = XDocument.Parse(body);
+					var psshElements = xmlDoc.Descendants(cenc + "pssh");
+					pssh = psshElements.ElementAt(1).Value;
+				}
+
+				return pssh;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex.Message);
+			}
+			return null;
+		}
+		public async Task<DateTime> GetDRMMPDLastModified(string mpdUrl, string policy, string signature, string kvp)
+		{
+			try
+			{
+				DateTime lastmodified;
+				Program program = new Program(new APIHelper(), new DownloadHelper());
+				HttpClient client = new HttpClient();
+				HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, mpdUrl);
+				request.Headers.Add("user-agent", program.auth.USER_AGENT);
+				request.Headers.Add("Accept", "*/*");
+				request.Headers.Add("Cookie", $"CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {program.auth.COOKIE};");
+				using (var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead))
+				{
+					response.EnsureSuccessStatusCode();
+					lastmodified = response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now;
+				}
+				return lastmodified;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex.Message);
+			}
+			return DateTime.Now;
+		}
+			
+		public async Task<string> GetDecryptionKey(Dictionary<string, string> drmHeaders, string licenceURL, string pssh)
+		{
+			try
+			{
+				string dcValue = string.Empty;
+				string buildInfo = "";
+				string proxy = "";
+				bool cache = true;
+
+				StringBuilder sb = new StringBuilder();
+				sb.Append("{\n");
+				sb.AppendFormat("  \"license\": \"{0}\",\n", licenceURL);
+				sb.Append("  \"headers\": \"");
+				foreach (KeyValuePair<string, string> header in drmHeaders)
+				{
+					if(header.Key == "time" || header.Key == "user-id")
+					{
+						sb.AppendFormat("{0}: '{1}'\\n", header.Key, header.Value);
+					}
+					else
+					{
+						sb.AppendFormat("{0}: {1}\\n", header.Key, header.Value);
+					}
+				}
+				sb.Remove(sb.Length - 2, 2); // remove the last \\n
+				sb.Append("\",\n");
+				sb.AppendFormat("  \"pssh\": \"{0}\",\n", pssh);
+				sb.AppendFormat("  \"buildInfo\": \"{0}\",\n", buildInfo);
+				sb.AppendFormat("  \"proxy\": \"{0}\",\n", proxy);
+				sb.AppendFormat("  \"cache\": {0}\n", cache.ToString().ToLower());
+				sb.Append("}");
+				string json = sb.ToString();
+				HttpClient client = new HttpClient();
+
+				HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "https://cdrm-project.com/wv");
+				request.Content = new StringContent(json);
+				using (var response = await client.SendAsync(request))
+				{
+					response.EnsureSuccessStatusCode();
+					var body = await response.Content.ReadAsStringAsync();
+					var htmlDoc = new HtmlDocument();
+					htmlDoc.LoadHtml(body);
+
+					// Find the <li> element containing the Decryption Key using XPath
+					HtmlNode dcElement = htmlDoc.DocumentNode.SelectSingleNode("//li");
+
+					// Get the text value of the <li> element
+					dcValue = dcElement.InnerText;
+				}
+				return dcValue;
 			}
 			catch (Exception ex)
 			{

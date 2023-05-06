@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Spectre.Console;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -547,6 +549,328 @@ namespace OF_DL.Helpers
 			{
 				Console.WriteLine(ex.Message);
 			}
+		}
+		public async Task<bool> DownloadMessageDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified)
+		{
+			try
+			{
+				Uri uri = new Uri(url);
+				string filename = System.IO.Path.GetFileName(uri.LocalPath).Split(".")[0];
+				string path = "/Messages/Free/Videos";
+				if (!Directory.Exists(folder + path)) // check if the folder already exists
+				{
+					Directory.CreateDirectory(folder + path); // create the new folder
+				}
+
+				if (!File.Exists(folder + path + "/" + filename + "_source.mp4"))
+				{
+					//Use ytdl-p to download the MPD as a M4A and MP4 file
+					ProcessStartInfo ytdlpstartInfo = new ProcessStartInfo();
+					ytdlpstartInfo.FileName = ytdlppath;
+					ytdlpstartInfo.Arguments = $"--allow-u --downloader aria2c -f bv,ba --user-agent \"{user_agent}\" --add-header \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess}\" --referer \"https://onlyfans.com/\" -o \"{folder + path + "/"}%(title)s.%(ext)s\" \"{url}\"";
+					ytdlpstartInfo.CreateNoWindow = true;
+					ytdlpstartInfo.RedirectStandardOutput = true;
+					ytdlpstartInfo.RedirectStandardError = true;
+
+					Process ytdlpprocess = new Process();
+					ytdlpprocess.StartInfo = ytdlpstartInfo;
+					ytdlpprocess.Start();
+					ytdlpprocess.WaitForExit();
+
+					//Use mp4decrypt to decrypt the MP4 and M4A files
+					ProcessStartInfo mp4decryptStartInfoVideo = new ProcessStartInfo();
+					mp4decryptStartInfoVideo.FileName = mp4decryptpath;
+					mp4decryptStartInfoVideo.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename}.mp4 {folder + path + "/" + filename}_vdec.mp4";
+					mp4decryptStartInfoVideo.CreateNoWindow = true;
+					mp4decryptStartInfoVideo.RedirectStandardOutput = true;
+					mp4decryptStartInfoVideo.RedirectStandardError = true;
+
+					Process mp4decryptVideoProcess = new Process();
+					mp4decryptVideoProcess.StartInfo = mp4decryptStartInfoVideo;
+					mp4decryptVideoProcess.Start();
+					mp4decryptVideoProcess.WaitForExit();
+
+					ProcessStartInfo mp4decryptStartInfoAudio = new ProcessStartInfo();
+					mp4decryptStartInfoAudio.FileName = mp4decryptpath;
+					mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename}.m4a {folder + path + "/" + filename}_adec.mp4";
+					mp4decryptStartInfoAudio.CreateNoWindow = true;
+					mp4decryptStartInfoAudio.RedirectStandardOutput = true;
+					mp4decryptStartInfoAudio.RedirectStandardError = true;
+
+					Process mp4decryptAudioProcess = new Process();
+					mp4decryptAudioProcess.StartInfo = mp4decryptStartInfoAudio;
+					mp4decryptAudioProcess.Start();
+					mp4decryptAudioProcess.WaitForExit();
+
+					//Finally use FFMPEG to merge the 2 together
+					ProcessStartInfo ffmpegStartInfo = new ProcessStartInfo();
+					ffmpegStartInfo.FileName = ffmpegpath;
+					ffmpegStartInfo.Arguments = $"-i {folder + path + "/" + filename}_vdec.mp4 -i {folder + path + "/" + filename}_adec.mp4 -c copy {folder + path + "/" + filename}_source.mp4";
+					ffmpegStartInfo.CreateNoWindow = true;
+
+					Process ffmpegProcess = new Process();
+					ffmpegProcess.StartInfo = ffmpegStartInfo;
+					ffmpegProcess.Start();
+					ffmpegProcess.WaitForExit();
+
+					//Cleanup Files
+					File.SetLastWriteTime($"{folder + path + "/" + filename}_source.mp4", lastModified);
+					File.Delete($"{folder + path + "/" + filename}.mp4");
+					File.Delete($"{folder + path + "/" + filename}.m4a");
+					File.Delete($"{folder + path + "/" + filename}_adec.mp4");
+					File.Delete($"{folder + path + "/" + filename}_vdec.mp4");
+
+					return true;
+				}
+				return false;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex.Message);
+			}
+			return false;
+		}
+
+		public async Task<bool> DownloadPurchasedMessageDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified)
+		{
+			try
+			{
+				Uri uri = new Uri(url);
+				string filename = System.IO.Path.GetFileName(uri.LocalPath).Split(".")[0];
+				string path = "/Messages/Paid/Videos";
+				if (!Directory.Exists(folder + path)) // check if the folder already exists
+				{
+					Directory.CreateDirectory(folder + path); // create the new folder
+				}
+
+				if (!File.Exists(folder + path + "/" + filename + "_source.mp4"))
+				{
+					//Use ytdl-p to download the MPD as a M4A and MP4 file
+					ProcessStartInfo ytdlpstartInfo = new ProcessStartInfo();
+					ytdlpstartInfo.FileName = ytdlppath;
+					ytdlpstartInfo.Arguments = $"--allow-u --downloader aria2c -f bv,ba --user-agent \"{user_agent}\" --add-header \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess}\" --referer \"https://onlyfans.com/\" -o \"{folder + path + "/"}%(title)s.%(ext)s\" \"{url}\"";
+					ytdlpstartInfo.CreateNoWindow = true;
+					ytdlpstartInfo.RedirectStandardOutput = true;
+					ytdlpstartInfo.RedirectStandardError = true;
+
+					Process ytdlpprocess = new Process();
+					ytdlpprocess.StartInfo = ytdlpstartInfo;
+					ytdlpprocess.Start();
+					ytdlpprocess.WaitForExit();
+
+					//Use mp4decrypt to decrypt the MP4 and M4A files
+					ProcessStartInfo mp4decryptStartInfoVideo = new ProcessStartInfo();
+					mp4decryptStartInfoVideo.FileName = mp4decryptpath;
+					mp4decryptStartInfoVideo.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename}.mp4 {folder + path + "/" + filename}_vdec.mp4";
+					mp4decryptStartInfoVideo.CreateNoWindow = true;
+					mp4decryptStartInfoVideo.RedirectStandardOutput = true;
+					mp4decryptStartInfoVideo.RedirectStandardError = true;
+
+					Process mp4decryptVideoProcess = new Process();
+					mp4decryptVideoProcess.StartInfo = mp4decryptStartInfoVideo;
+					mp4decryptVideoProcess.Start();
+					mp4decryptVideoProcess.WaitForExit();
+
+					ProcessStartInfo mp4decryptStartInfoAudio = new ProcessStartInfo();
+					mp4decryptStartInfoAudio.FileName = mp4decryptpath;
+					mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename}.m4a {folder + path + "/" + filename}_adec.mp4";
+					mp4decryptStartInfoAudio.CreateNoWindow = true;
+					mp4decryptStartInfoAudio.RedirectStandardOutput = true;
+					mp4decryptStartInfoAudio.RedirectStandardError = true;
+
+					Process mp4decryptAudioProcess = new Process();
+					mp4decryptAudioProcess.StartInfo = mp4decryptStartInfoAudio;
+					mp4decryptAudioProcess.Start();
+					mp4decryptAudioProcess.WaitForExit();
+
+					//Finally use FFMPEG to merge the 2 together
+					ProcessStartInfo ffmpegStartInfo = new ProcessStartInfo();
+					ffmpegStartInfo.FileName = ffmpegpath;
+					ffmpegStartInfo.Arguments = $"-i {folder + path + "/" + filename}_vdec.mp4 -i {folder + path + "/" + filename}_adec.mp4 -c copy {folder + path + "/" + filename}_source.mp4";
+					ffmpegStartInfo.CreateNoWindow = true;
+
+					Process ffmpegProcess = new Process();
+					ffmpegProcess.StartInfo = ffmpegStartInfo;
+					ffmpegProcess.Start();
+					ffmpegProcess.WaitForExit();
+
+					//Cleanup Files
+					File.SetLastWriteTime($"{folder + path + "/" + filename}_source.mp4", lastModified);
+					File.Delete($"{folder + path + "/" + filename}.mp4");
+					File.Delete($"{folder + path + "/" + filename}.m4a");
+					File.Delete($"{folder + path + "/" + filename}_adec.mp4");
+					File.Delete($"{folder + path + "/" + filename}_vdec.mp4");
+
+					return true;
+				}
+				return false;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex.Message);
+			}
+			return false;
+		}
+		public async Task<bool> DownloadPostDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified)
+		{
+			try
+			{
+				Uri uri = new Uri(url);
+				string filename = System.IO.Path.GetFileName(uri.LocalPath).Split(".")[0];
+				string path = "/Posts/Free/Videos";
+				if (!Directory.Exists(folder + path)) // check if the folder already exists
+				{
+					Directory.CreateDirectory(folder + path); // create the new folder
+				}
+
+				if (!File.Exists(folder + path + "/" + filename + "_source.mp4"))
+				{
+					//Use ytdl-p to download the MPD as a M4A and MP4 file
+					ProcessStartInfo ytdlpstartInfo = new ProcessStartInfo();
+					ytdlpstartInfo.FileName = ytdlppath;
+					ytdlpstartInfo.Arguments = $"--allow-u --downloader aria2c -f bv,ba --user-agent \"{user_agent}\" --add-header \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess}\" --referer \"https://onlyfans.com/\" -o \"{folder + path + "/"}%(title)s.%(ext)s\" \"{url}\"";
+					ytdlpstartInfo.CreateNoWindow = true;
+					ytdlpstartInfo.RedirectStandardOutput = true;
+					ytdlpstartInfo.RedirectStandardError = true;
+
+					Process ytdlpprocess = new Process();
+					ytdlpprocess.StartInfo = ytdlpstartInfo;
+					ytdlpprocess.Start();
+					ytdlpprocess.WaitForExit();
+
+					//Use mp4decrypt to decrypt the MP4 and M4A files
+					ProcessStartInfo mp4decryptStartInfoVideo = new ProcessStartInfo();
+					mp4decryptStartInfoVideo.FileName = mp4decryptpath;
+					mp4decryptStartInfoVideo.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename}.mp4 {folder + path + "/" + filename}_vdec.mp4";
+					mp4decryptStartInfoVideo.CreateNoWindow = true;
+					mp4decryptStartInfoVideo.RedirectStandardOutput = true;
+					mp4decryptStartInfoVideo.RedirectStandardError = true;
+
+					Process mp4decryptVideoProcess = new Process();
+					mp4decryptVideoProcess.StartInfo = mp4decryptStartInfoVideo;
+					mp4decryptVideoProcess.Start();
+					mp4decryptVideoProcess.WaitForExit();
+
+					ProcessStartInfo mp4decryptStartInfoAudio = new ProcessStartInfo();
+					mp4decryptStartInfoAudio.FileName = mp4decryptpath;
+					mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename}.m4a {folder + path + "/" + filename}_adec.mp4";
+					mp4decryptStartInfoAudio.CreateNoWindow = true;
+					mp4decryptStartInfoAudio.RedirectStandardOutput = true;
+					mp4decryptStartInfoAudio.RedirectStandardError = true;
+
+					Process mp4decryptAudioProcess = new Process();
+					mp4decryptAudioProcess.StartInfo = mp4decryptStartInfoAudio;
+					mp4decryptAudioProcess.Start();
+					mp4decryptAudioProcess.WaitForExit();
+
+					//Finally use FFMPEG to merge the 2 together
+					ProcessStartInfo ffmpegStartInfo = new ProcessStartInfo();
+					ffmpegStartInfo.FileName = ffmpegpath;
+					ffmpegStartInfo.Arguments = $"-i {folder + path + "/" + filename}_vdec.mp4 -i {folder + path + "/" + filename}_adec.mp4 -c copy {folder + path + "/" + filename}_source.mp4";
+					ffmpegStartInfo.CreateNoWindow = true;
+
+					Process ffmpegProcess = new Process();
+					ffmpegProcess.StartInfo = ffmpegStartInfo;
+					ffmpegProcess.Start();
+					ffmpegProcess.WaitForExit();
+
+					//Cleanup Files
+					File.SetLastWriteTime($"{folder + path + "/" + filename}_source.mp4", lastModified);
+					File.Delete($"{folder + path + "/" + filename}.mp4");
+					File.Delete($"{folder + path + "/" + filename}.m4a");
+					File.Delete($"{folder + path + "/" + filename}_adec.mp4");
+					File.Delete($"{folder + path + "/" + filename}_vdec.mp4");
+
+					return true;
+				}
+				return false;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex.Message);
+			}
+			return false;
+		}
+
+		public async Task<bool> DownloadPurchasedPostDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified)
+		{
+			try
+			{
+				Uri uri = new Uri(url);
+				string filename = System.IO.Path.GetFileName(uri.LocalPath).Split(".")[0];
+				string path = "/Posts/Paid/Videos";
+				if (!Directory.Exists(folder + path)) // check if the folder already exists
+				{
+					Directory.CreateDirectory(folder + path); // create the new folder
+				}
+
+				if (!File.Exists(folder + path + "/" + filename + "_source.mp4"))
+				{
+					//Use ytdl-p to download the MPD as a M4A and MP4 file
+					ProcessStartInfo ytdlpstartInfo = new ProcessStartInfo();
+					ytdlpstartInfo.FileName = ytdlppath;
+					ytdlpstartInfo.Arguments = $"--allow-u --downloader aria2c -f bv,ba --user-agent \"{user_agent}\" --add-header \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess}\" --referer \"https://onlyfans.com/\" -o \"{folder + path + "/"}%(title)s.%(ext)s\" \"{url}\"";
+					ytdlpstartInfo.CreateNoWindow = true;
+					ytdlpstartInfo.RedirectStandardOutput = true;
+					ytdlpstartInfo.RedirectStandardError = true;
+
+					Process ytdlpprocess = new Process();
+					ytdlpprocess.StartInfo = ytdlpstartInfo;
+					ytdlpprocess.Start();
+					ytdlpprocess.WaitForExit();
+
+					//Use mp4decrypt to decrypt the MP4 and M4A files
+					ProcessStartInfo mp4decryptStartInfoVideo = new ProcessStartInfo();
+					mp4decryptStartInfoVideo.FileName = mp4decryptpath;
+					mp4decryptStartInfoVideo.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename}.mp4 {folder + path + "/" + filename}_vdec.mp4";
+					mp4decryptStartInfoVideo.CreateNoWindow = true;
+					mp4decryptStartInfoVideo.RedirectStandardOutput = true;
+					mp4decryptStartInfoVideo.RedirectStandardError = true;
+
+					Process mp4decryptVideoProcess = new Process();
+					mp4decryptVideoProcess.StartInfo = mp4decryptStartInfoVideo;
+					mp4decryptVideoProcess.Start();
+					mp4decryptVideoProcess.WaitForExit();
+
+					ProcessStartInfo mp4decryptStartInfoAudio = new ProcessStartInfo();
+					mp4decryptStartInfoAudio.FileName = mp4decryptpath;
+					mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename}.m4a {folder + path + "/" + filename}_adec.mp4";
+					mp4decryptStartInfoAudio.CreateNoWindow = true;
+					mp4decryptStartInfoAudio.RedirectStandardOutput = true;
+					mp4decryptStartInfoAudio.RedirectStandardError = true;
+
+					Process mp4decryptAudioProcess = new Process();
+					mp4decryptAudioProcess.StartInfo = mp4decryptStartInfoAudio;
+					mp4decryptAudioProcess.Start();
+					mp4decryptAudioProcess.WaitForExit();
+
+					//Finally use FFMPEG to merge the 2 together
+					ProcessStartInfo ffmpegStartInfo = new ProcessStartInfo();
+					ffmpegStartInfo.FileName = ffmpegpath;
+					ffmpegStartInfo.Arguments = $"-i {folder + path + "/" + filename}_vdec.mp4 -i {folder + path + "/" + filename}_adec.mp4 -c copy {folder + path + "/" + filename}_source.mp4";
+					ffmpegStartInfo.CreateNoWindow = true;
+
+					Process ffmpegProcess = new Process();
+					ffmpegProcess.StartInfo = ffmpegStartInfo;
+					ffmpegProcess.Start();
+					ffmpegProcess.WaitForExit();
+
+					//Cleanup Files
+					File.SetLastWriteTime($"{folder + path + "/" + filename}_source.mp4", lastModified);
+					File.Delete($"{folder + path + "/" + filename}.mp4");
+					File.Delete($"{folder + path + "/" + filename}.m4a");
+					File.Delete($"{folder + path + "/" + filename}_adec.mp4");
+					File.Delete($"{folder + path + "/" + filename}_vdec.mp4");
+
+					return true;
+				}
+				return false;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex.Message);
+			}
+			return false;
 		}
 	}
 }
