@@ -29,6 +29,7 @@ First you need to fill out the auth.json file.
 7. Save the file and you should be ready to go!
 
 You should have something like this:
+
 `"USER_ID": "123456789"` - Do NOT include the `u` that gets exported using the Onlyfans Cookie Helper
 
 `"USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36"` - Make sure this is set to your user-agent value
