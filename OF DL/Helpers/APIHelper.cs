@@ -384,6 +384,8 @@ namespace OF_DL.Helpers
 							}
 						}
 
+						paidposts = paidposts.OrderByDescending(x => x.postedAt).ToList();
+
 						foreach (Purchased purchase in paidposts)
 						{
 							if (purchase.responseType == "post" && purchase.media != null && purchase.media.Count > 0)
@@ -480,6 +482,8 @@ namespace OF_DL.Helpers
 							}
 						}
 
+						posts = posts.OrderByDescending(x => x.postedAt).ToList();
+
 						foreach (Post post in posts)
 						{
 							if (post.media != null && post.media.Count > 0)
@@ -510,6 +514,7 @@ namespace OF_DL.Helpers
 					else if (isArchived)
 					{
 						archived = JsonConvert.DeserializeObject<List<Archived>>(body, jsonSerializerSettings);
+						archived = archived.OrderByDescending(x => x.postedAt).ToList();
 						foreach (Archived archive in archived)
 						{
 							if (archive.media != null && archive.media.Count > 0)
@@ -527,6 +532,7 @@ namespace OF_DL.Helpers
 					else if (isStories)
 					{
 						stories = JsonConvert.DeserializeObject<List<Stories>>(body, jsonSerializerSettings);
+						stories = stories.OrderByDescending(x => x.createdAt).ToList();
 						foreach (Stories story in stories)
 						{
 							if (story.media != null && story.media.Count > 0)
@@ -671,6 +677,9 @@ namespace OF_DL.Helpers
 								GetParams["id"] = newmessages.list[newmessages.list.Count - 1].id.ToString();
 							}
 						}
+
+						messages.list = messages.list.OrderByDescending(x => x.createdAt).ToList();
+
 						foreach (Messages.List list in messages.list)
 						{
 							if (list.canPurchaseReason != "opened" && list.media != null && list.media.Count > 0)
@@ -733,6 +742,8 @@ namespace OF_DL.Helpers
 								GetParams["offset"] = Convert.ToString(Convert.ToInt32(GetParams["offset"]) + post_limit);
 							}
 						}
+
+						paidMessages = paidMessages.OrderByDescending(x => x.postedAt).ToList();
 
 						foreach (Purchased purchase in paidMessages)
 						{
