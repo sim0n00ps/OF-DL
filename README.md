@@ -28,6 +28,22 @@ First you need to fill out the auth.json file.
 6. Copy the values of `cookie`, `user-agent`, `user-id` (this should just be a number, do not include a `u`) and `x-bc` to the `auth.json` file where the paths to yt-dlp, ffmpeg and mp4decrypt should already be.
 7. Save the file and you should be ready to go!
 
+You should have something like this:
+`"USER_ID": "123456789"` - Do NOT include the `u` that gets exported using the Onlyfans Cookie Helper
+
+`"USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36"` - Make sure this is set to your user-agent value
+
+'"X_BC": "2a9b28a68e7c03a9f0d3b98c28d70e8105e1f1df"' - Make sure this is set to your x-bc value
+
+'"COOKIE": "auth_id=123456789; sess=k3s9tnzdc8vt2h47ljxpmwqy5r;"' - Make sure you set auth_id to the same value as `user-id` and that you set your `sess` to your actual `sess` value, everytime you log out of Onlyfans this value will change so make sure to update it after every login.
+
+`"YTDLP_PATH": "C:/yt-dlp.exe"` - Make sure this is set to your location of yt-dlp.exe 
+
+`"FFMPEG_PATH": "C:/ffmpeg.exe"` - Make sure this is set to your location of ffmpeg.exe 
+
+`"MP4DECRYPT_PATH": "C:/mp4decrypt.exe"` - Make sure this is set to your location of mp4decrypt.exe 
+
+
 After you have filled out the auth.json file you can double click on the OF DL.exe to run the program.
 You should see something like this:
 ![image](https://user-images.githubusercontent.com/132307467/235548153-107f3f44-aa00-4946-8432-458329142007.png)
