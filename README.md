@@ -73,3 +73,7 @@ Content is downloaded in this order:
 5. Highlights
 6. Messages
 7. Paid Messages
+
+Can can select what media you want to download from each account by changing the values in auth.json, by default the script downloads everything.
+
+For instance, setting "DownloadPosts" to "false" will disable the download of media from a users main feed.
