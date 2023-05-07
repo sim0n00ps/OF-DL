@@ -15,5 +15,12 @@ namespace OF_DL.Entities
         public string? YTDLP_PATH { get; set; } = string.Empty;
         public string? FFMPEG_PATH { get; set;} = string.Empty;
         public string? MP4DECRYPT_PATH { get; set;} = string.Empty;
+        public bool DownloadPaidPosts { get; set; }
+		public bool DownloadPosts { get; set; }
+		public bool DownloadArchived { get; set; }
+		public bool DownloadStories { get; set; }
+		public bool DownloadHighlights { get; set; }
+		public bool DownloadMessages { get; set; }
+		public bool DownloadPaidMessages { get; set; }
 	}
 }
