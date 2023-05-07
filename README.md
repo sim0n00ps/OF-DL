@@ -2,16 +2,16 @@
 Scrape all the media from an OnlyFans account
 # Prerequisites
 This app is written in .NET 7.0 so you will need to have the .NET runtime installed in order to run the program.
-1. Get the latest version here https://dotnet.microsoft.com/en-us/download/dotnet/7.0, you need to download the .NET Runtime 7.X.X which is located on the right hand side of the screen (you may need to scroll down the page to find it).
+1. Get version 7.0.4 here https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-7.0.4-windows-x86-installer.
 2. Download and run the installer.
-3. Verfiy installation by opening Command Prompt or Powershell and run the `dotnet --list-runtimes` command, you should see that .NET 7 is listed.
+3. Verfiy installation by opening Command Prompt or Powershell and run the `dotnet --list-runtimes` command, you should see that .NET 7.0.4 is listed.
 
 Next you need to download yt-dlp, ffmpeg and mp4decrypt in order to download DRM protected videos.
 1. Download `yt-dlp.exe` from the latest release which you can find here https://github.com/yt-dlp/yt-dlp/releases.
 2. Download ffmpeg from https://www.gyan.dev/ffmpeg/builds/ you need to download the `ffmpeg-release-essentials.zip`, unzip that file and ffmpeg.exe should be in the extracted folder.
 3. Download the binaries from https://www.bento4.com/downloads/ extract the zip file and within the `bin` folder you should find `mp4decrypt.exe`.
 
-I would recommend copying all 3 of the .exe files somewhere safe where you can then add the path of each file to `auth.json` file. You can do this easily by holding `shift` when right clicking on the .exe file which should give you the option to `copy as path`. In the auth.json file the lines should look something like this `"YTDLP_PATH": "C:/yt-dlp.exe"`, `"FFMPEG_PATH": "C:/ffmpeg.exe"` and `"MP4DECRYPT_PATH": "C:/mp4decrypt.exe"`
+I would recommend copying all 3 of the .exe files somewhere safe where you can then add the path of each file to `auth.json` file. You can do this easily by holding `shift` when right clicking on the .exe file which should give you the option to `copy as path`, this will include `\` so you will need to replace them with `/`. In the auth.json file the lines should look something like this `"YTDLP_PATH": "C:/yt-dlp.exe"`, `"FFMPEG_PATH": "C:/ffmpeg.exe"` and `"MP4DECRYPT_PATH": "C:/mp4decrypt.exe"`
 # Running the program
 Make sure you download the latest release from the [releases](https://github.com/sim0n00ps/OF-DL/releases) page and unzip the .zip file to a location where you want to download content to.
 You should have 2 files in the folder you just created by unzipping the zip file, OF DL.exe and auth.json. 
@@ -25,7 +25,7 @@ First you need to fill out the auth.json file.
 
 4. Click on one of the requests (if nothing shows up refresh the page or click on one of the tabs such as messages to make something appear).
 5. After clicking on a request, make sure the headers tab is selected and then scroll down to find the 'Request Headers' section, this is where you should be able to find the information you need.
-6. Copy the values of `cookie`, `user-agent`, `user-id` and `x-bc` to the `auth.json` file where the paths to yt-dlp, ffmpeg and mp4decrypt should already be.
+6. Copy the values of `cookie`, `user-agent`, `user-id` (this should just be a number, do not include a `u`) and `x-bc` to the `auth.json` file where the paths to yt-dlp, ffmpeg and mp4decrypt should already be.
 7. Save the file and you should be ready to go!
 
 After you have filled out the auth.json file you can double click on the OF DL.exe to run the program.
