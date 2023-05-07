@@ -2,9 +2,9 @@
 Scrape all the media from an OnlyFans account
 # Prerequisites
 This app is written in .NET 7.0 so you will need to have the .NET runtime installed in order to run the program.
-1. Get version 7.0.4 here https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-7.0.4-windows-x86-installer.
+1. Get version 7.0.5 here https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-7.0.5-windows-x86-installer.
 2. Download and run the installer.
-3. Verfiy installation by opening Command Prompt or Powershell and run the `dotnet --list-runtimes` command, you should see that .NET 7.0.4 is listed.
+3. Verfiy installation by opening Command Prompt or Powershell and run the `dotnet --list-runtimes` command, you should see that .NET 7.0.5 is listed.
 
 Next you need to download yt-dlp, ffmpeg and mp4decrypt in order to download DRM protected videos.
 1. Download `yt-dlp.exe` from the latest release which you can find here https://github.com/yt-dlp/yt-dlp/releases.
@@ -73,3 +73,7 @@ Content is downloaded in this order:
 5. Highlights
 6. Messages
 7. Paid Messages
+
+You can select what media you want to download from each account by changing the values in auth.json, by default the script downloads everything.
+
+For instance, setting "DownloadPosts" to "false" will disable the download of media from a users main feed.
