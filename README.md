@@ -10,7 +10,7 @@ Next you need to download yt-dlp, ffmpeg and mp4decrypt in order to download DRM
 1. Download `yt-dlp.exe` from the latest release which you can find here https://github.com/yt-dlp/yt-dlp/releases.
 2. Download ffmpeg from https://www.gyan.dev/ffmpeg/builds/ you need to download the `ffmpeg-release-essentials.zip`, unzip that file and ffmpeg.exe should be in the extracted folder.
 3. Download the binaries from https://www.bento4.com/downloads/ extract the zip file and within the `bin` folder you should find `mp4decrypt.exe`.
-4. Open the auth.json file in Windows (Notepad/Wordpad/Notepad++/VS Code)
+4. Open the auth.json file in Notepad/Wordpad/Notepad++/VS Code
 
 I would recommend copying all 3 of the .exe files somewhere safe where you can then add the path of each file to `auth.json` file. You can do this easily by holding `shift` when right clicking on the .exe file which should give you the option to `copy as path`, this will include `\` so you will need to replace them with `/`. In the auth.json file the lines should look something like this `"YTDLP_PATH": "C:/yt-dlp.exe"`, `"FFMPEG_PATH": "C:/ffmpeg.exe"` and `"MP4DECRYPT_PATH": "C:/mp4decrypt.exe"`
 # Running the program
