@@ -366,6 +366,10 @@ namespace OF_DL.Helpers
 								loop = false;
 							}
 						}
+						else
+						{
+							loop = false;
+						}
 					}
 				}
 				return users;
