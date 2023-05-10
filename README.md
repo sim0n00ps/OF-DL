@@ -4,7 +4,7 @@ Scrape all the media from an OnlyFans account
 Future Developments
 1. Custom File Formats
 2. Allow you to go back to menu after scrape
-3. Download content from users in lists made on OF
+
 # Prerequisites
 This app is written in .NET 7.0 so you will need to have the .NET runtime installed in order to run the program.
 1. Get version 7.0.5 here https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-7.0.5-windows-x86-installer.
