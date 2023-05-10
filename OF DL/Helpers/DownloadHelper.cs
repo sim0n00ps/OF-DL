@@ -82,7 +82,13 @@ namespace OF_DL.Helpers
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine(ex.Message);
+				Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+
+				if (ex.InnerException != null)
+				{
+					Console.WriteLine("\nInner Exception:");
+					Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+				}
 			}
 			return false;
 		}
@@ -159,7 +165,13 @@ namespace OF_DL.Helpers
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine(ex.Message);
+				Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+
+				if (ex.InnerException != null)
+				{
+					Console.WriteLine("\nInner Exception:");
+					Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+				}
 			}
 			return false;
 		}
@@ -236,7 +248,13 @@ namespace OF_DL.Helpers
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine(ex.Message);
+				Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+
+				if (ex.InnerException != null)
+				{
+					Console.WriteLine("\nInner Exception:");
+					Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+				}
 			}
 			return false;
 		}
@@ -313,7 +331,13 @@ namespace OF_DL.Helpers
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine(ex.Message);
+				Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+
+				if (ex.InnerException != null)
+				{
+					Console.WriteLine("\nInner Exception:");
+					Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+				}
 			}
 			return false;
 		}
@@ -390,7 +414,13 @@ namespace OF_DL.Helpers
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine(ex.Message);
+				Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+
+				if (ex.InnerException != null)
+				{
+					Console.WriteLine("\nInner Exception:");
+					Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+				}
 			}
 			return false;
 		}
@@ -467,7 +497,13 @@ namespace OF_DL.Helpers
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine(ex.Message);
+				Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+
+				if (ex.InnerException != null)
+				{
+					Console.WriteLine("\nInner Exception:");
+					Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+				}
 			}
 			return false;
 		}
@@ -547,7 +583,13 @@ namespace OF_DL.Helpers
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine(ex.Message);
+				Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+
+				if (ex.InnerException != null)
+				{
+					Console.WriteLine("\nInner Exception:");
+					Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+				}
 			}
 		}
 		public async Task<bool> DownloadMessageDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified)
@@ -620,7 +662,13 @@ namespace OF_DL.Helpers
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine(ex.Message);
+				Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+
+				if (ex.InnerException != null)
+				{
+					Console.WriteLine("\nInner Exception:");
+					Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+				}
 			}
 			return false;
 		}
@@ -695,7 +743,13 @@ namespace OF_DL.Helpers
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine(ex.Message);
+				Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+
+				if (ex.InnerException != null)
+				{
+					Console.WriteLine("\nInner Exception:");
+					Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+				}
 			}
 			return false;
 		}
@@ -769,7 +823,13 @@ namespace OF_DL.Helpers
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine(ex.Message);
+				Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+
+				if (ex.InnerException != null)
+				{
+					Console.WriteLine("\nInner Exception:");
+					Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+				}
 			}
 			return false;
 		}
@@ -844,7 +904,13 @@ namespace OF_DL.Helpers
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine(ex.Message);
+				Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+
+				if (ex.InnerException != null)
+				{
+					Console.WriteLine("\nInner Exception:");
+					Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+				}
 			}
 			return false;
 		}

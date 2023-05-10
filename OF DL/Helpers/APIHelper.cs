@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using OF_DL.Entities;
 using OF_DL.Entities.Archived;
 using OF_DL.Entities.Highlights;
+using OF_DL.Entities.Lists;
 using OF_DL.Entities.Messages;
 using OF_DL.Entities.Post;
 using OF_DL.Entities.Purchased;
@@ -137,7 +138,13 @@ namespace OF_DL.Helpers
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine(ex.Message);
+				Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+
+				if (ex.InnerException != null)
+				{
+					Console.WriteLine("\nInner Exception:");
+					Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+				}
 			}
 			return null;
 		}
@@ -211,7 +218,167 @@ namespace OF_DL.Helpers
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine(ex.Message);
+				Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+
+				if (ex.InnerException != null)
+				{
+					Console.WriteLine("\nInner Exception:");
+					Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+				}
+			}
+			return null;
+		}
+		public async Task<Dictionary<string, int>> GetLists(string endpoint)
+		{
+			try
+			{
+				int offset = 0;
+				bool loop = true;
+				Dictionary<string, string> GetParams = new Dictionary<string, string>
+				{
+					{ "offset", offset.ToString() },
+					{ "skip_users", "all" },
+					{ "limit", "50" },
+					{ "format", "infinite" }
+				};
+				Dictionary<string, int> lists = new Dictionary<string, int>();
+				while (loop)
+				{
+					string queryParams = "?";
+					foreach (KeyValuePair<string, string> kvp in GetParams)
+					{
+						if (kvp.Key == GetParams.Keys.Last())
+						{
+							queryParams += $"{kvp.Key}={kvp.Value}";
+						}
+						else
+						{
+							queryParams += $"{kvp.Key}={kvp.Value}&";
+						}
+					}
+
+					Dictionary<string, string> headers = await Headers("/api2/v2" + endpoint, queryParams);
+
+					HttpClient client = new HttpClient();
+
+					HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
+
+					foreach (KeyValuePair<string, string> keyValuePair in headers)
+					{
+						request.Headers.Add(keyValuePair.Key, keyValuePair.Value);
+					}
+					using (var response = await client.SendAsync(request))
+					{
+						response.EnsureSuccessStatusCode();
+						var body = await response.Content.ReadAsStringAsync();
+						UserList userList = JsonConvert.DeserializeObject<UserList>(body);
+						if(userList != null)
+						{
+							foreach(UserList.List l in userList.list)
+							{
+								lists.Add(l.name, l.id.Value);
+							}
+							if (userList.hasMore.Value)
+							{
+								offset = offset + 50;
+								GetParams["offset"] = Convert.ToString(offset);
+							}
+							else
+							{
+								loop = false;
+							}
+						}
+						else
+						{
+							loop = false;
+						}
+					}
+				}
+				return lists;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+
+				if (ex.InnerException != null)
+				{
+					Console.WriteLine("\nInner Exception:");
+					Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+				}
+			}
+			return null;
+		}
+		public async Task<List<string>> GetListUsers(string endpoint)
+		{
+			try
+			{
+				int offset = 0;
+				bool loop = true;
+				Dictionary<string, string> GetParams = new Dictionary<string, string>
+				{
+					{ "offset", offset.ToString() },
+					{ "limit", "50" }
+				};
+				List<string> users = new List<string>();
+				while (loop)
+				{
+					string queryParams = "?";
+					foreach (KeyValuePair<string, string> kvp in GetParams)
+					{
+						if (kvp.Key == GetParams.Keys.Last())
+						{
+							queryParams += $"{kvp.Key}={kvp.Value}";
+						}
+						else
+						{
+							queryParams += $"{kvp.Key}={kvp.Value}&";
+						}
+					}
+
+					Dictionary<string, string> headers = await Headers("/api2/v2" + endpoint, queryParams);
+
+					HttpClient client = new HttpClient();
+
+					HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
+
+					foreach (KeyValuePair<string, string> keyValuePair in headers)
+					{
+						request.Headers.Add(keyValuePair.Key, keyValuePair.Value);
+					}
+					using (var response = await client.SendAsync(request))
+					{
+						response.EnsureSuccessStatusCode();
+						var body = await response.Content.ReadAsStringAsync();
+						List<UsersList> usersList = JsonConvert.DeserializeObject<List<UsersList>>(body);
+						if (usersList != null && usersList.Count > 0)
+						{
+							foreach (UsersList ul in usersList)
+							{
+								users.Add(ul.username);
+							}
+							if (users.Count >= 50)
+							{
+								offset = offset + 50;
+								GetParams["offset"] = Convert.ToString(offset);
+							}
+							else
+							{
+								loop = false;
+							}
+						}
+					}
+				}
+				return users;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+
+				if (ex.InnerException != null)
+				{
+					Console.WriteLine("\nInner Exception:");
+					Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+				}
 			}
 			return null;
 		}
@@ -799,7 +966,13 @@ namespace OF_DL.Helpers
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine(ex.Message);
+				Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+
+				if (ex.InnerException != null)
+				{
+					Console.WriteLine("\nInner Exception:");
+					Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+				}
 			}
 			return null;
 		}
@@ -829,7 +1002,13 @@ namespace OF_DL.Helpers
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine(ex.Message);
+				Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+
+				if (ex.InnerException != null)
+				{
+					Console.WriteLine("\nInner Exception:");
+					Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+				}
 			}
 			return null;
 		}
@@ -853,11 +1032,16 @@ namespace OF_DL.Helpers
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine(ex.Message);
+				Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+
+				if (ex.InnerException != null)
+				{
+					Console.WriteLine("\nInner Exception:");
+					Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+				}
 			}
 			return DateTime.Now;
 		}
-			
 		public async Task<string> GetDecryptionKey(Dictionary<string, string> drmHeaders, string licenceURL, string pssh)
 		{
 			try
@@ -911,7 +1095,13 @@ namespace OF_DL.Helpers
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine(ex.Message);
+				Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+
+				if (ex.InnerException != null)
+				{
+					Console.WriteLine("\nInner Exception:");
+					Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+				}
 			}
 			return null;
 		}
