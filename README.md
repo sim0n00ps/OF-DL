@@ -1,15 +1,21 @@
 # OF-DL
 Scrape all the media from an OnlyFans account
+
+Future Developments
+1. Custom File Formats
+2. Allow you to go back to menu after scrape
+3. Download content from users in lists made on OF
 # Prerequisites
 This app is written in .NET 7.0 so you will need to have the .NET runtime installed in order to run the program.
 1. Get version 7.0.5 here https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-7.0.5-windows-x86-installer.
 2. Download and run the installer.
-3. Verfiy installation by opening Command Prompt or Powershell and run the `dotnet --list-runtimes` command, you should see that .NET 7.0.5 is listed.
+3. Verfiy installation by opening Command Prompt or Powershell, change the directory to your C:\ drive by running `cd C:\`, then change directory to `Program Files (x86)/dotnet` by running `cd Program Files (x86)\dotnet` and finally run the `dotnet --list-runtimes` command, you should see that .NET 7.0.5 is listed.
 
 Next you need to download yt-dlp, ffmpeg and mp4decrypt in order to download DRM protected videos.
 1. Download `yt-dlp.exe` from the latest release which you can find here https://github.com/yt-dlp/yt-dlp/releases.
 2. Download ffmpeg from https://www.gyan.dev/ffmpeg/builds/ you need to download the `ffmpeg-release-essentials.zip`, unzip that file and ffmpeg.exe should be in the extracted folder.
 3. Download the binaries from https://www.bento4.com/downloads/ extract the zip file and within the `bin` folder you should find `mp4decrypt.exe`.
+4. Open the auth.json file in Notepad/Wordpad/Notepad++/VS Code
 
 I would recommend copying all 3 of the .exe files somewhere safe where you can then add the path of each file to `auth.json` file. You can do this easily by holding `shift` when right clicking on the .exe file which should give you the option to `copy as path`, this will include `\` so you will need to replace them with `/`. In the auth.json file the lines should look something like this `"YTDLP_PATH": "C:/yt-dlp.exe"`, `"FFMPEG_PATH": "C:/ffmpeg.exe"` and `"MP4DECRYPT_PATH": "C:/mp4decrypt.exe"`
 # Running the program
