@@ -162,7 +162,11 @@ namespace OF_DL
 						}
 
 						User user_info = await program.apiHelper.GetUserInfo($"/users/{user.Key}");
-						await program.downloadHelper.DownloadAvatarHeader(user_info.avatar, user_info.header, path);
+
+						if (program.auth.DownloadAvatarHeaderPhoto)
+						{
+							await program.downloadHelper.DownloadAvatarHeader(user_info.avatar, user_info.header, path);
+						}
 
 						if (program.auth.DownloadPaidPosts)
 						{

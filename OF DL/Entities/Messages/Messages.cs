@@ -78,7 +78,7 @@ namespace OF_DL.Entities.Messages
 			public bool? isFromQueue { get; set; }
 			public bool? canUnsendQueue { get; set; }
 			public int? unsendSecondsQueue { get; set; }
-			public object id { get; set; }
+			public long id { get; set; }
 			public bool? isOpened { get; set; }
 			public bool? isNew { get; set; }
 			public DateTime? createdAt { get; set; }
@@ -100,7 +100,7 @@ namespace OF_DL.Entities.Messages
 
 		public class Medium
 		{
-			public object id { get; set; }
+			public long id { get; set; }
 			public bool canView { get; set; }
 			public string type { get; set; }
 			public string src { get; set; }

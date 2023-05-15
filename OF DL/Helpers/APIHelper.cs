@@ -580,6 +580,22 @@ namespace OF_DL.Helpers
 								foreach (Purchased.Medium medium in purchase.media)
 								{
 									program.paid_post_ids.Add(medium.id);
+									if (medium.type == "photo" && !program.auth.DownloadImages)
+									{
+										continue;
+									}
+									if (medium.type == "video" && !program.auth.DownloadVideos)
+									{
+										continue;
+									}
+									if (medium.type == "gif" && !program.auth.DownloadVideos)
+									{
+										continue;
+									}
+									if (medium.type == "audio" && !program.auth.DownloadAudios)
+									{
+										continue;
+									}
 									if (previewids.Count > 0)
 									{
 										bool has = previewids.Any(cus => cus.Equals(medium.id));
@@ -661,6 +677,22 @@ namespace OF_DL.Helpers
 							{
 								foreach (Post.Medium medium in post.media)
 								{
+									if (medium.type == "photo" && !program.auth.DownloadImages)
+									{
+										continue;
+									}
+									if (medium.type == "video" && !program.auth.DownloadVideos)
+									{
+										continue;
+									}
+									if (medium.type == "gif" && !program.auth.DownloadVideos)
+									{
+										continue;
+									}
+									if (medium.type == "audio" && !program.auth.DownloadAudios)
+									{
+										continue;
+									}
 									if (medium.canView && medium.files.drm == null)
 									{
 										bool has = program.paid_post_ids.Any(cus => cus.Equals(medium.id));
@@ -686,12 +718,29 @@ namespace OF_DL.Helpers
 					{
 						archived = JsonConvert.DeserializeObject<List<Archived>>(body, jsonSerializerSettings);
 						archived = archived.OrderByDescending(x => x.postedAt).ToList();
+						Program program = new Program(new APIHelper(), new DownloadHelper());
 						foreach (Archived archive in archived)
 						{
 							if (archive.media != null && archive.media.Count > 0)
 							{
 								foreach (Archived.Medium medium in archive.media)
 								{
+									if (medium.type == "photo" && !program.auth.DownloadImages)
+									{
+										continue;
+									}
+									if (medium.type == "video" && !program.auth.DownloadVideos)
+									{
+										continue;
+									}
+									if (medium.type == "gif" && !program.auth.DownloadVideos)
+									{
+										continue;
+									}
+									if (medium.type == "audio" && !program.auth.DownloadAudios)
+									{
+										continue;
+									}
 									if (medium.canView && !medium.source.source.Contains("upload"))
 									{
 										return_urls.Add(medium.source.source);
@@ -704,12 +753,29 @@ namespace OF_DL.Helpers
 					{
 						stories = JsonConvert.DeserializeObject<List<Stories>>(body, jsonSerializerSettings);
 						stories = stories.OrderByDescending(x => x.createdAt).ToList();
+						Program program = new Program(new APIHelper(), new DownloadHelper());
 						foreach (Stories story in stories)
 						{
 							if (story.media != null && story.media.Count > 0)
 							{
 								foreach (Stories.Medium medium in story.media)
 								{
+									if (medium.type == "photo" && !program.auth.DownloadImages)
+									{
+										continue;
+									}
+									if (medium.type == "video" && !program.auth.DownloadVideos)
+									{
+										continue;
+									}
+									if (medium.type == "gif" && !program.auth.DownloadVideos)
+									{
+										continue;
+									}
+									if (medium.type == "audio" && !program.auth.DownloadAudios)
+									{
+										continue;
+									}
 									if (medium.canView && !medium.files.source.url.Contains("upload"))
 									{
 										return_urls.Add(medium.files.source.url);
@@ -722,6 +788,7 @@ namespace OF_DL.Helpers
 					{
 						List<string> highlight_ids = new List<string>();
 						highlights = JsonConvert.DeserializeObject<Highlights>(body, jsonSerializerSettings);
+						Program program = new Program(new APIHelper(), new DownloadHelper());
 						if (highlights.hasMore)
 						{
 							offset = offset + 5;
@@ -793,11 +860,30 @@ namespace OF_DL.Helpers
 								highlightMedia = JsonConvert.DeserializeObject<HighlightMedia>(highlightBody, highlightJsonSerializerSettings);
 								if (highlightMedia != null)
 								{
-									foreach (var item in highlightMedia.stories)
+									foreach (HighlightMedia.Story item in highlightMedia.stories)
 									{
-										if (!item.media[0].files.source.url.Contains("upload"))
+										if(item.media.Count > 0 && !item.media[0].files.source.url.Contains("upload"))
 										{
-											return_urls.Add(item.media[0].files.source.url);
+											foreach(HighlightMedia.Medium medium in item.media)
+											{
+												if (medium.type == "photo" && !program.auth.DownloadImages)
+												{
+													continue;
+												}
+												if (medium.type == "video" && !program.auth.DownloadVideos)
+												{
+													continue;
+												}
+												if (medium.type == "gif" && !program.auth.DownloadVideos)
+												{
+													continue;
+												}
+												if (medium.type == "audio" && !program.auth.DownloadAudios)
+												{
+													continue;
+												}
+												return_urls.Add(item.media[0].files.source.url);
+											}
 										}
 									}
 								}
@@ -807,6 +893,7 @@ namespace OF_DL.Helpers
 					else if (isMessages)
 					{
 						messages = JsonConvert.DeserializeObject<Messages>(body, jsonSerializerSettings);
+						Program program = new Program(new APIHelper(), new DownloadHelper());
 						if (messages.hasMore)
 						{
 							GetParams["id"] = messages.list[messages.list.Count - 1].id.ToString();
@@ -857,6 +944,22 @@ namespace OF_DL.Helpers
 							{
 								foreach (Messages.Medium medium in list.media)
 								{
+									if (medium.type == "photo" && !program.auth.DownloadImages)
+									{
+										continue;
+									}
+									if (medium.type == "video" && !program.auth.DownloadVideos)
+									{
+										continue;
+									}
+									if (medium.type == "gif" && !program.auth.DownloadVideos)
+									{
+										continue;
+									}
+									if (medium.type == "audio" && !program.auth.DownloadAudios)
+									{
+										continue;
+									}
 									if (medium.canView && medium.source.source != null && !medium.source.source.Contains("upload"))
 									{
 										return_urls.Add(medium.source.source.ToString());
@@ -872,6 +975,7 @@ namespace OF_DL.Helpers
 					else if (isPurchased)
 					{
 						paidMessages = JsonConvert.DeserializeObject<List<Purchased>>(body, jsonSerializerSettings);
+						Program program = new Program(new APIHelper(), new DownloadHelper());
 						if (paidMessages.Count >= post_limit)
 						{
 							GetParams["offset"] = post_limit.ToString();
@@ -938,6 +1042,22 @@ namespace OF_DL.Helpers
 
 								foreach (Purchased.Medium medium in purchase.media)
 								{
+									if (medium.type == "photo" && !program.auth.DownloadImages)
+									{
+										continue;
+									}
+									if (medium.type == "video" && !program.auth.DownloadVideos)
+									{
+										continue;
+									}
+									if (medium.type == "gif" && !program.auth.DownloadVideos)
+									{
+										continue;
+									}
+									if (medium.type == "audio" && !program.auth.DownloadAudios)
+									{
+										continue;
+									}
 									if (previewids.Count > 0)
 									{
 										bool has = previewids.Any(cus => cus.Equals(medium.id));
