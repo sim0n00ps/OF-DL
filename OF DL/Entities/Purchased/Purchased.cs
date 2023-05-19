@@ -15,7 +15,7 @@ namespace OF_DL.Entities.Purchased
             public object giphyId { get; set; }
             public bool lockedText { get; set; }
             public bool isFree { get; set; }
-            public double price { get; set; }
+            public string price { get; set; }
             public bool isMediaReady { get; set; }
             public int mediaCount { get; set; }
             public List<Medium> media { get; set; }
@@ -28,7 +28,7 @@ namespace OF_DL.Entities.Purchased
             public bool isFromQueue { get; set; }
             public bool canUnsendQueue { get; set; }
             public int unsendSecondsQueue { get; set; }
-            public object id { get; set; }
+            public long id { get; set; }
             public bool isOpened { get; set; }
             public bool isNew { get; set; }
             public DateTime createdAt { get; set; }

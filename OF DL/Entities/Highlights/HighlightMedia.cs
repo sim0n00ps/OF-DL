@@ -27,7 +27,7 @@ namespace OF_DL.Entities.Highlights
 
 		public class Medium
 		{
-			public object id { get; set; }
+			public long id { get; set; }
 			public string type { get; set; }
 			public bool convertedToVideo { get; set; }
 			public bool canView { get; set; }

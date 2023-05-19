@@ -10,7 +10,7 @@ namespace OF_DL.Helpers
 {
 	public class DownloadHelper
 	{
-		public async Task<bool> DownloadPostMedia(string url, string folder)
+		public async Task<bool> DownloadPostMedia(string url, string folder, long media_id)
 		{
 			try
 			{
@@ -55,8 +55,8 @@ namespace OF_DL.Helpers
 
 				Uri uri = new Uri(url);
 				string filename = System.IO.Path.GetFileName(uri.LocalPath);
-
-				if (!File.Exists(folder + path + "/" + filename))
+				DBHelper dBHelper = new DBHelper();
+				if (!await dBHelper.CheckDownloaded(folder, media_id) || !File.Exists(folder + path + "/" + filename))
 				{
 					var client = new HttpClient();
 					client.Timeout = TimeSpan.FromSeconds(5);
@@ -75,6 +75,8 @@ namespace OF_DL.Helpers
 							await body.CopyToAsync(fileStream);
 						}
 						File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
+						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
+						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
 					}
 					return true;
 				}
@@ -93,7 +95,7 @@ namespace OF_DL.Helpers
 			return false;
 		}
 
-		public async Task<bool> DownloadMessageMedia(string url, string folder)
+		public async Task<bool> DownloadMessageMedia(string url, string folder, long media_id)
 		{
 			try
 			{
@@ -138,8 +140,8 @@ namespace OF_DL.Helpers
 
 				Uri uri = new Uri(url);
 				string filename = System.IO.Path.GetFileName(uri.LocalPath);
-
-				if (!File.Exists(folder + path + "/" + filename))
+				DBHelper dBHelper = new DBHelper();
+				if (!await dBHelper.CheckDownloaded(folder, media_id) || !File.Exists(folder + path + "/" + filename))
 				{
 					var client = new HttpClient();
 					client.Timeout = TimeSpan.FromSeconds(5);
@@ -158,6 +160,8 @@ namespace OF_DL.Helpers
 							await body.CopyToAsync(fileStream);
 						}
 						File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
+						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
+						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
 					}
 					return true;
 				}
@@ -176,7 +180,7 @@ namespace OF_DL.Helpers
 			return false;
 		}
 
-		public async Task<bool> DownloadArchivedMedia(string url, string folder)
+		public async Task<bool> DownloadArchivedMedia(string url, string folder, long media_id)
 		{
 			try
 			{
@@ -221,8 +225,8 @@ namespace OF_DL.Helpers
 
 				Uri uri = new Uri(url);
 				string filename = System.IO.Path.GetFileName(uri.LocalPath);
-
-				if (!File.Exists(folder + path + "/" + filename))
+				DBHelper dBHelper = new DBHelper();
+				if (!await dBHelper.CheckDownloaded(folder, media_id) || !File.Exists(folder + path + "/" + filename))
 				{
 					var client = new HttpClient();
 					client.Timeout = TimeSpan.FromSeconds(5);
@@ -241,6 +245,8 @@ namespace OF_DL.Helpers
 							await body.CopyToAsync(fileStream);
 						}
 						File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
+						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
+						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
 					}
 					return true;
 				}
@@ -259,7 +265,7 @@ namespace OF_DL.Helpers
 			return false;
 		}
 
-		public async Task<bool> DownloadStoryMedia(string url, string folder)
+		public async Task<bool> DownloadStoryMedia(string url, string folder, long media_id)
 		{
 			try
 			{
@@ -304,8 +310,8 @@ namespace OF_DL.Helpers
 
 				Uri uri = new Uri(url);
 				string filename = System.IO.Path.GetFileName(uri.LocalPath);
-
-				if (!File.Exists(folder + path + "/" + filename))
+				DBHelper dBHelper = new DBHelper();
+				if (!await dBHelper.CheckDownloaded(folder, media_id) || !File.Exists(folder + path + "/" + filename))
 				{
 					var client = new HttpClient();
 					client.Timeout = TimeSpan.FromSeconds(5);
@@ -324,6 +330,8 @@ namespace OF_DL.Helpers
 							await body.CopyToAsync(fileStream);
 						}
 						File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
+						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
+						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
 					}
 					return true;
 				}
@@ -342,7 +350,7 @@ namespace OF_DL.Helpers
 			return false;
 		}
 
-		public async Task<bool> DownloadPurchasedMedia(string url, string folder)
+		public async Task<bool> DownloadPurchasedMedia(string url, string folder, long media_id)
 		{
 			try
 			{
@@ -387,8 +395,8 @@ namespace OF_DL.Helpers
 
 				Uri uri = new Uri(url);
 				string filename = System.IO.Path.GetFileName(uri.LocalPath);
-
-				if (!File.Exists(folder + path + "/" + filename))
+				DBHelper dBHelper = new DBHelper();
+				if (!await dBHelper.CheckDownloaded(folder, media_id) || !File.Exists(folder + path + "/" + filename))
 				{
 					var client = new HttpClient();
 					client.Timeout = TimeSpan.FromSeconds(5);
@@ -407,6 +415,8 @@ namespace OF_DL.Helpers
 							await body.CopyToAsync(fileStream);
 						}
 						File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
+						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
+						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
 					}
 					return true;
 				}
@@ -425,7 +435,7 @@ namespace OF_DL.Helpers
 			return false;
 		}
 
-		public async Task<bool> DownloadPurchasedPostMedia(string url, string folder)
+		public async Task<bool> DownloadPurchasedPostMedia(string url, string folder, long media_id)
 		{
 			try
 			{
@@ -470,8 +480,8 @@ namespace OF_DL.Helpers
 
 				Uri uri = new Uri(url);
 				string filename = System.IO.Path.GetFileName(uri.LocalPath);
-
-				if (!File.Exists(folder + path + "/" + filename))
+				DBHelper dBHelper = new DBHelper();
+				if (!await dBHelper.CheckDownloaded(folder, media_id) || !File.Exists(folder + path + "/" + filename))
 				{
 					var client = new HttpClient();
 					client.Timeout = TimeSpan.FromSeconds(5);
@@ -490,6 +500,8 @@ namespace OF_DL.Helpers
 							await body.CopyToAsync(fileStream);
 						}
 						File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
+						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
+						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
 					}
 					return true;
 				}
@@ -592,7 +604,7 @@ namespace OF_DL.Helpers
 				}
 			}
 		}
-		public async Task<bool> DownloadMessageDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified)
+		public async Task<bool> DownloadMessageDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id)
 		{
 			try
 			{
@@ -603,8 +615,8 @@ namespace OF_DL.Helpers
 				{
 					Directory.CreateDirectory(folder + path); // create the new folder
 				}
-
-				if (!File.Exists(folder + path + "/" + filename + "_source.mp4"))
+				DBHelper dBHelper = new DBHelper();
+				if (!await dBHelper.CheckDownloaded(folder, media_id) || !File.Exists(folder + path + "/" + filename + "_source.mp4"))
 				{
 					//Use ytdl-p to download the MPD as a M4A and MP4 file
 					ProcessStartInfo ytdlpstartInfo = new ProcessStartInfo();
@@ -630,7 +642,14 @@ namespace OF_DL.Helpers
 
 					ProcessStartInfo mp4decryptStartInfoAudio = new ProcessStartInfo();
 					mp4decryptStartInfoAudio.FileName = mp4decryptpath;
-					mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f4"}.m4a {folder + path + "/" + filename}_adec.mp4";
+					if(File.Exists(folder + path + "/" + filename + ".f4.m4a"))
+					{
+						mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f4"}.m4a {folder + path + "/" + filename}_adec.mp4";
+					}
+					else
+					{
+						mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f3"}.m4a {folder + path + "/" + filename}_adec.mp4";
+					}
 					mp4decryptStartInfoAudio.CreateNoWindow = true;
 
 					Process mp4decryptAudioProcess = new Process();
@@ -651,8 +670,17 @@ namespace OF_DL.Helpers
 
 					//Cleanup Files
 					File.SetLastWriteTime($"{folder + path + "/" + filename}_source.mp4", lastModified);
+					long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
+					await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
 					File.Delete($"{folder + path + "/" + filename + ".f1"}.mp4");
-					File.Delete($"{folder + path + "/" + filename + ".f4"}.m4a");
+					if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
+					{
+						File.Delete($"{folder + path + "/" + filename + ".f4"}.m4a");
+					}
+					else
+					{
+						File.Delete($"{folder + path + "/" + filename + ".f3"}.m4a");
+					}
 					File.Delete($"{folder + path + "/" + filename}_adec.mp4");
 					File.Delete($"{folder + path + "/" + filename}_vdec.mp4");
 
@@ -673,7 +701,7 @@ namespace OF_DL.Helpers
 			return false;
 		}
 
-		public async Task<bool> DownloadPurchasedMessageDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified)
+		public async Task<bool> DownloadPurchasedMessageDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id)
 		{
 			try
 			{
@@ -684,8 +712,8 @@ namespace OF_DL.Helpers
 				{
 					Directory.CreateDirectory(folder + path); // create the new folder
 				}
-
-				if (!File.Exists(folder + path + "/" + filename + "_source.mp4"))
+				DBHelper dBHelper = new DBHelper();
+				if (!await dBHelper.CheckDownloaded(folder, media_id) || !File.Exists(folder + path + "/" + filename + "_source.mp4"))
 				{
 					//Use ytdl-p to download the MPD as a M4A and MP4 file
 					ProcessStartInfo ytdlpstartInfo = new ProcessStartInfo();
@@ -711,7 +739,14 @@ namespace OF_DL.Helpers
 
 					ProcessStartInfo mp4decryptStartInfoAudio = new ProcessStartInfo();
 					mp4decryptStartInfoAudio.FileName = mp4decryptpath;
-					mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f4"}.m4a {folder + path + "/" + filename}_adec.mp4";
+					if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
+					{
+						mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f4"}.m4a {folder + path + "/" + filename}_adec.mp4";
+					}
+					else
+					{
+						mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f3"}.m4a {folder + path + "/" + filename}_adec.mp4";
+					}
 					mp4decryptStartInfoAudio.CreateNoWindow = true;
 
 					Process mp4decryptAudioProcess = new Process();
@@ -732,8 +767,17 @@ namespace OF_DL.Helpers
 
 					//Cleanup Files
 					File.SetLastWriteTime($"{folder + path + "/" + filename}_source.mp4", lastModified);
+					long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
+					await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
 					File.Delete($"{folder + path + "/" + filename + ".f1"}.mp4");
-					File.Delete($"{folder + path + "/" + filename + ".f4"}.m4a");
+					if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
+					{
+						File.Delete($"{folder + path + "/" + filename + ".f4"}.m4a");
+					}
+					else
+					{
+						File.Delete($"{folder + path + "/" + filename + ".f3"}.m4a");
+					}
 					File.Delete($"{folder + path + "/" + filename}_adec.mp4");
 					File.Delete($"{folder + path + "/" + filename}_vdec.mp4");
 
@@ -753,7 +797,7 @@ namespace OF_DL.Helpers
 			}
 			return false;
 		}
-		public async Task<bool> DownloadPostDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified)
+		public async Task<bool> DownloadPostDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id)
 		{
 			try
 			{
@@ -764,8 +808,8 @@ namespace OF_DL.Helpers
 				{
 					Directory.CreateDirectory(folder + path); // create the new folder
 				}
-
-				if (!File.Exists(folder + path + "/" + filename + "_source.mp4"))
+				DBHelper dBHelper = new DBHelper();
+				if (!await dBHelper.CheckDownloaded(folder, media_id) || !File.Exists(folder + path + "/" + filename + "_source.mp4"))
 				{
 					//Use ytdl-p to download the MPD as a M4A and MP4 file
 					ProcessStartInfo ytdlpstartInfo = new ProcessStartInfo();
@@ -791,7 +835,14 @@ namespace OF_DL.Helpers
 
 					ProcessStartInfo mp4decryptStartInfoAudio = new ProcessStartInfo();
 					mp4decryptStartInfoAudio.FileName = mp4decryptpath;
-					mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f4"}.m4a {folder + path + "/" + filename}_adec.mp4";
+					if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
+					{
+						mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f4"}.m4a {folder + path + "/" + filename}_adec.mp4";
+					}
+					else
+					{
+						mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f3"}.m4a {folder + path + "/" + filename}_adec.mp4";
+					}
 					mp4decryptStartInfoAudio.CreateNoWindow = true;
 
 					Process mp4decryptAudioProcess = new Process();
@@ -813,7 +864,16 @@ namespace OF_DL.Helpers
 					//Cleanup Files
 					File.SetLastWriteTime($"{folder + path + "/" + filename}_source.mp4", lastModified);
 					File.Delete($"{folder + path + "/" + filename + ".f1"}.mp4");
-					File.Delete($"{folder + path + "/" + filename + ".f4"}.m4a");
+					long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
+					await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
+					if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
+					{
+						File.Delete($"{folder + path + "/" + filename + ".f4"}.m4a");
+					}
+					else
+					{
+						File.Delete($"{folder + path + "/" + filename + ".f3"}.m4a");
+					}
 					File.Delete($"{folder + path + "/" + filename}_adec.mp4");
 					File.Delete($"{folder + path + "/" + filename}_vdec.mp4");
 
@@ -834,7 +894,7 @@ namespace OF_DL.Helpers
 			return false;
 		}
 
-		public async Task<bool> DownloadPurchasedPostDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified)
+		public async Task<bool> DownloadPurchasedPostDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id)
 		{
 			try
 			{
@@ -845,8 +905,8 @@ namespace OF_DL.Helpers
 				{
 					Directory.CreateDirectory(folder + path); // create the new folder
 				}
-
-				if (!File.Exists(folder + path + "/" + filename + "_source.mp4"))
+				DBHelper dBHelper = new DBHelper();
+				if (!await dBHelper.CheckDownloaded(folder, media_id) || !File.Exists(folder + path + "/" + filename + "_source.mp4"))
 				{
 					//Use ytdl-p to download the MPD as a M4A and MP4 file
 					ProcessStartInfo ytdlpstartInfo = new ProcessStartInfo();
@@ -872,7 +932,14 @@ namespace OF_DL.Helpers
 
 					ProcessStartInfo mp4decryptStartInfoAudio = new ProcessStartInfo();
 					mp4decryptStartInfoAudio.FileName = mp4decryptpath;
-					mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f4"}.m4a {folder + path + "/" + filename}_adec.mp4";
+					if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
+					{
+						mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f4"}.m4a {folder + path + "/" + filename}_adec.mp4";
+					}
+					else
+					{
+						mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f3"}.m4a {folder + path + "/" + filename}_adec.mp4";
+					}
 					mp4decryptStartInfoAudio.CreateNoWindow = true;
 
 					Process mp4decryptAudioProcess = new Process();
@@ -893,8 +960,17 @@ namespace OF_DL.Helpers
 
 					//Cleanup Files
 					File.SetLastWriteTime($"{folder + path + "/" + filename}_source.mp4", lastModified);
+					long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
+					await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
 					File.Delete($"{folder + path + "/" + filename + ".f1"}.mp4");
-					File.Delete($"{folder + path + "/" + filename + ".f4"}.m4a");
+					if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
+					{
+						File.Delete($"{folder + path + "/" + filename + ".f4"}.m4a");
+					}
+					else
+					{
+						File.Delete($"{folder + path + "/" + filename + ".f3"}.m4a");
+					}
 					File.Delete($"{folder + path + "/" + filename}_adec.mp4");
 					File.Delete($"{folder + path + "/" + filename}_vdec.mp4");
 
