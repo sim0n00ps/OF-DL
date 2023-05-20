@@ -586,7 +586,7 @@ namespace OF_DL.Helpers
 										}
 									}
 								}
-								await dBHelper.AddPost(folder, purchase.id, purchase.text, purchase.price?.ToString(), purchase.price != null && purchase.isOpened ? true : false, purchase.isArchived.HasValue ? purchase.isArchived.Value : false, purchase.postedAt.HasValue ? purchase.postedAt.Value : DateTime.Now);
+								await dBHelper.AddPost(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price?.ToString(), purchase.price != null && purchase.isOpened ? true : false, purchase.isArchived.HasValue ? purchase.isArchived.Value : false, purchase.postedAt.HasValue ? purchase.postedAt.Value : DateTime.Now);
 								foreach (Purchased.Medium medium in purchase.media)
 								{
 									program.paid_post_ids.Add(medium.id);
@@ -714,12 +714,11 @@ namespace OF_DL.Helpers
 									}
 								}
 							}
-							await dBHelper.AddPost(folder, post.id, post.text, post.price != null ? post.price.ToString() : "0", post.price != null && post.isOpened ? true : false, post.isArchived, post.postedAt);
+							await dBHelper.AddPost(folder, post.id, post.text != null ? post.text : string.Empty, post.price != null ? post.price.ToString() : "0", post.price != null && post.isOpened ? true : false, post.isArchived, post.postedAt);
 							if (post.media != null && post.media.Count > 0)
 							{
 								foreach (Post.Medium medium in post.media)
 								{
-									await dBHelper.AddMedia(folder, medium.id, post.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), postPreviewIds.Contains((long)medium.id) ? true : false, false, null);
 									if (medium.type == "photo" && !program.auth.DownloadImages)
 									{
 										continue;
@@ -743,6 +742,7 @@ namespace OF_DL.Helpers
 										{
 											if (!return_urls.ContainsKey(medium.id))
 											{
+												await dBHelper.AddMedia(folder, medium.id, post.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), postPreviewIds.Contains((long)medium.id) ? true : false, false, null);
 												return_urls.Add(medium.id, medium.source.source);
 											}
 										}
@@ -754,6 +754,7 @@ namespace OF_DL.Helpers
 										{
 											if (!return_urls.ContainsKey(medium.id))
 											{
+												await dBHelper.AddMedia(folder, medium.id, post.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), postPreviewIds.Contains((long)medium.id) ? true : false, false, null);
 												return_urls.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{post.id}");
 											}
 										}
@@ -782,12 +783,11 @@ namespace OF_DL.Helpers
 									}
 								}
 							}
-							await dBHelper.AddPost(folder, archive.id, archive.text, archive.price != null ? archive.price.ToString() : "0", archive.price != null && archive.isOpened ? true : false, archive.isArchived, archive.postedAt);
+							await dBHelper.AddPost(folder, archive.id, archive.text != null ? archive.text : string.Empty, archive.price != null ? archive.price.ToString() : "0", archive.price != null && archive.isOpened ? true : false, archive.isArchived, archive.postedAt);
 							if (archive.media != null && archive.media.Count > 0)
 							{
 								foreach (Archived.Medium medium in archive.media)
 								{
-									await dBHelper.AddMedia(folder, medium.id, archive.id, medium.source.source, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
 									if (medium.type == "photo" && !program.auth.DownloadImages)
 									{
 										continue;
@@ -808,6 +808,7 @@ namespace OF_DL.Helpers
 									{
 										if (!return_urls.ContainsKey(medium.id))
 										{
+											await dBHelper.AddMedia(folder, medium.id, archive.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
 											return_urls.Add(medium.id, medium.source.source);
 										}
 									}
@@ -1035,7 +1036,7 @@ namespace OF_DL.Helpers
 									}
 								}
 							}
-							await dBHelper.AddMessage(folder, list.id, list.text, list.price, list.canPurchaseReason == "opened" ? true : list.canPurchaseReason != "opened" ? false : (bool?)null ?? false, false, list.createdAt.Value, list.fromUser.id.Value);
+							await dBHelper.AddMessage(folder, list.id, list.text != null ? list.text : string.Empty, list.price, list.canPurchaseReason == "opened" ? true : list.canPurchaseReason != "opened" ? false : (bool?)null ?? false, false, list.createdAt.Value, list.fromUser.id.Value);
 							if (list.canPurchaseReason != "opened" && list.media != null && list.media.Count > 0)
 							{
 								foreach (Messages.Medium medium in list.media)
@@ -1145,11 +1146,11 @@ namespace OF_DL.Helpers
 						{
 							if(purchase.postedAt != null)
 							{
-								await dBHelper.AddMessage(folder, purchase.id, purchase.text, purchase.price, true, false, purchase.postedAt.Value, purchase.fromUser.id);
+								await dBHelper.AddMessage(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price, true, false, purchase.postedAt.Value, purchase.fromUser.id);
 							}
 							else
 							{
-								await dBHelper.AddMessage(folder, purchase.id, purchase.text, purchase.price, true, false, purchase.createdAt, purchase.fromUser.id);
+								await dBHelper.AddMessage(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price, true, false, purchase.createdAt, purchase.fromUser.id);
 							}
 							
 							if (purchase.media != null && purchase.media.Count > 0)
