@@ -20,7 +20,7 @@ Next you need to download yt-dlp, ffmpeg and mp4decrypt in order to download DRM
 I would recommend copying all 3 of the .exe files somewhere safe where you can then add the path of each file to `auth.json` file. You can do this easily by holding `shift` when right clicking on the .exe file which should give you the option to `copy as path`, this will include `\` so you will need to replace them with `/`. In the auth.json file the lines should look something like this `"YTDLP_PATH": "C:/yt-dlp.exe"`, `"FFMPEG_PATH": "C:/ffmpeg.exe"` and `"MP4DECRYPT_PATH": "C:/mp4decrypt.exe"`
 # Running the program
 Make sure you download the latest release from the [releases](https://github.com/sim0n00ps/OF-DL/releases) page and unzip the .zip file to a location where you want to download content to.
-You should have 2 files in the folder you just created by unzipping the zip file, OF DL.exe and auth.json. 
+You should have 3 files in the folder you just created by unzipping the zip file, OF DL.exe, auth.json and e_sqlite3.dll. 
 
 First you need to fill out the auth.json file.
 1. Go to www.onlyfans.com and login.
