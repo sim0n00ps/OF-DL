@@ -1036,7 +1036,7 @@ namespace OF_DL.Helpers
 									}
 								}
 							}
-							await dBHelper.AddMessage(folder, list.id, list.text != null ? list.text : string.Empty, list.price != null ? list.price.ToString() : "0", list.canPurchaseReason == "opened" ? true : list.canPurchaseReason != "opened" ? false : (bool?)null ?? false, false, list.createdAt.Value, list.fromUser.id.Value);
+							await dBHelper.AddMessage(folder, list.id, list.text != null ? list.text : string.Empty, list.price != null ? list.price.ToString() : "0", list.canPurchaseReason == "opened" ? true : list.canPurchaseReason != "opened" ? false : (bool?)null ?? false, false, list.createdAt.HasValue ? list.createdAt.Value : DateTime.Now, list.fromUser != null && list.fromUser.id != null ? list.fromUser.id.Value : int.MinValue);
 							if (list.canPurchaseReason != "opened" && list.media != null && list.media.Count > 0)
 							{
 								foreach (Messages.Medium medium in list.media)
