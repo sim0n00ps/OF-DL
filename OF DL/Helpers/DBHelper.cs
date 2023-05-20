@@ -99,8 +99,8 @@ namespace OF_DL.Helpers
 							using (SqliteCommand insertCmd = new SqliteCommand("INSERT INTO messages(post_id, text, price, paid, archived, created_at, user_id) VALUES(@post_id, @message_text, @price, @is_paid, @is_archived, @created_at, @user_id)", connection))
 							{
 								insertCmd.Parameters.AddWithValue("@post_id", post_id);
-								insertCmd.Parameters.AddWithValue("@message_text", message_text);
-								insertCmd.Parameters.AddWithValue("@price", price);
+								insertCmd.Parameters.AddWithValue("@message_text", message_text ?? (object)DBNull.Value);
+								insertCmd.Parameters.AddWithValue("@price", price ?? (object)DBNull.Value);
 								insertCmd.Parameters.AddWithValue("@is_paid", is_paid);
 								insertCmd.Parameters.AddWithValue("@is_archived", is_archived);
 								insertCmd.Parameters.AddWithValue("@created_at", created_at);
@@ -139,8 +139,8 @@ namespace OF_DL.Helpers
 							using (SqliteCommand insertCmd = new SqliteCommand("INSERT INTO posts(post_id, text, price, paid, archived, created_at) VALUES(@post_id, @message_text, @price, @is_paid, @is_archived, @created_at)", connection))
 							{
 								insertCmd.Parameters.AddWithValue("@post_id", post_id);
-								insertCmd.Parameters.AddWithValue("@message_text", message_text);
-								insertCmd.Parameters.AddWithValue("@price", price);
+								insertCmd.Parameters.AddWithValue("@message_text", message_text ?? (object)DBNull.Value);
+								insertCmd.Parameters.AddWithValue("@price", price ?? (object)DBNull.Value);
 								insertCmd.Parameters.AddWithValue("@is_paid", is_paid);
 								insertCmd.Parameters.AddWithValue("@is_archived", is_archived);
 								insertCmd.Parameters.AddWithValue("@created_at", created_at);
@@ -179,7 +179,7 @@ namespace OF_DL.Helpers
 							{
 								insertCmd.Parameters.AddWithValue("@post_id", post_id);
 								insertCmd.Parameters.AddWithValue("@message_text", message_text ?? (object)DBNull.Value);
-								insertCmd.Parameters.AddWithValue("@price", price);
+								insertCmd.Parameters.AddWithValue("@price", price ?? (object)DBNull.Value);
 								insertCmd.Parameters.AddWithValue("@is_paid", is_paid);
 								insertCmd.Parameters.AddWithValue("@is_archived", is_archived);
 								insertCmd.Parameters.AddWithValue("@created_at", created_at);

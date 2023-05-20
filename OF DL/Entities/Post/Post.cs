@@ -32,7 +32,7 @@ namespace OF_DL.Entities.Post
         public bool isOpened { get; set; }
         public bool canToggleFavorite { get; set; }
         public object streamId { get; set; }
-        public object price { get; set; }
+        public string price { get; set; }
         public bool hasVoting { get; set; }
         public bool isAddedToBookmarks { get; set; }
         public bool isArchived { get; set; }

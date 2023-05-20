@@ -586,7 +586,7 @@ namespace OF_DL.Helpers
 										}
 									}
 								}
-								await dBHelper.AddPost(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price?.ToString(), purchase.price != null && purchase.isOpened ? true : false, purchase.isArchived.HasValue ? purchase.isArchived.Value : false, purchase.postedAt.HasValue ? purchase.postedAt.Value : DateTime.Now);
+								await dBHelper.AddPost(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price != null ? purchase.price.ToString() : "0", purchase.price != null && purchase.isOpened ? true : false, purchase.isArchived.HasValue ? purchase.isArchived.Value : false, purchase.postedAt.HasValue ? purchase.postedAt.Value : DateTime.Now);
 								foreach (Purchased.Medium medium in purchase.media)
 								{
 									program.paid_post_ids.Add(medium.id);
@@ -1036,7 +1036,7 @@ namespace OF_DL.Helpers
 									}
 								}
 							}
-							await dBHelper.AddMessage(folder, list.id, list.text != null ? list.text : string.Empty, list.price, list.canPurchaseReason == "opened" ? true : list.canPurchaseReason != "opened" ? false : (bool?)null ?? false, false, list.createdAt.Value, list.fromUser.id.Value);
+							await dBHelper.AddMessage(folder, list.id, list.text != null ? list.text : string.Empty, list.price != null ? list.price.ToString() : "0", list.canPurchaseReason == "opened" ? true : list.canPurchaseReason != "opened" ? false : (bool?)null ?? false, false, list.createdAt.Value, list.fromUser.id.Value);
 							if (list.canPurchaseReason != "opened" && list.media != null && list.media.Count > 0)
 							{
 								foreach (Messages.Medium medium in list.media)
@@ -1146,11 +1146,11 @@ namespace OF_DL.Helpers
 						{
 							if(purchase.postedAt != null)
 							{
-								await dBHelper.AddMessage(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price, true, false, purchase.postedAt.Value, purchase.fromUser.id);
+								await dBHelper.AddMessage(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price != null ? purchase.price : "0", true, false, purchase.postedAt.Value, purchase.fromUser.id);
 							}
 							else
 							{
-								await dBHelper.AddMessage(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price, true, false, purchase.createdAt, purchase.fromUser.id);
+								await dBHelper.AddMessage(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price != null ? purchase.price : "0", true, false, purchase.createdAt, purchase.fromUser.id);
 							}
 							
 							if (purchase.media != null && purchase.media.Count > 0)
