@@ -777,9 +777,12 @@ namespace OF_DL.Helpers
 							{
 								for (int i = 0; i < archive.preview.Count; i++)
 								{
-									if (!previewids.Contains((long)archive.preview[i]))
+									if(archive.preview[i]?.ToString() != "poll")
 									{
-										previewids.Add((long)archive.preview[i]);
+										if (!previewids.Contains((long)archive.preview[i]))
+										{
+											previewids.Add((long)archive.preview[i]);
+										}
 									}
 								}
 							}
@@ -1140,17 +1143,17 @@ namespace OF_DL.Helpers
 							}
 						}
 
-						paidMessages = paidMessages.OrderByDescending(x => x.postedAt).ToList();
+						paidMessages = paidMessages.Where(z => z.responseType == "message").OrderByDescending(x => x.postedAt).ToList();
 						DBHelper dBHelper = new DBHelper();
 						foreach (Purchased purchase in paidMessages)
 						{
 							if(purchase.postedAt != null)
 							{
-								await dBHelper.AddMessage(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price != null ? purchase.price : "0", true, false, purchase.postedAt.Value, purchase.fromUser.id);
+								await dBHelper.AddMessage(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price != null ? purchase.price : "0", true, false, purchase.postedAt.Value, purchase.fromUser != null ? purchase.fromUser.id : purchase.author.id);
 							}
 							else
 							{
-								await dBHelper.AddMessage(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price != null ? purchase.price : "0", true, false, purchase.createdAt, purchase.fromUser.id);
+								await dBHelper.AddMessage(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price != null ? purchase.price : "0", true, false, purchase.createdAt, purchase.fromUser != null ? purchase.fromUser.id : purchase.author.id);
 							}
 							
 							if (purchase.media != null && purchase.media.Count > 0)
@@ -1160,14 +1163,20 @@ namespace OF_DL.Helpers
 								{
 									for (int i = 0; i < purchase.previews.Count; i++)
 									{
-										previewids.Add((long)purchase.previews[i]);
+										if (!previewids.Contains((long)purchase.previews[i]))
+										{
+											previewids.Add((long)purchase.previews[i]);
+										}
 									}
 								}
 								else if (purchase.preview != null)
 								{
 									for (int i = 0; i < purchase.preview.Count; i++)
 									{
-										previewids.Add((long)purchase.preview[i]);
+										if (!previewids.Contains((long)purchase.preview[i]))
+										{
+											previewids.Add((long)purchase.preview[i]);
+										}
 									}
 								}
 
@@ -1216,7 +1225,10 @@ namespace OF_DL.Helpers
 											{
 												continue;
 											}
-											return_urls.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{purchase.id}");
+											if(!return_urls.ContainsKey(medium.id))
+											{
+												return_urls.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{purchase.id}");
+											}
 										}
 									}
 									else
@@ -1240,7 +1252,10 @@ namespace OF_DL.Helpers
 											{
 												continue;
 											}
-											return_urls.Add(medium.id, medium.source.source);
+											if(!return_urls.ContainsKey(medium.id))
+											{
+												return_urls.Add(medium.id, medium.source.source);
+											}
 										}
 										else if (medium.canView && medium.files != null && medium.files.drm != null)
 										{
@@ -1261,7 +1276,10 @@ namespace OF_DL.Helpers
 											{
 												continue;
 											}
-											return_urls.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{purchase.id}");
+											if(!return_urls.ContainsKey(medium.id)) 
+											{
+												return_urls.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{purchase.id}");
+											}
 										}
 									}
 								}
