@@ -163,7 +163,7 @@ namespace OF_DL.Helpers
 				{
 					{ "limit", post_limit.ToString() },
 					{ "order", "publish_date_asc" },
-					{ "type", "active" }
+					{ "type", "all" }
 				};
 				Dictionary<string, int> users = new Dictionary<string, int>();
 				while (loop)
@@ -1204,7 +1204,10 @@ namespace OF_DL.Helpers
 											{
 												continue;
 											}
-											return_urls.Add(medium.id, medium.source.source);
+											if(!return_urls.ContainsKey(medium.id))
+											{
+												return_urls.Add(medium.id, medium.source.source);
+											}
 										}
 										else if (!has && medium.canView && medium.files != null && medium.files.drm != null)
 										{

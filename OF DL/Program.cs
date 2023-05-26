@@ -29,6 +29,7 @@ namespace OF_DL
 				AnsiConsole.Write(new FigletText("Welcome to OF-DL").Color(Color.Red));
 				Program program = new Program(new APIHelper(), new DownloadHelper(), new DBHelper());
 				DateTime startTime = DateTime.Now;
+				bool hasSelectedUsers = false;
 
 				//Check if yt-dlp, ffmpeg and mp4decrypt paths are valid
 				if (!File.Exists(program.auth.YTDLP_PATH))
@@ -75,70 +76,109 @@ namespace OF_DL
 					Dictionary<string, int> users = await program.apiHelper.GetSubscriptions("/subscriptions/subscribes");
 					Dictionary<string, int> lists = await program.apiHelper.GetLists("/lists");
 
-					//User Selection
-					List<string> options;
-					if(lists.Count > 0)
+					// Main Menu
+					List<string> mainMenuOptions;
+					if (lists.Count > 0)
 					{
-						options = new List<string>
+						mainMenuOptions = new List<string>
 						{
 							"[red]Select All[/]",
 							"[red]List[/]",
-							"[red]Custom[/]"
+							"[red]Custom[/]",
+							"[red]Exit[/]"
 						};
 					}
 					else
 					{
-						options = new List<string>
+						mainMenuOptions = new List<string>
 						{
 							"[red]Select All[/]",
-							"[red]Custom[/]"
+							"[red]Custom[/]",
+							"[red]Exit[/]"
 						};
 					}
-					
-
-					var selectedOption = AnsiConsole.Prompt(
-						new SelectionPrompt<string>()
-							.Title("[red]Select Accounts to Scrape | Select All = All Accounts | List = Download content from users on List | Custom = Specific Account(s)[/]")
-							.AddChoices(options)
-					);
 
 					Dictionary<string, int> selectedUsers = new Dictionary<string, int>();
+					
+					while (!hasSelectedUsers)
+					{
+						var mainMenuSelection = AnsiConsole.Prompt(
+							new SelectionPrompt<string>()
+								.Title("[red]Select Accounts to Scrape | Select All = All Accounts | List = Download content from users on List | Custom = Specific Account(s)[/]")
+								.AddChoices(mainMenuOptions)
+						);
 
-					if (selectedOption == "[red]Select All[/]")
-					{
-						selectedUsers = users;
-					}
-					else if (selectedOption == "[red]List[/]")
-					{
-						var listSelection = AnsiConsole.Prompt(
-							new MultiSelectionPrompt<string>()
-								.Title("[red]Select List[/]")
-								.PageSize(10)
-								.AddChoices(lists.Keys.Select(k => $"[red]{k}[/]").ToList())
-						);
-						List<string> listUsernames = new List<string>();
-						foreach (var item in listSelection)
+						switch (mainMenuSelection)
 						{
-							int listId = lists[item.Replace("[red]", "").Replace("[/]", "")];
-							List<string> usernames = await program.apiHelper.GetListUsers($"/lists/{listId}/users");
-							foreach (string user in usernames)
-							{
-								listUsernames.Add(user);
-							}
+							case "[red]Select All[/]":
+								selectedUsers = users;
+								break;
+							case "[red]List[/]":
+								while (true)
+								{
+									var listSelectionPrompt = new MultiSelectionPrompt<string>();
+									listSelectionPrompt.Title = "[red]Select List[/]";
+									listSelectionPrompt.PageSize = 10;
+									listSelectionPrompt.AddChoice("[red]Go Back[/]");
+									foreach (string key in lists.Keys.Select(k => $"[red]{k}[/]").ToList())
+									{
+										listSelectionPrompt.AddChoice(key);
+									}
+									var listSelection = AnsiConsole.Prompt(listSelectionPrompt);
+
+									if (listSelection.Contains("[red]Go Back[/]"))
+									{
+										break; // Go back to the main menu
+									}
+									else
+									{
+										hasSelectedUsers = true;
+										List<string> listUsernames = new List<string>();
+										foreach (var item in listSelection)
+										{
+											int listId = lists[item.Replace("[red]", "").Replace("[/]", "")];
+											List<string> usernames = await program.apiHelper.GetListUsers($"/lists/{listId}/users");
+											foreach (string user in usernames)
+											{
+												listUsernames.Add(user);
+											}
+										}
+										selectedUsers = users.Where(x => listUsernames.Contains($"{x.Key}")).Distinct().ToDictionary(x => x.Key, x => x.Value);
+										AnsiConsole.Markup(string.Format("[red]Downloading from List(s): {0}[/]", string.Join(", ", listSelection)));
+										break;
+									}
+								}
+								break;
+							case "[red]Custom[/]":
+								while (true)
+								{
+									var selectedNamesPrompt = new MultiSelectionPrompt<string>();
+									selectedNamesPrompt.Title("[red]Select users[/]");
+									selectedNamesPrompt.PageSize(10);
+									selectedNamesPrompt.AddChoice("[red]Go Back[/]");
+									foreach (string key in users.Keys.Select(k => $"[red]{k}[/]").ToList())
+									{
+										selectedNamesPrompt.AddChoice(key);
+									}
+									var userSelection = AnsiConsole.Prompt(selectedNamesPrompt);
+									if (userSelection.Contains("[red]Go Back[/]"))
+									{
+										break; // Go back to the main menu
+									}
+									else
+									{
+										hasSelectedUsers = true;
+										selectedUsers = users.Where(x => userSelection.Contains($"[red]{x.Key}[/]")).ToDictionary(x => x.Key, x => x.Value);
+										break;
+									}
+								}
+								break;
+							case "[red]Exit[/]":
+								Environment.Exit(0);
+								return; // Exit the program
 						}
-						selectedUsers = users.Where(x => listUsernames.Contains($"{x.Key}")).Distinct().ToDictionary(x => x.Key, x => x.Value);
-						AnsiConsole.Markup(string.Format("[red]Downloading from List(s): {0}[/]", string.Join(", ", listSelection)));
 					}
-					else if (selectedOption == "[red]Custom[/]")
-					{
-						var selectedNames = AnsiConsole.Prompt(
-							new MultiSelectionPrompt<string>()
-								.Title("[red]Select users[/]")
-								.PageSize(10)
-								.AddChoices(users.Keys.Select(k => $"[red]{k}[/]").ToList())
-						);
-						selectedUsers = users.Where(x => selectedNames.Contains($"[red]{x.Key}[/]")).ToDictionary(x => x.Key, x => x.Value);
-					}
+
 
 					//Iterate over each user in the list of users
 					foreach (KeyValuePair<string, int> user in selectedUsers)
@@ -185,12 +225,12 @@ namespace OF_DL
 								AnsiConsole.Markup($"[red]Found {purchasedPosts.Count} Paid Posts\n[/]");
 								paidPostCount = purchasedPosts.Count;
 								await AnsiConsole.Progress()
-								.Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn())
+								.Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
 								.StartAsync(async ctx =>
 								{
 									// Define tasks
 									var task = ctx.AddTask($"[red]Downloading {purchasedPosts.Count} Paid Posts[/]", autoStart: false);
-									task.MaxValue = purchasedPosts.Count;
+									task.MaxValue = await program.downloadHelper.CalculateTotalFileSize(purchasedPosts.Values.ToList());
 									task.StartTask();
 									foreach (KeyValuePair<long, string> purchasedPostKVP in purchasedPosts)
 									{
@@ -211,7 +251,7 @@ namespace OF_DL
 												DateTime lastModified = await program.apiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
 												Dictionary<string, string> drmHeaders = await program.apiHelper.Headers($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
 												string decryptionKey = await program.apiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
-												isNew = await program.downloadHelper.DownloadPurchasedPostDRMVideo(program.auth.YTDLP_PATH, program.auth.MP4DECRYPT_PATH, program.auth.FFMPEG_PATH, program.auth.USER_AGENT, policy, signature, kvp, program.auth.COOKIE, mpdURL, decryptionKey, path, lastModified, purchasedPostKVP.Key);
+												isNew = await program.downloadHelper.DownloadPurchasedPostDRMVideo(program.auth.YTDLP_PATH, program.auth.MP4DECRYPT_PATH, program.auth.FFMPEG_PATH, program.auth.USER_AGENT, policy, signature, kvp, program.auth.COOKIE, mpdURL, decryptionKey, path, lastModified, purchasedPostKVP.Key, task);
 												if (isNew)
 												{
 													newPaidPostCount++;
@@ -224,7 +264,7 @@ namespace OF_DL
 										}
 										else
 										{
-											isNew = await program.downloadHelper.DownloadPurchasedPostMedia(purchasedPostKVP.Value, path, purchasedPostKVP.Key);
+											isNew = await program.downloadHelper.DownloadPurchasedPostMedia(purchasedPostKVP.Value, path, purchasedPostKVP.Key, task);
 											if (isNew)
 											{
 												newPaidPostCount++;
@@ -257,11 +297,11 @@ namespace OF_DL
 								AnsiConsole.Markup($"[red]Found {posts.Count} Posts\n[/]");
 								postCount = posts.Count;
 								await AnsiConsole.Progress()
-								.Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn())
+								.Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
 								.StartAsync(async ctx =>
 								{
 									var task = ctx.AddTask($"[red]Downloading {posts.Count} Posts[/]", autoStart: false);
-									task.MaxValue = posts.Count;
+									task.MaxValue = await program.downloadHelper.CalculateTotalFileSize(posts.Values.ToList());
 									task.StartTask();
 									foreach (KeyValuePair<long, string> postKVP in posts)
 									{
@@ -282,7 +322,7 @@ namespace OF_DL
 												DateTime lastModified = await program.apiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
 												Dictionary<string, string> drmHeaders = await program.apiHelper.Headers($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
 												string decryptionKey = await program.apiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
-												isNew = await program.downloadHelper.DownloadPostDRMVideo(program.auth.YTDLP_PATH, program.auth.MP4DECRYPT_PATH, program.auth.FFMPEG_PATH, program.auth.USER_AGENT, policy, signature, kvp, program.auth.COOKIE, mpdURL, decryptionKey, path, lastModified, postKVP.Key);
+												isNew = await program.downloadHelper.DownloadPostDRMVideo(program.auth.YTDLP_PATH, program.auth.MP4DECRYPT_PATH, program.auth.FFMPEG_PATH, program.auth.USER_AGENT, policy, signature, kvp, program.auth.COOKIE, mpdURL, decryptionKey, path, lastModified, postKVP.Key, task);
 												if (isNew)
 												{
 													newPostCount++;
@@ -295,7 +335,7 @@ namespace OF_DL
 										}
 										else
 										{
-											isNew = await program.downloadHelper.DownloadPostMedia(postKVP.Value, path, postKVP.Key);
+											isNew = await program.downloadHelper.DownloadPostMedia(postKVP.Value, path, postKVP.Key, task);
 											if (isNew)
 											{
 												newPostCount++;
@@ -305,7 +345,6 @@ namespace OF_DL
 												oldPostCount++;
 											}
 										}
-										task.Increment(1.0);
 									}
 									task.StopTask();
 								});
@@ -329,16 +368,16 @@ namespace OF_DL
 								AnsiConsole.Markup($"[red]Found {archived.Count} Archived Posts\n[/]");
 								archivedCount = archived.Count;
 								await AnsiConsole.Progress()
-								.Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn())
+								.Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
 								.StartAsync(async ctx =>
 								{
 									// Define tasks
 									var task = ctx.AddTask($"[red]Downloading {archived.Count} Archived Posts[/]", autoStart: false);
-									task.MaxValue = archived.Count;
+									task.MaxValue = await program.downloadHelper.CalculateTotalFileSize(archived.Values.ToList());
 									task.StartTask();
 									foreach (KeyValuePair<long, string> archivedKVP in archived)
 									{
-										bool isNew = await program.downloadHelper.DownloadArchivedMedia(archivedKVP.Value, path, archivedKVP.Key);
+										bool isNew = await program.downloadHelper.DownloadArchivedMedia(archivedKVP.Value, path, archivedKVP.Key, task);
 										task.Increment(1.0);
 										if (isNew)
 										{
@@ -370,16 +409,16 @@ namespace OF_DL
 								AnsiConsole.Markup($"[red]Found {stories.Count} Stories\n[/]");
 								storiesCount = stories.Count;
 								await AnsiConsole.Progress()
-								.Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn())
+								.Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
 								.StartAsync(async ctx =>
 								{
 									// Define tasks
 									var task = ctx.AddTask($"[red]Downloading {stories.Count} Stories[/]", autoStart: false);
-									task.MaxValue = stories.Count;
+									task.MaxValue = await program.downloadHelper.CalculateTotalFileSize(stories.Values.ToList());
 									task.StartTask();
 									foreach (KeyValuePair<long, string> storyKVP in stories)
 									{
-										bool isNew = await program.downloadHelper.DownloadStoryMedia(storyKVP.Value, path, storyKVP.Key);
+										bool isNew = await program.downloadHelper.DownloadStoryMedia(storyKVP.Value, path, storyKVP.Key, task);
 										task.Increment(1.0);
 										if (isNew)
 										{
@@ -411,16 +450,16 @@ namespace OF_DL
 								AnsiConsole.Markup($"[red]Found {highlights.Count} Highlights\n[/]");
 								highlightsCount = highlights.Count;
 								await AnsiConsole.Progress()
-								.Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn())
+								.Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
 								.StartAsync(async ctx =>
 								{
 									// Define tasks
 									var task = ctx.AddTask($"[red]Downloading {highlights.Count} Highlights[/]", autoStart: false);
-									task.MaxValue = highlights.Count;
+									task.MaxValue = await program.downloadHelper.CalculateTotalFileSize(highlights.Values.ToList());
 									task.StartTask();
 									foreach (KeyValuePair<long, string> highlightKVP in highlights)
 									{
-										bool isNew = await program.downloadHelper.DownloadStoryMedia(highlightKVP.Value, path, highlightKVP.Key);
+										bool isNew = await program.downloadHelper.DownloadStoryMedia(highlightKVP.Value, path, highlightKVP.Key, task);
 										task.Increment(1.0);
 										if (isNew)
 										{
@@ -452,12 +491,12 @@ namespace OF_DL
 								AnsiConsole.Markup($"[red]Found {messages.Count} Messages\n[/]");
 								messagesCount = messages.Count;
 								await AnsiConsole.Progress()
-								.Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn())
+								.Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
 								.StartAsync(async ctx =>
 								{
 									// Define tasks
 									var task = ctx.AddTask($"[red]Downloading {messages.Count} Messages[/]", autoStart: false);
-									task.MaxValue = messages.Count;
+									task.MaxValue = await program.downloadHelper.CalculateTotalFileSize(messages.Values.ToList());
 									task.StartTask();
 									foreach (KeyValuePair<long, string> messageKVP in messages)
 									{
@@ -478,7 +517,7 @@ namespace OF_DL
 												DateTime lastModified = await program.apiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
 												Dictionary<string, string> drmHeaders = await program.apiHelper.Headers($"/api2/v2/users/media/{mediaId}/drm/message/{messageId}", "?type=widevine");
 												string decryptionKey = await program.apiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
-												isNew = await program.downloadHelper.DownloadMessageDRMVideo(program.auth.YTDLP_PATH, program.auth.MP4DECRYPT_PATH, program.auth.FFMPEG_PATH, program.auth.USER_AGENT, policy, signature, kvp, program.auth.COOKIE, mpdURL, decryptionKey, path, lastModified, messageKVP.Key);
+												isNew = await program.downloadHelper.DownloadMessageDRMVideo(program.auth.YTDLP_PATH, program.auth.MP4DECRYPT_PATH, program.auth.FFMPEG_PATH, program.auth.USER_AGENT, policy, signature, kvp, program.auth.COOKIE, mpdURL, decryptionKey, path, lastModified, messageKVP.Key, task);
 												if (isNew)
 												{
 													newMessagesCount++;
@@ -491,7 +530,7 @@ namespace OF_DL
 										}
 										else
 										{
-											isNew = await program.downloadHelper.DownloadMessageMedia(messageKVP.Value, path, messageKVP.Key);
+											isNew = await program.downloadHelper.DownloadMessageMedia(messageKVP.Value, path, messageKVP.Key, task);
 											if (isNew)
 											{
 												newMessagesCount++;
@@ -525,14 +564,14 @@ namespace OF_DL
 								AnsiConsole.Markup($"[red]Found {purchased.Count} Paid Messages\n[/]");
 								paidMessagesCount = purchased.Count;
 								await AnsiConsole.Progress()
-								.Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn())
+								.Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
 								.StartAsync(async ctx =>
 								{
 									// Define tasks
 									var task = ctx.AddTask($"[red]Downloading {purchased.Count} Paid Messages[/]", autoStart: false);
-									task.MaxValue = purchased.Count;
+									task.MaxValue = await program.downloadHelper.CalculateTotalFileSize(purchased.Values.ToList());
 									task.StartTask();
-									foreach (KeyValuePair<long, string> paidMessageKVP  in purchased)
+									foreach (KeyValuePair<long, string> paidMessageKVP in purchased)
 									{
 										bool isNew;
 										if (paidMessageKVP.Value.Contains("cdn3.onlyfans.com/dash/files"))
@@ -551,7 +590,7 @@ namespace OF_DL
 												DateTime lastModified = await program.apiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
 												Dictionary<string, string> drmHeaders = await program.apiHelper.Headers($"/api2/v2/users/media/{mediaId}/drm/message/{messageId}", "?type=widevine");
 												string decryptionKey = await program.apiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
-												isNew = await program.downloadHelper.DownloadPurchasedMessageDRMVideo(program.auth.YTDLP_PATH, program.auth.MP4DECRYPT_PATH, program.auth.FFMPEG_PATH, program.auth.USER_AGENT, policy, signature, kvp, program.auth.COOKIE, mpdURL, decryptionKey, path, lastModified, paidMessageKVP.Key);
+												isNew = await program.downloadHelper.DownloadPurchasedMessageDRMVideo(program.auth.YTDLP_PATH, program.auth.MP4DECRYPT_PATH, program.auth.FFMPEG_PATH, program.auth.USER_AGENT, policy, signature, kvp, program.auth.COOKIE, mpdURL, decryptionKey, path, lastModified, paidMessageKVP.Key, task);
 												if (isNew)
 												{
 													newPaidMessagesCount++;
@@ -564,7 +603,7 @@ namespace OF_DL
 										}
 										else
 										{
-											isNew = await program.downloadHelper.DownloadPurchasedMedia(paidMessageKVP.Value, path, paidMessageKVP.Key);
+											isNew = await program.downloadHelper.DownloadPurchasedMedia(paidMessageKVP.Value, path, paidMessageKVP.Key, task);
 											if (isNew)
 											{
 												newPaidMessagesCount++;
@@ -601,8 +640,7 @@ namespace OF_DL
 				}
 				DateTime endTime = DateTime.Now;
 				TimeSpan totalTime = endTime - startTime;
-				AnsiConsole.Markup($"[green]Scrape Completed in {totalTime.TotalMinutes.ToString("0.00")} minutes, Press any key to exit![/]");
-				Console.ReadKey();
+				AnsiConsole.Markup($"[green]Scrape Completed in {totalTime.TotalMinutes.ToString("0.00")} minutes[/]");
 			}
 			catch (Exception ex)
 			{

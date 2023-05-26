@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -10,7 +11,7 @@ namespace OF_DL.Helpers
 {
 	public class DownloadHelper
 	{
-		public async Task<bool> DownloadPostMedia(string url, string folder, long media_id)
+		public async Task<bool> DownloadPostMedia(string url, string folder, long media_id, ProgressTask task)
 		{
 			try
 			{
@@ -72,9 +73,19 @@ namespace OF_DL.Helpers
 						{
 							response.EnsureSuccessStatusCode();
 							var body = await response.Content.ReadAsStreamAsync();
-							using (FileStream fileStream = File.Create(folder + path + "/" + filename))
+							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
 							{
-								await body.CopyToAsync(fileStream);
+								var buffer = new byte[8192];
+								while (true)
+								{
+									var read = await body.ReadAsync(buffer, 0, buffer.Length);
+									if (read == 0)
+									{
+										break;
+									}
+									task.Increment(read);
+									await fileStream.WriteAsync(buffer, 0, read);
+								}
 							}
 							File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
 							long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
@@ -86,6 +97,7 @@ namespace OF_DL.Helpers
 					{
 						DateTime lastModified = File.GetLastWriteTime(folder + path + "/" + filename);
 						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
+						task.Increment(fileSizeInBytes);
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, lastModified);
 					}
 				}
@@ -105,15 +117,30 @@ namespace OF_DL.Helpers
 						{
 							response.EnsureSuccessStatusCode();
 							var body = await response.Content.ReadAsStreamAsync();
-							using (FileStream fileStream = File.Create(folder + path + "/" + filename))
+							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
 							{
-								await body.CopyToAsync(fileStream);
+								var buffer = new byte[8192];
+								while (true)
+								{
+									var read = await body.ReadAsync(buffer, 0, buffer.Length);
+									if (read == 0)
+									{
+										break;
+									}
+									task.Increment(read);
+									await fileStream.WriteAsync(buffer, 0, read);
+								}
 							}
 							File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
 							long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
 							await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
 						}
 						return true;
+					}
+					else
+					{
+						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
+						task.Increment(fileSizeInBytes);
 					}
 				}
 				return false;
@@ -131,7 +158,7 @@ namespace OF_DL.Helpers
 			return false;
 		}
 
-		public async Task<bool> DownloadMessageMedia(string url, string folder, long media_id)
+		public async Task<bool> DownloadMessageMedia(string url, string folder, long media_id, ProgressTask task)
 		{
 			try
 			{
@@ -193,9 +220,19 @@ namespace OF_DL.Helpers
 						{
 							response.EnsureSuccessStatusCode();
 							var body = await response.Content.ReadAsStreamAsync();
-							using (FileStream fileStream = File.Create(folder + path + "/" + filename))
+							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
 							{
-								await body.CopyToAsync(fileStream);
+								var buffer = new byte[8192];
+								while (true)
+								{
+									var read = await body.ReadAsync(buffer, 0, buffer.Length);
+									if (read == 0)
+									{
+										break;
+									}
+									task.Increment(read);
+									await fileStream.WriteAsync(buffer, 0, read);
+								}
 							}
 							File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
 							long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
@@ -207,6 +244,7 @@ namespace OF_DL.Helpers
 					{
 						DateTime lastModified = File.GetLastWriteTime(folder + path + "/" + filename);
 						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
+						task.Increment(fileSizeInBytes);
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, lastModified);
 					}
 				}
@@ -226,15 +264,30 @@ namespace OF_DL.Helpers
 						{
 							response.EnsureSuccessStatusCode();
 							var body = await response.Content.ReadAsStreamAsync();
-							using (FileStream fileStream = File.Create(folder + path + "/" + filename))
+							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
 							{
-								await body.CopyToAsync(fileStream);
+								var buffer = new byte[8192];
+								while (true)
+								{
+									var read = await body.ReadAsync(buffer, 0, buffer.Length);
+									if (read == 0)
+									{
+										break;
+									}
+									task.Increment(read);
+									await fileStream.WriteAsync(buffer, 0, read);
+								}
 							}
 							File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
 							long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
 							await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
 						}
 						return true;
+					}
+					else
+					{
+						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
+						task.Increment(fileSizeInBytes);
 					}
 				}
 				return false;
@@ -252,7 +305,7 @@ namespace OF_DL.Helpers
 			return false;
 		}
 
-		public async Task<bool> DownloadArchivedMedia(string url, string folder, long media_id)
+		public async Task<bool> DownloadArchivedMedia(string url, string folder, long media_id, ProgressTask task)
 		{
 			try
 			{
@@ -314,12 +367,23 @@ namespace OF_DL.Helpers
 						{
 							response.EnsureSuccessStatusCode();
 							var body = await response.Content.ReadAsStreamAsync();
-							using (FileStream fileStream = File.Create(folder + path + "/" + filename))
+							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
 							{
-								await body.CopyToAsync(fileStream);
+								var buffer = new byte[8192];
+								while (true)
+								{
+									var read = await body.ReadAsync(buffer, 0, buffer.Length);
+									if (read == 0)
+									{
+										break;
+									}
+									task.Increment(read);
+									await fileStream.WriteAsync(buffer, 0, read);
+								}
 							}
 							File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
 							long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
+							task.Increment(fileSizeInBytes);
 							await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
 						}
 						return true;
@@ -347,15 +411,30 @@ namespace OF_DL.Helpers
 						{
 							response.EnsureSuccessStatusCode();
 							var body = await response.Content.ReadAsStreamAsync();
-							using (FileStream fileStream = File.Create(folder + path + "/" + filename))
+							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
 							{
-								await body.CopyToAsync(fileStream);
+								var buffer = new byte[8192];
+								while (true)
+								{
+									var read = await body.ReadAsync(buffer, 0, buffer.Length);
+									if (read == 0)
+									{
+										break;
+									}
+									task.Increment(read);
+									await fileStream.WriteAsync(buffer, 0, read);
+								}
 							}
 							File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
 							long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
 							await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
 						}
 						return true;
+					}
+					else
+					{
+						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
+						task.Increment(fileSizeInBytes);
 					}
 				}
 				return false;
@@ -373,7 +452,7 @@ namespace OF_DL.Helpers
 			return false;
 		}
 
-		public async Task<bool> DownloadStoryMedia(string url, string folder, long media_id)
+		public async Task<bool> DownloadStoryMedia(string url, string folder, long media_id, ProgressTask task)
 		{
 			try
 			{
@@ -435,12 +514,23 @@ namespace OF_DL.Helpers
 						{
 							response.EnsureSuccessStatusCode();
 							var body = await response.Content.ReadAsStreamAsync();
-							using (FileStream fileStream = File.Create(folder + path + "/" + filename))
+							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
 							{
-								await body.CopyToAsync(fileStream);
+								var buffer = new byte[8192];
+								while (true)
+								{
+									var read = await body.ReadAsync(buffer, 0, buffer.Length);
+									if (read == 0)
+									{
+										break;
+									}
+									task.Increment(read);
+									await fileStream.WriteAsync(buffer, 0, read);
+								}
 							}
 							File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
 							long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
+							task.Increment(fileSizeInBytes);
 							await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
 						}
 						return true;
@@ -468,15 +558,30 @@ namespace OF_DL.Helpers
 						{
 							response.EnsureSuccessStatusCode();
 							var body = await response.Content.ReadAsStreamAsync();
-							using (FileStream fileStream = File.Create(folder + path + "/" + filename))
+							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
 							{
-								await body.CopyToAsync(fileStream);
+								var buffer = new byte[8192];
+								while (true)
+								{
+									var read = await body.ReadAsync(buffer, 0, buffer.Length);
+									if (read == 0)
+									{
+										break;
+									}
+									task.Increment(read);
+									await fileStream.WriteAsync(buffer, 0, read);
+								}
 							}
 							File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
 							long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
 							await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
 						}
 						return true;
+					}
+					else
+					{
+						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
+						task.Increment(fileSizeInBytes);
 					}
 				}
 				return false;
@@ -494,7 +599,7 @@ namespace OF_DL.Helpers
 			return false;
 		}
 
-		public async Task<bool> DownloadPurchasedMedia(string url, string folder, long media_id)
+		public async Task<bool> DownloadPurchasedMedia(string url, string folder, long media_id, ProgressTask task)
 		{
 			try
 			{
@@ -556,12 +661,23 @@ namespace OF_DL.Helpers
 						{
 							response.EnsureSuccessStatusCode();
 							var body = await response.Content.ReadAsStreamAsync();
-							using (FileStream fileStream = File.Create(folder + path + "/" + filename))
+							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
 							{
-								await body.CopyToAsync(fileStream);
+								var buffer = new byte[8192];
+								while (true)
+								{
+									var read = await body.ReadAsync(buffer, 0, buffer.Length);
+									if (read == 0)
+									{
+										break;
+									}
+									task.Increment(read);
+									await fileStream.WriteAsync(buffer, 0, read);
+								}
 							}
 							File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
 							long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
+							task.Increment(fileSizeInBytes);
 							await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
 						}
 						return true;
@@ -589,15 +705,30 @@ namespace OF_DL.Helpers
 						{
 							response.EnsureSuccessStatusCode();
 							var body = await response.Content.ReadAsStreamAsync();
-							using (FileStream fileStream = File.Create(folder + path + "/" + filename))
+							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
 							{
-								await body.CopyToAsync(fileStream);
+								var buffer = new byte[8192];
+								while (true)
+								{
+									var read = await body.ReadAsync(buffer, 0, buffer.Length);
+									if (read == 0)
+									{
+										break;
+									}
+									task.Increment(read);
+									await fileStream.WriteAsync(buffer, 0, read);
+								}
 							}
 							File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
 							long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
 							await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
 						}
 						return true;
+					}
+					else
+					{
+						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
+						task.Increment(fileSizeInBytes);
 					}
 				}
 				return false;
@@ -615,7 +746,7 @@ namespace OF_DL.Helpers
 			return false;
 		}
 
-		public async Task<bool> DownloadPurchasedPostMedia(string url, string folder, long media_id)
+		public async Task<bool> DownloadPurchasedPostMedia(string url, string folder, long media_id, ProgressTask task)
 		{
 			try
 			{
@@ -677,12 +808,23 @@ namespace OF_DL.Helpers
 						{
 							response.EnsureSuccessStatusCode();
 							var body = await response.Content.ReadAsStreamAsync();
-							using (FileStream fileStream = File.Create(folder + path + "/" + filename))
+							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
 							{
-								await body.CopyToAsync(fileStream);
+								var buffer = new byte[8192];
+								while (true)
+								{
+									var read = await body.ReadAsync(buffer, 0, buffer.Length);
+									if (read == 0)
+									{
+										break;
+									}
+									task.Increment(read);
+									await fileStream.WriteAsync(buffer, 0, read);
+								}
 							}
 							File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
 							long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
+							task.Increment(fileSizeInBytes);
 							await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
 						}
 						return true;
@@ -710,15 +852,30 @@ namespace OF_DL.Helpers
 						{
 							response.EnsureSuccessStatusCode();
 							var body = await response.Content.ReadAsStreamAsync();
-							using (FileStream fileStream = File.Create(folder + path + "/" + filename))
+							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
 							{
-								await body.CopyToAsync(fileStream);
+								var buffer = new byte[8192];
+								while (true)
+								{
+									var read = await body.ReadAsync(buffer, 0, buffer.Length);
+									if (read == 0)
+									{
+										break;
+									}
+									task.Increment(read);
+									await fileStream.WriteAsync(buffer, 0, read);
+								}
 							}
 							File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
 							long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
 							await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
 						}
 						return true;
+					}
+					else
+					{
+						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
+						task.Increment(fileSizeInBytes);
 					}
 				}
 				return false;
@@ -820,7 +977,7 @@ namespace OF_DL.Helpers
 				}
 			}
 		}
-		public async Task<bool> DownloadMessageDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id)
+		public async Task<bool> DownloadMessageDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task)
 		{
 			try
 			{
@@ -889,6 +1046,7 @@ namespace OF_DL.Helpers
 
 						//Cleanup Files
 						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
+						task.Increment(fileSizeInBytes);
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
 						File.Delete($"{folder + path + "/" + filename + ".f1"}.mp4");
 						if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
@@ -907,6 +1065,7 @@ namespace OF_DL.Helpers
 					else
 					{
 						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
+						task.Increment(fileSizeInBytes);
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
 					}
 				}
@@ -982,6 +1141,11 @@ namespace OF_DL.Helpers
 
 						return true;
 					}
+					else
+					{
+						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
+						task.Increment(fileSizeInBytes);
+					}
 				}
 				return false;
 			}
@@ -998,7 +1162,7 @@ namespace OF_DL.Helpers
 			return false;
 		}
 
-		public async Task<bool> DownloadPurchasedMessageDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id)
+		public async Task<bool> DownloadPurchasedMessageDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task)
 		{
 			try
 			{
@@ -1067,6 +1231,7 @@ namespace OF_DL.Helpers
 
 						//Cleanup Files
 						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
+						task.Increment(fileSizeInBytes);
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
 						File.Delete($"{folder + path + "/" + filename + ".f1"}.mp4");
 						if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
@@ -1085,6 +1250,7 @@ namespace OF_DL.Helpers
 					else
 					{
 						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
+						task.Increment(fileSizeInBytes);
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
 					}
 				}
@@ -1160,6 +1326,11 @@ namespace OF_DL.Helpers
 
 						return true;
 					}
+					else
+					{
+						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
+						task.Increment(fileSizeInBytes);
+					}
 				}
 				return false;
 			}
@@ -1175,7 +1346,7 @@ namespace OF_DL.Helpers
 			}
 			return false;
 		}
-		public async Task<bool> DownloadPostDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id)
+		public async Task<bool> DownloadPostDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task)
 		{
 			try
 			{
@@ -1244,6 +1415,7 @@ namespace OF_DL.Helpers
 
 						//Cleanup Files
 						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
+						task.Increment(fileSizeInBytes);
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
 						File.Delete($"{folder + path + "/" + filename + ".f1"}.mp4");
 						if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
@@ -1262,6 +1434,7 @@ namespace OF_DL.Helpers
 					else
 					{
 						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
+						task.Increment(fileSizeInBytes);
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
 					}
 				}
@@ -1337,6 +1510,11 @@ namespace OF_DL.Helpers
 
 						return true;
 					}
+					else
+					{
+						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
+						task.Increment(fileSizeInBytes);
+					}
 				}
 				return false;
 			}
@@ -1353,7 +1531,7 @@ namespace OF_DL.Helpers
 			return false;
 		}
 
-		public async Task<bool> DownloadPurchasedPostDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id)
+		public async Task<bool> DownloadPurchasedPostDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task)
 		{
 			try
 			{
@@ -1422,6 +1600,7 @@ namespace OF_DL.Helpers
 
 						//Cleanup Files
 						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
+						task.Increment(fileSizeInBytes);
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
 						File.Delete($"{folder + path + "/" + filename + ".f1"}.mp4");
 						if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
@@ -1440,6 +1619,7 @@ namespace OF_DL.Helpers
 					else
 					{
 						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
+						task.Increment(fileSizeInBytes);
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
 					}
 				}
@@ -1515,6 +1695,11 @@ namespace OF_DL.Helpers
 
 						return true;
 					}
+					else
+					{
+						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
+						task.Increment(fileSizeInBytes);
+					}
 				}
 				return false;
 			}
@@ -1529,6 +1714,79 @@ namespace OF_DL.Helpers
 				}
 			}
 			return false;
+		}
+
+		public async Task<long> CalculateTotalFileSize(List<string> urls)
+		{
+			long totalFileSize = 0;
+			var tasks = new List<Task<long>>();
+
+			foreach (string url in urls)
+			{
+				tasks.Add(GetFileSizeAsync(url));
+			}
+
+			long[] fileSizes = await Task.WhenAll(tasks);
+			foreach (long fileSize in fileSizes)
+			{
+				totalFileSize += fileSize;
+			}
+
+			return totalFileSize;
+		}
+
+		private async Task<long> GetFileSizeAsync(string url)
+		{
+			long fileSize = 0;
+
+			try
+			{
+				if (url.Contains("cdn3.onlyfans.com/dash/files"))
+				{
+					Program program = new Program(new APIHelper(), new DownloadHelper(), new DBHelper());
+					string[] messageUrlParsed = url.Split(',');
+					string mpdURL = messageUrlParsed[0];
+					string policy = messageUrlParsed[1];
+					string signature = messageUrlParsed[2];
+					string kvp = messageUrlParsed[3];
+
+					mpdURL = mpdURL.Replace(".mpd", "_source.mp4");
+
+					var request = WebRequest.Create(mpdURL);
+					request.Method = "HEAD";
+					request.Headers.Add("Cookie", $"CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {program.auth.COOKIE}");
+					request.Headers.Add("user-agent", program.auth.USER_AGENT);
+
+
+					using (var response = await request.GetResponseAsync())
+					{
+						if (response is HttpWebResponse httpWebResponse)
+						{
+							fileSize = httpWebResponse.ContentLength;
+						}
+					}
+				}
+				else
+				{
+					var request = WebRequest.Create(url);
+					request.Method = "HEAD";
+
+					using (var response = await request.GetResponseAsync())
+					{
+						if (response is HttpWebResponse httpWebResponse)
+						{
+							fileSize = httpWebResponse.ContentLength;
+						}
+					}
+				}
+				
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"Error getting file size for URL '{url}': {ex.Message}");
+			}
+
+			return fileSize;
 		}
 	}
 }

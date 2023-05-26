@@ -36,24 +36,24 @@ namespace OF_DL.Entities
         public bool isPaywallRequired { get; set; }
         public bool unprofitable { get; set; }
         public List<ListsState> listsStates { get; set; }
-        public bool isMuted { get; set; }
-        public bool isRestricted { get; set; }
-        public bool canRestrict { get; set; }
-        public bool subscribedBy { get; set; }
-        public bool subscribedByExpire { get; set; }
+        public bool? isMuted { get; set; }
+        public bool? isRestricted { get; set; }
+        public bool? canRestrict { get; set; }
+        public bool? subscribedBy { get; set; }
+        public bool? subscribedByExpire { get; set; }
         public DateTime subscribedByExpireDate { get; set; }
-        public bool subscribedByAutoprolong { get; set; }
-        public bool subscribedIsExpiredNow { get; set; }
-        public double currentSubscribePrice { get; set; }
+        public bool? subscribedByAutoprolong { get; set; }
+        public bool? subscribedIsExpiredNow { get; set; }
+        public double? currentSubscribePrice { get; set; }
         public bool? subscribedOn { get; set; }
         public bool? subscribedOnExpiredNow { get; set; }
         public string subscribedOnDuration { get; set; }
-        public bool canReport { get; set; }
-        public bool canReceiveChatMessage { get; set; }
-        public bool hideChat { get; set; }
+        public bool? canReport { get; set; }
+        public bool? canReceiveChatMessage { get; set; }
+        public bool? hideChat { get; set; }
         public DateTime? lastSeen { get; set; }
-        public bool isPerformer { get; set; }
-        public bool isRealPerformer { get; set; }
+        public bool? isPerformer { get; set; }
+        public bool? isRealPerformer { get; set; }
         public SubscribedByData subscribedByData { get; set; }
         public SubscribedOnData subscribedOnData { get; set; }
         public bool canTrialSend { get; set; }
