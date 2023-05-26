@@ -383,7 +383,6 @@ namespace OF_DL.Helpers
 							}
 							File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
 							long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
-							task.Increment(fileSizeInBytes);
 							await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
 						}
 						return true;
@@ -392,6 +391,7 @@ namespace OF_DL.Helpers
 					{
 						DateTime lastModified = File.GetLastWriteTime(folder + path + "/" + filename);
 						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
+						task.Increment(fileSizeInBytes);
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, lastModified);
 					}
 				}
@@ -530,7 +530,6 @@ namespace OF_DL.Helpers
 							}
 							File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
 							long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
-							task.Increment(fileSizeInBytes);
 							await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
 						}
 						return true;
@@ -575,7 +574,6 @@ namespace OF_DL.Helpers
 							}
 							File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
 							long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
-							task.Increment(fileSizeInBytes);
 							await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
 						}
 						return true;
@@ -679,7 +677,6 @@ namespace OF_DL.Helpers
 							}
 							File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
 							long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
-							task.Increment(fileSizeInBytes);
 							await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
 						}
 						return true;
@@ -688,6 +685,7 @@ namespace OF_DL.Helpers
 					{
 						DateTime lastModified = File.GetLastWriteTime(folder + path + "/" + filename);
 						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
+						task.Increment(fileSizeInBytes);
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, lastModified);
 					}
 				}
@@ -826,7 +824,6 @@ namespace OF_DL.Helpers
 							}
 							File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
 							long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
-							task.Increment(fileSizeInBytes);
 							await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
 						}
 						return true;
@@ -835,6 +832,7 @@ namespace OF_DL.Helpers
 					{
 						DateTime lastModified = File.GetLastWriteTime(folder + path + "/" + filename);
 						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
+						task.Increment(fileSizeInBytes);
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, lastModified);
 					}
 				}
@@ -1128,6 +1126,7 @@ namespace OF_DL.Helpers
 
 						//Cleanup Files
 						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
+						task.Increment(fileSizeInBytes);
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
 						File.Delete($"{folder + path + "/" + filename + ".f1"}.mp4");
 						if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
@@ -1313,6 +1312,7 @@ namespace OF_DL.Helpers
 
 						//Cleanup Files
 						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
+						task.Increment(fileSizeInBytes);
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
 						File.Delete($"{folder + path + "/" + filename + ".f1"}.mp4");
 						if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
@@ -1497,6 +1497,7 @@ namespace OF_DL.Helpers
 
 						//Cleanup Files
 						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
+						task.Increment(fileSizeInBytes);
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
 						File.Delete($"{folder + path + "/" + filename + ".f1"}.mp4");
 						if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
@@ -1682,6 +1683,7 @@ namespace OF_DL.Helpers
 
 						//Cleanup Files
 						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
+						task.Increment(fileSizeInBytes);
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
 						File.Delete($"{folder + path + "/" + filename + ".f1"}.mp4");
 						if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
