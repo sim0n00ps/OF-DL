@@ -539,6 +539,7 @@ namespace OF_DL.Helpers
 					{
 						DateTime lastModified = File.GetLastWriteTime(folder + path + "/" + filename);
 						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
+						task.Increment(fileSizeInBytes);
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, lastModified);
 					}
 				}
@@ -574,6 +575,7 @@ namespace OF_DL.Helpers
 							}
 							File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
 							long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
+							task.Increment(fileSizeInBytes);
 							await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
 						}
 						return true;
