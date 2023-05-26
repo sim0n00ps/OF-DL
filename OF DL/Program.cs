@@ -112,6 +112,7 @@ namespace OF_DL
 						{
 							case "[red]Select All[/]":
 								selectedUsers = users;
+								hasSelectedUsers = true;
 								break;
 							case "[red]List[/]":
 								while (true)
