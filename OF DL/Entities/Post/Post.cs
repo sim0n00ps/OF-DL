@@ -60,30 +60,30 @@ namespace OF_DL.Entities.Post
             public int id { get; set; }
             public string name { get; set; }
             public string username { get; set; }
-            public bool canLookStory { get; set; }
-            public bool canCommentStory { get; set; }
-            public bool hasNotViewedStory { get; set; }
-            public bool isVerified { get; set; }
-            public bool canPayInternal { get; set; }
-            public bool hasScheduledStream { get; set; }
-            public bool hasStream { get; set; }
-            public bool hasStories { get; set; }
-            public bool tipsEnabled { get; set; }
-            public bool tipsTextEnabled { get; set; }
-            public int tipsMin { get; set; }
-            public int tipsMinInternal { get; set; }
-            public int tipsMax { get; set; }
-            public bool canEarn { get; set; }
-            public bool canAddSubscriber { get; set; }
-            public string subscribePrice { get; set; }
-            public bool isPaywallRequired { get; set; }
-            public bool unprofitable { get; set; }
-            public bool isMuted { get; set; }
-            public bool isRestricted { get; set; }
-            public bool canRestrict { get; set; }
-            public bool subscribedBy { get; set; }
-            public bool subscribedByExpire { get; set; }
-            public DateTime subscribedByExpireDate { get; set; }
+            public bool? canLookStory { get; set; }
+            public bool? canCommentStory { get; set; }
+            public bool? hasNotViewedStory { get; set; }
+            public bool? isVerified { get; set; }
+            public bool? canPayInternal { get; set; }
+            public bool? hasScheduledStream { get; set; }
+            public bool? hasStream { get; set; }
+            public bool? hasStories { get; set; }
+            public bool? tipsEnabled { get; set; }
+            public bool? tipsTextEnabled { get; set; }
+            public int? tipsMin { get; set; }
+            public int? tipsMinInternal { get; set; }
+            public int? tipsMax { get; set; }
+            public bool? canEarn { get; set; }
+            public bool? canAddSubscriber { get; set; }
+            public string? subscribePrice { get; set; }
+            public bool? isPaywallRequired { get; set; }
+            public bool? unprofitable { get; set; }
+            public bool? isMuted { get; set; }
+            public bool? isRestricted { get; set; }
+            public bool? canRestrict { get; set; }
+            public bool? subscribedBy { get; set; }
+            public bool? subscribedByExpire { get; set; }
+            public DateTime? subscribedByExpireDate { get; set; }
             public bool? subscribedByAutoprolong { get; set; }
             public bool? subscribedIsExpiredNow { get; set; }
             public string? currentSubscribePrice { get; set; }
