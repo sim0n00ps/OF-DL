@@ -286,5 +286,18 @@ namespace OF_DL.Helpers
 				}
 			}
 		}
+		public async Task<long> GetFileSize(string folder, long media_id)
+		{
+			long size;
+            using (SqliteConnection connection = new SqliteConnection($"Data Source={folder}/Metadata/user_data.db"))
+            {
+                connection.Open();
+                using (SqliteCommand cmd = new SqliteCommand($"SELECT size FROM medias WHERE media_id={media_id}", connection))
+                {
+                    size = Convert.ToInt64(cmd.ExecuteScalar());
+                }
+            }
+            return size;
+        }
 	}
 }

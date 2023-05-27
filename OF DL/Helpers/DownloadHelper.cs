@@ -103,45 +103,8 @@ namespace OF_DL.Helpers
 				}
 				else
 				{
-					if (!File.Exists(folder + path + "/" + filename))
-					{
-						var client = new HttpClient();
-						client.Timeout = TimeSpan.FromSeconds(5);
-						var request = new HttpRequestMessage
-						{
-							Method = HttpMethod.Get,
-							RequestUri = new Uri(url),
-
-						};
-						using (var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead))
-						{
-							response.EnsureSuccessStatusCode();
-							var body = await response.Content.ReadAsStreamAsync();
-							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
-							{
-								var buffer = new byte[8192];
-								while (true)
-								{
-									var read = await body.ReadAsync(buffer, 0, buffer.Length);
-									if (read == 0)
-									{
-										break;
-									}
-									task.Increment(read);
-									await fileStream.WriteAsync(buffer, 0, read);
-								}
-							}
-							File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
-							long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
-							await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
-						}
-						return true;
-					}
-					else
-					{
-						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
-						task.Increment(fileSizeInBytes);
-					}
+					long size = await dBHelper.GetFileSize(folder, media_id);
+					task.Increment(size);
 				}
 				return false;
 			}
@@ -248,49 +211,12 @@ namespace OF_DL.Helpers
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, lastModified);
 					}
 				}
-				else
-				{
-					if (!File.Exists(folder + path + "/" + filename))
-					{
-						var client = new HttpClient();
-						client.Timeout = TimeSpan.FromSeconds(5);
-						var request = new HttpRequestMessage
-						{
-							Method = HttpMethod.Get,
-							RequestUri = new Uri(url),
-
-						};
-						using (var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead))
-						{
-							response.EnsureSuccessStatusCode();
-							var body = await response.Content.ReadAsStreamAsync();
-							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
-							{
-								var buffer = new byte[8192];
-								while (true)
-								{
-									var read = await body.ReadAsync(buffer, 0, buffer.Length);
-									if (read == 0)
-									{
-										break;
-									}
-									task.Increment(read);
-									await fileStream.WriteAsync(buffer, 0, read);
-								}
-							}
-							File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
-							long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
-							await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
-						}
-						return true;
-					}
-					else
-					{
-						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
-						task.Increment(fileSizeInBytes);
-					}
-				}
-				return false;
+                else
+                {
+                    long size = await dBHelper.GetFileSize(folder, media_id);
+                    task.Increment(size);
+                }
+                return false;
 			}
 			catch (Exception ex)
 			{
@@ -395,49 +321,12 @@ namespace OF_DL.Helpers
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, lastModified);
 					}
 				}
-				else
-				{
-					if (!File.Exists(folder + path + "/" + filename))
-					{
-						var client = new HttpClient();
-						client.Timeout = TimeSpan.FromSeconds(5);
-						var request = new HttpRequestMessage
-						{
-							Method = HttpMethod.Get,
-							RequestUri = new Uri(url),
-
-						};
-						using (var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead))
-						{
-							response.EnsureSuccessStatusCode();
-							var body = await response.Content.ReadAsStreamAsync();
-							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
-							{
-								var buffer = new byte[8192];
-								while (true)
-								{
-									var read = await body.ReadAsync(buffer, 0, buffer.Length);
-									if (read == 0)
-									{
-										break;
-									}
-									task.Increment(read);
-									await fileStream.WriteAsync(buffer, 0, read);
-								}
-							}
-							File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
-							long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
-							await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
-						}
-						return true;
-					}
-					else
-					{
-						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
-						task.Increment(fileSizeInBytes);
-					}
-				}
-				return false;
+                else
+                {
+                    long size = await dBHelper.GetFileSize(folder, media_id);
+                    task.Increment(size);
+                }
+                return false;
 			}
 			catch (Exception ex)
 			{
@@ -542,49 +431,12 @@ namespace OF_DL.Helpers
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, lastModified);
 					}
 				}
-				else
-				{
-					if (!File.Exists(folder + path + "/" + filename))
-					{
-						var client = new HttpClient();
-						client.Timeout = TimeSpan.FromSeconds(5);
-						var request = new HttpRequestMessage
-						{
-							Method = HttpMethod.Get,
-							RequestUri = new Uri(url),
-
-						};
-						using (var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead))
-						{
-							response.EnsureSuccessStatusCode();
-							var body = await response.Content.ReadAsStreamAsync();
-							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
-							{
-								var buffer = new byte[8192];
-								while (true)
-								{
-									var read = await body.ReadAsync(buffer, 0, buffer.Length);
-									if (read == 0)
-									{
-										break;
-									}
-									task.Increment(read);
-									await fileStream.WriteAsync(buffer, 0, read);
-								}
-							}
-							File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
-							long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
-							await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
-						}
-						return true;
-					}
-					else
-					{
-						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
-						task.Increment(fileSizeInBytes);
-					}
-				}
-				return false;
+                else
+                {
+                    long size = await dBHelper.GetFileSize(folder, media_id);
+                    task.Increment(size);
+                }
+                return false;
 			}
 			catch (Exception ex)
 			{
@@ -689,49 +541,12 @@ namespace OF_DL.Helpers
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, lastModified);
 					}
 				}
-				else
-				{
-					if (!File.Exists(folder + path + "/" + filename))
-					{
-						var client = new HttpClient();
-						client.Timeout = TimeSpan.FromSeconds(5);
-						var request = new HttpRequestMessage
-						{
-							Method = HttpMethod.Get,
-							RequestUri = new Uri(url),
-
-						};
-						using (var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead))
-						{
-							response.EnsureSuccessStatusCode();
-							var body = await response.Content.ReadAsStreamAsync();
-							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
-							{
-								var buffer = new byte[8192];
-								while (true)
-								{
-									var read = await body.ReadAsync(buffer, 0, buffer.Length);
-									if (read == 0)
-									{
-										break;
-									}
-									task.Increment(read);
-									await fileStream.WriteAsync(buffer, 0, read);
-								}
-							}
-							File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
-							long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
-							await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
-						}
-						return true;
-					}
-					else
-					{
-						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
-						task.Increment(fileSizeInBytes);
-					}
-				}
-				return false;
+                else
+                {
+                    long size = await dBHelper.GetFileSize(folder, media_id);
+                    task.Increment(size);
+                }
+                return false;
 			}
 			catch (Exception ex)
 			{
@@ -836,49 +651,12 @@ namespace OF_DL.Helpers
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, lastModified);
 					}
 				}
-				else
-				{
-					if (!File.Exists(folder + path + "/" + filename))
-					{
-						var client = new HttpClient();
-						client.Timeout = TimeSpan.FromSeconds(5);
-						var request = new HttpRequestMessage
-						{
-							Method = HttpMethod.Get,
-							RequestUri = new Uri(url),
-
-						};
-						using (var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead))
-						{
-							response.EnsureSuccessStatusCode();
-							var body = await response.Content.ReadAsStreamAsync();
-							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
-							{
-								var buffer = new byte[8192];
-								while (true)
-								{
-									var read = await body.ReadAsync(buffer, 0, buffer.Length);
-									if (read == 0)
-									{
-										break;
-									}
-									task.Increment(read);
-									await fileStream.WriteAsync(buffer, 0, read);
-								}
-							}
-							File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
-							long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
-							await dBHelper.UpdateMedia(folder, media_id, folder + path, filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
-						}
-						return true;
-					}
-					else
-					{
-						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename).Length;
-						task.Increment(fileSizeInBytes);
-					}
-				}
-				return false;
+                else
+                {
+                    long size = await dBHelper.GetFileSize(folder, media_id);
+                    task.Increment(size);
+                }
+                return false;
 			}
 			catch (Exception ex)
 			{
@@ -1069,86 +847,12 @@ namespace OF_DL.Helpers
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
 					}
 				}
-				else
-				{
-					if (!File.Exists(folder + path + "/" + filename + "_source.mp4"))
-					{
-						//Use ytdl-p to download the MPD as a M4A and MP4 file
-						ProcessStartInfo ytdlpstartInfo = new ProcessStartInfo();
-						ytdlpstartInfo.FileName = ytdlppath;
-						ytdlpstartInfo.Arguments = $"--allow-u --no-part --restrict-filenames -N 4 --user-agent \"{user_agent}\" --add-header \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess}\" --referer \"https://onlyfans.com/\" -o \"{folder + path + "/"}%(title)s.%(ext)s\" \"{url}\"";
-						ytdlpstartInfo.CreateNoWindow = true;
-
-						Process ytdlpprocess = new Process();
-						ytdlpprocess.StartInfo = ytdlpstartInfo;
-						ytdlpprocess.Start();
-						ytdlpprocess.WaitForExit();
-
-						//Use mp4decrypt to decrypt the MP4 and M4A files
-						ProcessStartInfo mp4decryptStartInfoVideo = new ProcessStartInfo();
-						mp4decryptStartInfoVideo.FileName = mp4decryptpath;
-						mp4decryptStartInfoVideo.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f1"}.mp4 {folder + path + "/" + filename}_vdec.mp4";
-						mp4decryptStartInfoVideo.CreateNoWindow = true;
-
-						Process mp4decryptVideoProcess = new Process();
-						mp4decryptVideoProcess.StartInfo = mp4decryptStartInfoVideo;
-						mp4decryptVideoProcess.Start();
-						mp4decryptVideoProcess.WaitForExit();
-
-						ProcessStartInfo mp4decryptStartInfoAudio = new ProcessStartInfo();
-						mp4decryptStartInfoAudio.FileName = mp4decryptpath;
-						if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
-						{
-							mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f4"}.m4a {folder + path + "/" + filename}_adec.mp4";
-						}
-						else
-						{
-							mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f3"}.m4a {folder + path + "/" + filename}_adec.mp4";
-						}
-						mp4decryptStartInfoAudio.CreateNoWindow = true;
-
-						Process mp4decryptAudioProcess = new Process();
-						mp4decryptAudioProcess.StartInfo = mp4decryptStartInfoAudio;
-						mp4decryptAudioProcess.Start();
-						mp4decryptAudioProcess.WaitForExit();
-
-						//Finally use FFMPEG to merge the 2 together
-						ProcessStartInfo ffmpegStartInfo = new ProcessStartInfo();
-						ffmpegStartInfo.FileName = ffmpegpath;
-						ffmpegStartInfo.Arguments = $"-i {folder + path + "/" + filename}_vdec.mp4 -i {folder + path + "/" + filename}_adec.mp4 -c copy {folder + path + "/" + filename}_source.mp4";
-						ffmpegStartInfo.CreateNoWindow = true;
-
-						Process ffmpegProcess = new Process();
-						ffmpegProcess.StartInfo = ffmpegStartInfo;
-						ffmpegProcess.Start();
-						ffmpegProcess.WaitForExit();
-						File.SetLastWriteTime($"{folder + path + "/" + filename}_source.mp4", lastModified);
-
-						//Cleanup Files
-						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
-						task.Increment(fileSizeInBytes);
-						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
-						File.Delete($"{folder + path + "/" + filename + ".f1"}.mp4");
-						if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
-						{
-							File.Delete($"{folder + path + "/" + filename + ".f4"}.m4a");
-						}
-						else
-						{
-							File.Delete($"{folder + path + "/" + filename + ".f3"}.m4a");
-						}
-						File.Delete($"{folder + path + "/" + filename}_adec.mp4");
-						File.Delete($"{folder + path + "/" + filename}_vdec.mp4");
-
-						return true;
-					}
-					else
-					{
-						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
-						task.Increment(fileSizeInBytes);
-					}
-				}
-				return false;
+                else
+                {
+                    long size = await dBHelper.GetFileSize(folder, media_id);
+                    task.Increment(size);
+                }
+                return false;
 			}
 			catch (Exception ex)
 			{
@@ -1255,86 +959,12 @@ namespace OF_DL.Helpers
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
 					}
 				}
-				else
-				{
-					if (!File.Exists(folder + path + "/" + filename + "_source.mp4"))
-					{
-						//Use ytdl-p to download the MPD as a M4A and MP4 file
-						ProcessStartInfo ytdlpstartInfo = new ProcessStartInfo();
-						ytdlpstartInfo.FileName = ytdlppath;
-						ytdlpstartInfo.Arguments = $"--allow-u --no-part --restrict-filenames -N 4 --user-agent \"{user_agent}\" --add-header \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess}\" --referer \"https://onlyfans.com/\" -o \"{folder + path + "/"}%(title)s.%(ext)s\" \"{url}\"";
-						ytdlpstartInfo.CreateNoWindow = true;
-
-						Process ytdlpprocess = new Process();
-						ytdlpprocess.StartInfo = ytdlpstartInfo;
-						ytdlpprocess.Start();
-						ytdlpprocess.WaitForExit();
-
-						//Use mp4decrypt to decrypt the MP4 and M4A files
-						ProcessStartInfo mp4decryptStartInfoVideo = new ProcessStartInfo();
-						mp4decryptStartInfoVideo.FileName = mp4decryptpath;
-						mp4decryptStartInfoVideo.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f1"}.mp4 {folder + path + "/" + filename}_vdec.mp4";
-						mp4decryptStartInfoVideo.CreateNoWindow = true;
-
-						Process mp4decryptVideoProcess = new Process();
-						mp4decryptVideoProcess.StartInfo = mp4decryptStartInfoVideo;
-						mp4decryptVideoProcess.Start();
-						mp4decryptVideoProcess.WaitForExit();
-
-						ProcessStartInfo mp4decryptStartInfoAudio = new ProcessStartInfo();
-						mp4decryptStartInfoAudio.FileName = mp4decryptpath;
-						if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
-						{
-							mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f4"}.m4a {folder + path + "/" + filename}_adec.mp4";
-						}
-						else
-						{
-							mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f3"}.m4a {folder + path + "/" + filename}_adec.mp4";
-						}
-						mp4decryptStartInfoAudio.CreateNoWindow = true;
-
-						Process mp4decryptAudioProcess = new Process();
-						mp4decryptAudioProcess.StartInfo = mp4decryptStartInfoAudio;
-						mp4decryptAudioProcess.Start();
-						mp4decryptAudioProcess.WaitForExit();
-
-						//Finally use FFMPEG to merge the 2 together
-						ProcessStartInfo ffmpegStartInfo = new ProcessStartInfo();
-						ffmpegStartInfo.FileName = ffmpegpath;
-						ffmpegStartInfo.Arguments = $"-i {folder + path + "/" + filename}_vdec.mp4 -i {folder + path + "/" + filename}_adec.mp4 -c copy {folder + path + "/" + filename}_source.mp4";
-						ffmpegStartInfo.CreateNoWindow = true;
-
-						Process ffmpegProcess = new Process();
-						ffmpegProcess.StartInfo = ffmpegStartInfo;
-						ffmpegProcess.Start();
-						ffmpegProcess.WaitForExit();
-						File.SetLastWriteTime($"{folder + path + "/" + filename}_source.mp4", lastModified);
-
-						//Cleanup Files
-						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
-						task.Increment(fileSizeInBytes);
-						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
-						File.Delete($"{folder + path + "/" + filename + ".f1"}.mp4");
-						if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
-						{
-							File.Delete($"{folder + path + "/" + filename + ".f4"}.m4a");
-						}
-						else
-						{
-							File.Delete($"{folder + path + "/" + filename + ".f3"}.m4a");
-						}
-						File.Delete($"{folder + path + "/" + filename}_adec.mp4");
-						File.Delete($"{folder + path + "/" + filename}_vdec.mp4");
-
-						return true;
-					}
-					else
-					{
-						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
-						task.Increment(fileSizeInBytes);
-					}
-				}
-				return false;
+                else
+                {
+                    long size = await dBHelper.GetFileSize(folder, media_id);
+                    task.Increment(size);
+                }
+                return false;
 			}
 			catch (Exception ex)
 			{
@@ -1440,86 +1070,12 @@ namespace OF_DL.Helpers
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
 					}
 				}
-				else
-				{
-					if (!File.Exists(folder + path + "/" + filename + "_source.mp4"))
-					{
-						//Use ytdl-p to download the MPD as a M4A and MP4 file
-						ProcessStartInfo ytdlpstartInfo = new ProcessStartInfo();
-						ytdlpstartInfo.FileName = ytdlppath;
-						ytdlpstartInfo.Arguments = $"--allow-u --no-part --restrict-filenames -N 4 --user-agent \"{user_agent}\" --add-header \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess}\" --referer \"https://onlyfans.com/\" -o \"{folder + path + "/"}%(title)s.%(ext)s\" \"{url}\"";
-						ytdlpstartInfo.CreateNoWindow = true;
-
-						Process ytdlpprocess = new Process();
-						ytdlpprocess.StartInfo = ytdlpstartInfo;
-						ytdlpprocess.Start();
-						ytdlpprocess.WaitForExit();
-
-						//Use mp4decrypt to decrypt the MP4 and M4A files
-						ProcessStartInfo mp4decryptStartInfoVideo = new ProcessStartInfo();
-						mp4decryptStartInfoVideo.FileName = mp4decryptpath;
-						mp4decryptStartInfoVideo.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f1"}.mp4 {folder + path + "/" + filename}_vdec.mp4";
-						mp4decryptStartInfoVideo.CreateNoWindow = true;
-
-						Process mp4decryptVideoProcess = new Process();
-						mp4decryptVideoProcess.StartInfo = mp4decryptStartInfoVideo;
-						mp4decryptVideoProcess.Start();
-						mp4decryptVideoProcess.WaitForExit();
-
-						ProcessStartInfo mp4decryptStartInfoAudio = new ProcessStartInfo();
-						mp4decryptStartInfoAudio.FileName = mp4decryptpath;
-						if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
-						{
-							mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f4"}.m4a {folder + path + "/" + filename}_adec.mp4";
-						}
-						else
-						{
-							mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f3"}.m4a {folder + path + "/" + filename}_adec.mp4";
-						}
-						mp4decryptStartInfoAudio.CreateNoWindow = true;
-
-						Process mp4decryptAudioProcess = new Process();
-						mp4decryptAudioProcess.StartInfo = mp4decryptStartInfoAudio;
-						mp4decryptAudioProcess.Start();
-						mp4decryptAudioProcess.WaitForExit();
-
-						//Finally use FFMPEG to merge the 2 together
-						ProcessStartInfo ffmpegStartInfo = new ProcessStartInfo();
-						ffmpegStartInfo.FileName = ffmpegpath;
-						ffmpegStartInfo.Arguments = $"-i {folder + path + "/" + filename}_vdec.mp4 -i {folder + path + "/" + filename}_adec.mp4 -c copy {folder + path + "/" + filename}_source.mp4";
-						ffmpegStartInfo.CreateNoWindow = true;
-
-						Process ffmpegProcess = new Process();
-						ffmpegProcess.StartInfo = ffmpegStartInfo;
-						ffmpegProcess.Start();
-						ffmpegProcess.WaitForExit();
-						File.SetLastWriteTime($"{folder + path + "/" + filename}_source.mp4", lastModified);
-
-						//Cleanup Files
-						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
-						task.Increment(fileSizeInBytes);
-						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
-						File.Delete($"{folder + path + "/" + filename + ".f1"}.mp4");
-						if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
-						{
-							File.Delete($"{folder + path + "/" + filename + ".f4"}.m4a");
-						}
-						else
-						{
-							File.Delete($"{folder + path + "/" + filename + ".f3"}.m4a");
-						}
-						File.Delete($"{folder + path + "/" + filename}_adec.mp4");
-						File.Delete($"{folder + path + "/" + filename}_vdec.mp4");
-
-						return true;
-					}
-					else
-					{
-						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
-						task.Increment(fileSizeInBytes);
-					}
-				}
-				return false;
+                else
+                {
+                    long size = await dBHelper.GetFileSize(folder, media_id);
+                    task.Increment(size);
+                }
+                return false;
 			}
 			catch (Exception ex)
 			{
@@ -1626,86 +1182,12 @@ namespace OF_DL.Helpers
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
 					}
 				}
-				else
-				{
-					if (!File.Exists(folder + path + "/" + filename + "_source.mp4"))
-					{
-						//Use ytdl-p to download the MPD as a M4A and MP4 file
-						ProcessStartInfo ytdlpstartInfo = new ProcessStartInfo();
-						ytdlpstartInfo.FileName = ytdlppath;
-						ytdlpstartInfo.Arguments = $"--allow-u --no-part --restrict-filenames -N 4 --user-agent \"{user_agent}\" --add-header \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess}\" --referer \"https://onlyfans.com/\" -o \"{folder + path + "/"}%(title)s.%(ext)s\" \"{url}\"";
-						ytdlpstartInfo.CreateNoWindow = true;
-
-						Process ytdlpprocess = new Process();
-						ytdlpprocess.StartInfo = ytdlpstartInfo;
-						ytdlpprocess.Start();
-						ytdlpprocess.WaitForExit();
-
-						//Use mp4decrypt to decrypt the MP4 and M4A files
-						ProcessStartInfo mp4decryptStartInfoVideo = new ProcessStartInfo();
-						mp4decryptStartInfoVideo.FileName = mp4decryptpath;
-						mp4decryptStartInfoVideo.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f1"}.mp4 {folder + path + "/" + filename}_vdec.mp4";
-						mp4decryptStartInfoVideo.CreateNoWindow = true;
-
-						Process mp4decryptVideoProcess = new Process();
-						mp4decryptVideoProcess.StartInfo = mp4decryptStartInfoVideo;
-						mp4decryptVideoProcess.Start();
-						mp4decryptVideoProcess.WaitForExit();
-
-						ProcessStartInfo mp4decryptStartInfoAudio = new ProcessStartInfo();
-						mp4decryptStartInfoAudio.FileName = mp4decryptpath;
-						if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
-						{
-							mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f4"}.m4a {folder + path + "/" + filename}_adec.mp4";
-						}
-						else
-						{
-							mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f3"}.m4a {folder + path + "/" + filename}_adec.mp4";
-						}
-						mp4decryptStartInfoAudio.CreateNoWindow = true;
-
-						Process mp4decryptAudioProcess = new Process();
-						mp4decryptAudioProcess.StartInfo = mp4decryptStartInfoAudio;
-						mp4decryptAudioProcess.Start();
-						mp4decryptAudioProcess.WaitForExit();
-
-						//Finally use FFMPEG to merge the 2 together
-						ProcessStartInfo ffmpegStartInfo = new ProcessStartInfo();
-						ffmpegStartInfo.FileName = ffmpegpath;
-						ffmpegStartInfo.Arguments = $"-i {folder + path + "/" + filename}_vdec.mp4 -i {folder + path + "/" + filename}_adec.mp4 -c copy {folder + path + "/" + filename}_source.mp4";
-						ffmpegStartInfo.CreateNoWindow = true;
-
-						Process ffmpegProcess = new Process();
-						ffmpegProcess.StartInfo = ffmpegStartInfo;
-						ffmpegProcess.Start();
-						ffmpegProcess.WaitForExit();
-						File.SetLastWriteTime($"{folder + path + "/" + filename}_source.mp4", lastModified);
-
-						//Cleanup Files
-						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
-						task.Increment(fileSizeInBytes);
-						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
-						File.Delete($"{folder + path + "/" + filename + ".f1"}.mp4");
-						if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
-						{
-							File.Delete($"{folder + path + "/" + filename + ".f4"}.m4a");
-						}
-						else
-						{
-							File.Delete($"{folder + path + "/" + filename + ".f3"}.m4a");
-						}
-						File.Delete($"{folder + path + "/" + filename}_adec.mp4");
-						File.Delete($"{folder + path + "/" + filename}_vdec.mp4");
-
-						return true;
-					}
-					else
-					{
-						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
-						task.Increment(fileSizeInBytes);
-					}
-				}
-				return false;
+                else
+                {
+                    long size = await dBHelper.GetFileSize(folder, media_id);
+                    task.Increment(size);
+                }
+                return false;
 			}
 			catch (Exception ex)
 			{
