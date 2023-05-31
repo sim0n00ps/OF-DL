@@ -62,7 +62,7 @@ namespace OF_DL.Helpers
 					if(!File.Exists(folder + path + "/" + filename))
 					{
 						var client = new HttpClient();
-						client.Timeout = TimeSpan.FromSeconds(5);
+						
 						var request = new HttpRequestMessage
 						{
 							Method = HttpMethod.Get,
@@ -73,9 +73,9 @@ namespace OF_DL.Helpers
 						{
 							response.EnsureSuccessStatusCode();
 							var body = await response.Content.ReadAsStreamAsync();
-							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
+							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 16384, true))
 							{
-								var buffer = new byte[8192];
+								var buffer = new byte[16384];
 								while (true)
 								{
 									var read = await body.ReadAsync(buffer, 0, buffer.Length);
@@ -172,7 +172,7 @@ namespace OF_DL.Helpers
 					if(!File.Exists(folder + path + "/" + filename))
 					{
 						var client = new HttpClient();
-						client.Timeout = TimeSpan.FromSeconds(5);
+						
 						var request = new HttpRequestMessage
 						{
 							Method = HttpMethod.Get,
@@ -183,9 +183,9 @@ namespace OF_DL.Helpers
 						{
 							response.EnsureSuccessStatusCode();
 							var body = await response.Content.ReadAsStreamAsync();
-							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
+							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 16384, true))
 							{
-								var buffer = new byte[8192];
+								var buffer = new byte[16384];
 								while (true)
 								{
 									var read = await body.ReadAsync(buffer, 0, buffer.Length);
@@ -282,7 +282,7 @@ namespace OF_DL.Helpers
 					if(!File.Exists(folder + path + "/" + filename))
 					{
 						var client = new HttpClient();
-						client.Timeout = TimeSpan.FromSeconds(5);
+						
 						var request = new HttpRequestMessage
 						{
 							Method = HttpMethod.Get,
@@ -293,9 +293,9 @@ namespace OF_DL.Helpers
 						{
 							response.EnsureSuccessStatusCode();
 							var body = await response.Content.ReadAsStreamAsync();
-							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
+							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 16384, true))
 							{
-								var buffer = new byte[8192];
+								var buffer = new byte[16384];
 								while (true)
 								{
 									var read = await body.ReadAsync(buffer, 0, buffer.Length);
@@ -392,7 +392,7 @@ namespace OF_DL.Helpers
 					if(!File.Exists(folder + path + "/" + filename))
 					{
 						var client = new HttpClient();
-						client.Timeout = TimeSpan.FromSeconds(5);
+						
 						var request = new HttpRequestMessage
 						{
 							Method = HttpMethod.Get,
@@ -403,9 +403,9 @@ namespace OF_DL.Helpers
 						{
 							response.EnsureSuccessStatusCode();
 							var body = await response.Content.ReadAsStreamAsync();
-							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
+							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 16384, true))
 							{
-								var buffer = new byte[8192];
+								var buffer = new byte[16384];
 								while (true)
 								{
 									var read = await body.ReadAsync(buffer, 0, buffer.Length);
@@ -502,7 +502,7 @@ namespace OF_DL.Helpers
 					if(!File.Exists(folder + path + "/" + filename))
 					{
 						var client = new HttpClient();
-						client.Timeout = TimeSpan.FromSeconds(5);
+						
 						var request = new HttpRequestMessage
 						{
 							Method = HttpMethod.Get,
@@ -513,9 +513,9 @@ namespace OF_DL.Helpers
 						{
 							response.EnsureSuccessStatusCode();
 							var body = await response.Content.ReadAsStreamAsync();
-							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
+							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 16384, true))
 							{
-								var buffer = new byte[8192];
+								var buffer = new byte[16384];
 								while (true)
 								{
 									var read = await body.ReadAsync(buffer, 0, buffer.Length);
@@ -612,7 +612,7 @@ namespace OF_DL.Helpers
 					if(!File.Exists(folder + path + "/" + filename))
 					{
 						var client = new HttpClient();
-						client.Timeout = TimeSpan.FromSeconds(5);
+						
 						var request = new HttpRequestMessage
 						{
 							Method = HttpMethod.Get,
@@ -623,9 +623,9 @@ namespace OF_DL.Helpers
 						{
 							response.EnsureSuccessStatusCode();
 							var body = await response.Content.ReadAsStreamAsync();
-							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
+							using (FileStream fileStream = new FileStream(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 16384, true))
 							{
-								var buffer = new byte[8192];
+								var buffer = new byte[16384];
 								while (true)
 								{
 									var read = await body.ReadAsync(buffer, 0, buffer.Length);
@@ -694,7 +694,7 @@ namespace OF_DL.Helpers
 					string filename = System.IO.Path.GetFileName(uri.LocalPath);
 
 					var client = new HttpClient();
-					client.Timeout = TimeSpan.FromSeconds(5);
+					
 					var request = new HttpRequestMessage
 					{
 						Method = HttpMethod.Get,
@@ -725,7 +725,7 @@ namespace OF_DL.Helpers
 					string filename = System.IO.Path.GetFileName(uri.LocalPath);
 
 					var client = new HttpClient();
-					client.Timeout = TimeSpan.FromSeconds(5);
+					
 					var request = new HttpRequestMessage
 					{
 						Method = HttpMethod.Get,
@@ -1202,77 +1202,77 @@ namespace OF_DL.Helpers
 			return false;
 		}
 
-		public async Task<long> CalculateTotalFileSize(List<string> urls)
-		{
-			long totalFileSize = 0;
-			var tasks = new List<Task<long>>();
+        public async Task<long> CalculateTotalFileSize(List<string> urls)
+        {
+            long totalFileSize = 0;
+            var tasks = new List<Task<long>>();
 
-			foreach (string url in urls)
-			{
-				tasks.Add(GetFileSizeAsync(url));
-			}
+            foreach (string url in urls)
+            {
+                tasks.Add(GetFileSizeAsync(url));
+            }
 
-			long[] fileSizes = await Task.WhenAll(tasks);
-			foreach (long fileSize in fileSizes)
-			{
-				totalFileSize += fileSize;
-			}
+            long[] fileSizes = await Task.WhenAll(tasks);
+            foreach (long fileSize in fileSizes)
+            {
+                totalFileSize += fileSize;
+            }
 
-			return totalFileSize;
-		}
+            return totalFileSize;
+        }
 
-		private async Task<long> GetFileSizeAsync(string url)
-		{
-			long fileSize = 0;
+        private async Task<long> GetFileSizeAsync(string url)
+        {
+            long fileSize = 0;
 
-			try
-			{
-				if (url.Contains("cdn3.onlyfans.com/dash/files"))
-				{
-					Program program = new Program(new APIHelper(), new DownloadHelper(), new DBHelper());
-					string[] messageUrlParsed = url.Split(',');
-					string mpdURL = messageUrlParsed[0];
-					string policy = messageUrlParsed[1];
-					string signature = messageUrlParsed[2];
-					string kvp = messageUrlParsed[3];
+            try
+            {
+                if (url.Contains("cdn3.onlyfans.com/dash/files"))
+                {
+                    Program program = new Program(new APIHelper(), new DownloadHelper(), new DBHelper());
+                    string[] messageUrlParsed = url.Split(',');
+                    string mpdURL = messageUrlParsed[0];
+                    string policy = messageUrlParsed[1];
+                    string signature = messageUrlParsed[2];
+                    string kvp = messageUrlParsed[3];
 
-					mpdURL = mpdURL.Replace(".mpd", "_source.mp4");
+                    mpdURL = mpdURL.Replace(".mpd", "_source.mp4");
 
-					var request = WebRequest.Create(mpdURL);
-					request.Method = "HEAD";
-					request.Headers.Add("Cookie", $"CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {program.auth.COOKIE}");
-					request.Headers.Add("user-agent", program.auth.USER_AGENT);
+                    using (HttpClient client = new HttpClient())
+                    {
+                        client.DefaultRequestHeaders.Add("Cookie", $"CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {program.auth.COOKIE}");
+                        client.DefaultRequestHeaders.Add("User-Agent", program.auth.USER_AGENT);
 
+                        using (HttpResponseMessage response = await client.GetAsync(mpdURL, HttpCompletionOption.ResponseHeadersRead))
+                        {
+                            if (response.IsSuccessStatusCode)
+                            {
+                                fileSize = response.Content.Headers.ContentLength ?? 0;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    using (HttpClient client = new HttpClient())
+                    {
+                        using (HttpResponseMessage response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead))
+                        {
+                            if (response.IsSuccessStatusCode)
+                            {
+                                fileSize = response.Content.Headers.ContentLength ?? 0;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting file size for URL '{url}': {ex.Message}");
+            }
 
-					using (var response = await request.GetResponseAsync())
-					{
-						if (response is HttpWebResponse httpWebResponse)
-						{
-							fileSize = httpWebResponse.ContentLength;
-						}
-					}
-				}
-				else
-				{
-					var request = WebRequest.Create(url);
-					request.Method = "HEAD";
+            return fileSize;
+        }
 
-					using (var response = await request.GetResponseAsync())
-					{
-						if (response is HttpWebResponse httpWebResponse)
-						{
-							fileSize = httpWebResponse.ContentLength;
-						}
-					}
-				}
-				
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine($"Error getting file size for URL '{url}': {ex.Message}");
-			}
-
-			return fileSize;
-		}
-	}
+    }
 }
