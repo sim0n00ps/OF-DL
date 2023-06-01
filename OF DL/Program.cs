@@ -4,6 +4,7 @@ using OF_DL.Entities.Post;
 using OF_DL.Enumurations;
 using OF_DL.Helpers;
 using Spectre.Console;
+using System.Text.RegularExpressions;
 using static OF_DL.Entities.Lists.UserList;
 
 namespace OF_DL
@@ -32,37 +33,65 @@ namespace OF_DL
 				DateTime startTime = DateTime.Now;
                 bool exitProgram = false;
 
-                //Check if yt-dlp, ffmpeg and mp4decrypt paths are valid
-                if (!File.Exists(program.auth.YTDLP_PATH))
-				{
-					AnsiConsole.Markup($"[red]Cannot locate yt-dlp.exe with specified path {program.auth.YTDLP_PATH}, please modify auth.json with the correct path, press any key to exit[/]");
-					Console.ReadKey();
-					Environment.Exit(0);
-				}
-				else
-				{
-					AnsiConsole.Markup($"[green]yt-dlp.exe located successfully![/]\n");
-				}
-				if (!File.Exists(program.auth.FFMPEG_PATH))
-				{
-					AnsiConsole.Markup($"[red]Cannot locate ffmpeg.exe with specified path {program.auth.FFMPEG_PATH}, please modify auth.json with the correct path, press any key to exit[/]");
-					Console.ReadKey();
-					Environment.Exit(0);
-				}
-				else
-				{
-					AnsiConsole.Markup($"[green]ffmpeg.exe located successfully![/]\n");
-				}
-				if (!File.Exists(program.auth.MP4DECRYPT_PATH))
-				{
-					AnsiConsole.Markup($"[red]Cannot locate mp4decrypt.exe with specified path {program.auth.MP4DECRYPT_PATH}, please modify auth.json with the correct path, press any key to exit[/]");
-					Console.ReadKey();
-					Environment.Exit(0);
-				}
-				else
-				{
-					AnsiConsole.Markup($"[green]mp4decrypt.exe located successfully![/]\n");
-				}
+                if (ValidateFilePath(program.auth.YTDLP_PATH))
+                {
+                    if (!File.Exists(program.auth.YTDLP_PATH))
+                    {
+                        AnsiConsole.Markup($"[red]Cannot locate yt-dlp.exe with specified path {program.auth.YTDLP_PATH}, please modify auth.json with the correct path, press any key to exit[/]");
+                        Console.ReadKey();
+                        Environment.Exit(0);
+                    }
+                    else
+                    {
+                        AnsiConsole.Markup($"[green]yt-dlp.exe located successfully![/]\n");
+                    }
+                }
+                else
+                {
+                    AnsiConsole.Markup(@$"[red]Specified path {program.auth.YTDLP_PATH} does not match the required format, please remove any \ from the path and replace them with / and make sure the path does not have a / at the end, press any key to exit[/]");
+                    Console.ReadKey();
+                    Environment.Exit(0);
+                }
+
+                if (ValidateFilePath(program.auth.FFMPEG_PATH))
+                {
+                    if (!File.Exists(program.auth.FFMPEG_PATH))
+                    {
+                        AnsiConsole.Markup($"[red]Cannot locate ffmpeg.exe with specified path {program.auth.FFMPEG_PATH}, please modify auth.json with the correct path, press any key to exit[/]");
+                        Console.ReadKey();
+                        Environment.Exit(0);
+                    }
+                    else
+                    {
+                        AnsiConsole.Markup($"[green]ffmpeg.exe located successfully![/]\n");
+                    }
+                }
+                else
+                {
+                    AnsiConsole.Markup(@$"[red]Specified path {program.auth.FFMPEG_PATH} does not match the required format, please remove any \ from the path and replace them with / and make sure the path does not have a / at the end, press any key to exit[/]");
+                    Console.ReadKey();
+                    Environment.Exit(0);
+                }
+
+                if (ValidateFilePath(program.auth.MP4DECRYPT_PATH))
+                {
+                    if (!File.Exists(program.auth.MP4DECRYPT_PATH))
+                    {
+                        AnsiConsole.Markup($"[red]Cannot locate mp4decrypt.exe with specified path {program.auth.MP4DECRYPT_PATH}, please modify auth.json with the correct path, press any key to exit[/]");
+                        Console.ReadKey();
+                        Environment.Exit(0);
+                    }
+                    else
+                    {
+                        AnsiConsole.Markup($"[green]mp4decrypt.exe located successfully![/]\n");
+                    }
+                }
+                else
+                {
+                    AnsiConsole.Markup(@$"[red]Specified path {program.auth.MP4DECRYPT_PATH} does not match the required format, please remove any \ from the path and replace them with / and make sure the path does not have a / at the end, press any key to exit[/]");
+                    Console.ReadKey();
+                    Environment.Exit(0);
+                }
 
                 //Check if auth is valid
                 Entities.User validate = await program.apiHelper.GetUserInfo($"/users/me");
@@ -673,6 +702,16 @@ namespace OF_DL
 					"[red]Exit[/]"
 				};
             }
+        }
+        static bool ValidateFilePath(string path)
+        {
+            // Regular expression pattern to validate file path
+            string pattern = @"^[A-Za-z]:/(?:[^/\n]+/)*[^/:*?<>|]+\.[^/:*?<>|]+$";
+
+            // Check if the path matches the pattern and doesn't end with a forward slash
+            bool isMatch = Regex.IsMatch(path, pattern) && !path.EndsWith("/");
+
+            return isMatch;
         }
     }
 }
