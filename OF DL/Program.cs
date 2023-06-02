@@ -1,6 +1,10 @@
 ﻿using Newtonsoft.Json;
 using OF_DL.Entities;
+using OF_DL.Entities.Archived;
+using OF_DL.Entities.Highlights;
+using OF_DL.Entities.Messages;
 using OF_DL.Entities.Post;
+using OF_DL.Entities.Stories;
 using OF_DL.Enumurations;
 using OF_DL.Helpers;
 using Spectre.Console;
@@ -157,13 +161,14 @@ namespace OF_DL
                                     {
                                         AnsiConsole.Markup($"[red]Found {purchasedPosts.Count} Paid Posts\n[/]");
                                         paidPostCount = purchasedPosts.Count;
+                                        long totalSize = await program.downloadHelper.CalculateTotalFileSize(purchasedPosts.Values.ToList());
                                         await AnsiConsole.Progress()
                                         .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
                                         .StartAsync(async ctx =>
                                         {
                                             // Define tasks
                                             var task = ctx.AddTask($"[red]Downloading {purchasedPosts.Count} Paid Posts[/]", autoStart: false);
-                                            task.MaxValue = await program.downloadHelper.CalculateTotalFileSize(purchasedPosts.Values.ToList());
+                                            task.MaxValue = totalSize;
                                             task.StartTask();
                                             foreach (KeyValuePair<long, string> purchasedPostKVP in purchasedPosts)
                                             {
@@ -229,12 +234,13 @@ namespace OF_DL
                                     {
                                         AnsiConsole.Markup($"[red]Found {posts.Count} Posts\n[/]");
                                         postCount = posts.Count;
+                                        long totalSize = await program.downloadHelper.CalculateTotalFileSize(posts.Values.ToList());
                                         await AnsiConsole.Progress()
                                         .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
                                         .StartAsync(async ctx =>
                                         {
                                             var task = ctx.AddTask($"[red]Downloading {posts.Count} Posts[/]", autoStart: false);
-                                            task.MaxValue = await program.downloadHelper.CalculateTotalFileSize(posts.Values.ToList());
+                                            task.MaxValue = totalSize;
                                             task.StartTask();
                                             foreach (KeyValuePair<long, string> postKVP in posts)
                                             {
@@ -300,13 +306,14 @@ namespace OF_DL
                                     {
                                         AnsiConsole.Markup($"[red]Found {archived.Count} Archived Posts\n[/]");
                                         archivedCount = archived.Count;
+                                        long totalSize = await program.downloadHelper.CalculateTotalFileSize(archived.Values.ToList());
                                         await AnsiConsole.Progress()
                                         .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
                                         .StartAsync(async ctx =>
                                         {
                                             // Define tasks
                                             var task = ctx.AddTask($"[red]Downloading {archived.Count} Archived Posts[/]", autoStart: false);
-                                            task.MaxValue = await program.downloadHelper.CalculateTotalFileSize(archived.Values.ToList());
+                                            task.MaxValue = totalSize;
                                             task.StartTask();
                                             foreach (KeyValuePair<long, string> archivedKVP in archived)
                                             {
@@ -341,13 +348,14 @@ namespace OF_DL
                                     {
                                         AnsiConsole.Markup($"[red]Found {stories.Count} Stories\n[/]");
                                         storiesCount = stories.Count;
+                                        long totalSize = await program.downloadHelper.CalculateTotalFileSize(stories.Values.ToList());
                                         await AnsiConsole.Progress()
                                         .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
                                         .StartAsync(async ctx =>
                                         {
                                             // Define tasks
                                             var task = ctx.AddTask($"[red]Downloading {stories.Count} Stories[/]", autoStart: false);
-                                            task.MaxValue = await program.downloadHelper.CalculateTotalFileSize(stories.Values.ToList());
+                                            task.MaxValue = totalSize;
                                             task.StartTask();
                                             foreach (KeyValuePair<long, string> storyKVP in stories)
                                             {
@@ -382,13 +390,14 @@ namespace OF_DL
                                     {
                                         AnsiConsole.Markup($"[red]Found {highlights.Count} Highlights\n[/]");
                                         highlightsCount = highlights.Count;
+                                        long totalSize = await program.downloadHelper.CalculateTotalFileSize(highlights.Values.ToList());
                                         await AnsiConsole.Progress()
                                         .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
                                         .StartAsync(async ctx =>
                                         {
                                             // Define tasks
                                             var task = ctx.AddTask($"[red]Downloading {highlights.Count} Highlights[/]", autoStart: false);
-                                            task.MaxValue = await program.downloadHelper.CalculateTotalFileSize(highlights.Values.ToList());
+                                            task.MaxValue = totalSize;
                                             task.StartTask();
                                             foreach (KeyValuePair<long, string> highlightKVP in highlights)
                                             {
@@ -423,13 +432,14 @@ namespace OF_DL
                                     {
                                         AnsiConsole.Markup($"[red]Found {messages.Count} Messages\n[/]");
                                         messagesCount = messages.Count;
+                                        long totalSize = await program.downloadHelper.CalculateTotalFileSize(messages.Values.ToList());
                                         await AnsiConsole.Progress()
                                         .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
                                         .StartAsync(async ctx =>
                                         {
                                             // Define tasks
                                             var task = ctx.AddTask($"[red]Downloading {messages.Count} Messages[/]", autoStart: false);
-                                            task.MaxValue = await program.downloadHelper.CalculateTotalFileSize(messages.Values.ToList());
+                                            task.MaxValue = totalSize;
                                             task.StartTask();
                                             foreach (KeyValuePair<long, string> messageKVP in messages)
                                             {
@@ -496,13 +506,14 @@ namespace OF_DL
                                     {
                                         AnsiConsole.Markup($"[red]Found {purchased.Count} Paid Messages\n[/]");
                                         paidMessagesCount = purchased.Count;
+                                        long totalSize = await program.downloadHelper.CalculateTotalFileSize(purchased.Values.ToList());
                                         await AnsiConsole.Progress()
                                         .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
                                         .StartAsync(async ctx =>
                                         {
                                             // Define tasks
                                             var task = ctx.AddTask($"[red]Downloading {purchased.Count} Paid Messages[/]", autoStart: false);
-                                            task.MaxValue = await program.downloadHelper.CalculateTotalFileSize(purchased.Values.ToList());
+                                            task.MaxValue = totalSize;
                                             task.StartTask();
                                             foreach (KeyValuePair<long, string> paidMessageKVP in purchased)
                                             {

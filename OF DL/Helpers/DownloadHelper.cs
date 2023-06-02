@@ -1205,17 +1205,44 @@ namespace OF_DL.Helpers
         public async Task<long> CalculateTotalFileSize(List<string> urls)
         {
             long totalFileSize = 0;
-            var tasks = new List<Task<long>>();
+            if (urls.Count > 500)
+			{
+                int batchSize = 500; 
+                
+                var tasks = new List<Task<long>>();
 
-            foreach (string url in urls)
-            {
-                tasks.Add(GetFileSizeAsync(url));
+                for (int i = 0; i < urls.Count; i += batchSize)
+                {
+                    var batchUrls = urls.Skip(i).Take(batchSize).ToList();
+
+                    var batchTasks = batchUrls.Select(url => GetFileSizeAsync(url));
+                    tasks.AddRange(batchTasks);
+
+                    await Task.WhenAll(batchTasks);
+
+                    await Task.Delay(3000);
+                }
+
+                long[] fileSizes = await Task.WhenAll(tasks);
+                foreach (long fileSize in fileSizes)
+                {
+                    totalFileSize += fileSize;
+                }
             }
+			else
+			{
+                var tasks = new List<Task<long>>();
 
-            long[] fileSizes = await Task.WhenAll(tasks);
-            foreach (long fileSize in fileSizes)
-            {
-                totalFileSize += fileSize;
+                foreach (string url in urls)
+                {
+                    tasks.Add(GetFileSizeAsync(url));
+                }
+
+                long[] fileSizes = await Task.WhenAll(tasks);
+                foreach (long fileSize in fileSizes)
+                {
+                    totalFileSize += fileSize;
+                }
             }
 
             return totalFileSize;
