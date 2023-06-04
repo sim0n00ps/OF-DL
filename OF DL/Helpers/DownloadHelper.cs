@@ -798,7 +798,7 @@ namespace OF_DL.Helpers
 
                         if (File.Exists(folder + path + "/" + filename + ".f3.m4a"))
                         {
-                            File.Move(folder + path + "/" + filename + ".f3.mp4", folder + path + "/" + filename + ".m4a");
+                            File.Move(folder + path + "/" + filename + ".f3.m4a", folder + path + "/" + filename + ".m4a");
                         }
                         else if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
                         {
@@ -919,7 +919,7 @@ namespace OF_DL.Helpers
 
                         if (File.Exists(folder + path + "/" + filename + ".f3.m4a"))
                         {
-                            File.Move(folder + path + "/" + filename + ".f3.mp4", folder + path + "/" + filename + ".m4a");
+                            File.Move(folder + path + "/" + filename + ".f3.m4a", folder + path + "/" + filename + ".m4a");
                         }
                         else if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
                         {
@@ -1039,7 +1039,7 @@ namespace OF_DL.Helpers
 
                         if (File.Exists(folder + path + "/" + filename + ".f3.m4a"))
                         {
-                            File.Move(folder + path + "/" + filename + ".f3.mp4", folder + path + "/" + filename + ".m4a");
+                            File.Move(folder + path + "/" + filename + ".f3.m4a", folder + path + "/" + filename + ".m4a");
                         }
                         else if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
                         {
@@ -1160,7 +1160,7 @@ namespace OF_DL.Helpers
 
                         if (File.Exists(folder + path + "/" + filename + ".f3.m4a"))
                         {
-                            File.Move(folder + path + "/" + filename + ".f3.mp4", folder + path + "/" + filename + ".m4a");
+                            File.Move(folder + path + "/" + filename + ".f3.m4a", folder + path + "/" + filename + ".m4a");
                         }
                         else if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
                         {
