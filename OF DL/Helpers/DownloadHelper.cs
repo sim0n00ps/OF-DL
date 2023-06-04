@@ -774,7 +774,7 @@ namespace OF_DL.Helpers
 						//Use ytdl-p to download the MPD as a M4A and MP4 file
 						ProcessStartInfo ytdlpstartInfo = new ProcessStartInfo();
 						ytdlpstartInfo.FileName = ytdlppath;
-						ytdlpstartInfo.Arguments = $"--allow-u --no-part --restrict-filenames -N 4 --user-agent \"{user_agent}\" --add-header \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess}\" --referer \"https://onlyfans.com/\" -o \"{folder + path + "/"}%(title)s.%(ext)s\" \"{url}\"";
+						ytdlpstartInfo.Arguments = $"--allow-u --no-part --restrict-filenames -N 4 --user-agent \"{user_agent}\" --add-header \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess}\" --referer \"https://onlyfans.com/\" -o \"{folder + path + "/"}%(title)s.%(ext)s\" --format \"bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best[ext=m4a]\" \"{url}\"";
 						ytdlpstartInfo.CreateNoWindow = true;
 
 						Process ytdlpprocess = new Process();
@@ -782,10 +782,33 @@ namespace OF_DL.Helpers
 						ytdlpprocess.Start();
 						ytdlpprocess.WaitForExit();
 
-						//Use mp4decrypt to decrypt the MP4 and M4A files
-						ProcessStartInfo mp4decryptStartInfoVideo = new ProcessStartInfo();
+						//Remove .fx from filenames
+						if (File.Exists(folder + path + "/" + filename + ".f1.mp4"))
+						{
+							File.Move(folder + path + "/" + filename + ".f1.mp4", folder + path + "/" + filename + ".mp4");
+						}
+						else if (File.Exists(folder + path + "/" + filename + ".f2.mp4"))
+						{
+                            File.Move(folder + path + "/" + filename + ".f2.mp4", folder + path + "/" + filename + ".mp4");
+                        }
+                        else if (File.Exists(folder + path + "/" + filename + ".f3.mp4"))
+                        {
+                            File.Move(folder + path + "/" + filename + ".f3.mp4", folder + path + "/" + filename + ".mp4");
+                        }
+
+                        if (File.Exists(folder + path + "/" + filename + ".f3.m4a"))
+                        {
+                            File.Move(folder + path + "/" + filename + ".f3.mp4", folder + path + "/" + filename + ".m4a");
+                        }
+                        else if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
+                        {
+                            File.Move(folder + path + "/" + filename + ".f4.m4a", folder + path + "/" + filename + ".m4a");
+                        }
+
+                        //Use mp4decrypt to decrypt the MP4 and M4A files
+                        ProcessStartInfo mp4decryptStartInfoVideo = new ProcessStartInfo();
 						mp4decryptStartInfoVideo.FileName = mp4decryptpath;
-						mp4decryptStartInfoVideo.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f1"}.mp4 {folder + path + "/" + filename}_vdec.mp4";
+						mp4decryptStartInfoVideo.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename}.mp4 {folder + path + "/" + filename}_vdec.mp4";
 						mp4decryptStartInfoVideo.CreateNoWindow = true;
 
 						Process mp4decryptVideoProcess = new Process();
@@ -795,14 +818,7 @@ namespace OF_DL.Helpers
 
 						ProcessStartInfo mp4decryptStartInfoAudio = new ProcessStartInfo();
 						mp4decryptStartInfoAudio.FileName = mp4decryptpath;
-						if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
-						{
-							mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f4"}.m4a {folder + path + "/" + filename}_adec.mp4";
-						}
-						else
-						{
-							mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f3"}.m4a {folder + path + "/" + filename}_adec.mp4";
-						}
+						mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename}.m4a {folder + path + "/" + filename}_adec.mp4";
 						mp4decryptStartInfoAudio.CreateNoWindow = true;
 
 						Process mp4decryptAudioProcess = new Process();
@@ -826,15 +842,8 @@ namespace OF_DL.Helpers
 						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
 						task.Increment(fileSizeInBytes);
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
-						File.Delete($"{folder + path + "/" + filename + ".f1"}.mp4");
-						if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
-						{
-							File.Delete($"{folder + path + "/" + filename + ".f4"}.m4a");
-						}
-						else
-						{
-							File.Delete($"{folder + path + "/" + filename + ".f3"}.m4a");
-						}
+						File.Delete($"{folder + path + "/" + filename}.mp4");
+						File.Delete($"{folder + path + "/" + filename}.m4a");
 						File.Delete($"{folder + path + "/" + filename}_adec.mp4");
 						File.Delete($"{folder + path + "/" + filename}_vdec.mp4");
 
@@ -886,18 +895,41 @@ namespace OF_DL.Helpers
 						//Use ytdl-p to download the MPD as a M4A and MP4 file
 						ProcessStartInfo ytdlpstartInfo = new ProcessStartInfo();
 						ytdlpstartInfo.FileName = ytdlppath;
-						ytdlpstartInfo.Arguments = $"--allow-u --no-part --restrict-filenames -N 4 --user-agent \"{user_agent}\" --add-header \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess}\" --referer \"https://onlyfans.com/\" -o \"{folder + path + "/"}%(title)s.%(ext)s\" \"{url}\"";
-						ytdlpstartInfo.CreateNoWindow = true;
+                        ytdlpstartInfo.Arguments = $"--allow-u --no-part --restrict-filenames -N 4 --user-agent \"{user_agent}\" --add-header \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess}\" --referer \"https://onlyfans.com/\" -o \"{folder + path + "/"}%(title)s.%(ext)s\" --format \"bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best[ext=m4a]\" \"{url}\"";
+                        ytdlpstartInfo.CreateNoWindow = true;
 
 						Process ytdlpprocess = new Process();
 						ytdlpprocess.StartInfo = ytdlpstartInfo;
 						ytdlpprocess.Start();
 						ytdlpprocess.WaitForExit();
 
-						//Use mp4decrypt to decrypt the MP4 and M4A files
-						ProcessStartInfo mp4decryptStartInfoVideo = new ProcessStartInfo();
+                        //Remove .fx from filenames
+                        if (File.Exists(folder + path + "/" + filename + ".f1.mp4"))
+                        {
+                            File.Move(folder + path + "/" + filename + ".f1.mp4", folder + path + "/" + filename + ".mp4");
+                        }
+                        else if (File.Exists(folder + path + "/" + filename + ".f2.mp4"))
+                        {
+                            File.Move(folder + path + "/" + filename + ".f2.mp4", folder + path + "/" + filename + ".mp4");
+                        }
+                        else if (File.Exists(folder + path + "/" + filename + ".f3.mp4"))
+                        {
+                            File.Move(folder + path + "/" + filename + ".f3.mp4", folder + path + "/" + filename + ".mp4");
+                        }
+
+                        if (File.Exists(folder + path + "/" + filename + ".f3.m4a"))
+                        {
+                            File.Move(folder + path + "/" + filename + ".f3.mp4", folder + path + "/" + filename + ".m4a");
+                        }
+                        else if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
+                        {
+                            File.Move(folder + path + "/" + filename + ".f4.m4a", folder + path + "/" + filename + ".m4a");
+                        }
+
+                        //Use mp4decrypt to decrypt the MP4 and M4A files
+                        ProcessStartInfo mp4decryptStartInfoVideo = new ProcessStartInfo();
 						mp4decryptStartInfoVideo.FileName = mp4decryptpath;
-						mp4decryptStartInfoVideo.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f1"}.mp4 {folder + path + "/" + filename}_vdec.mp4";
+						mp4decryptStartInfoVideo.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename}.mp4 {folder + path + "/" + filename}_vdec.mp4";
 						mp4decryptStartInfoVideo.CreateNoWindow = true;
 
 						Process mp4decryptVideoProcess = new Process();
@@ -907,15 +939,8 @@ namespace OF_DL.Helpers
 
 						ProcessStartInfo mp4decryptStartInfoAudio = new ProcessStartInfo();
 						mp4decryptStartInfoAudio.FileName = mp4decryptpath;
-						if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
-						{
-							mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f4"}.m4a {folder + path + "/" + filename}_adec.mp4";
-						}
-						else
-						{
-							mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f3"}.m4a {folder + path + "/" + filename}_adec.mp4";
-						}
-						mp4decryptStartInfoAudio.CreateNoWindow = true;
+                        mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename}.m4a {folder + path + "/" + filename}_adec.mp4";
+                        mp4decryptStartInfoAudio.CreateNoWindow = true;
 
 						Process mp4decryptAudioProcess = new Process();
 						mp4decryptAudioProcess.StartInfo = mp4decryptStartInfoAudio;
@@ -938,15 +963,8 @@ namespace OF_DL.Helpers
 						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
 						task.Increment(fileSizeInBytes);
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
-						File.Delete($"{folder + path + "/" + filename + ".f1"}.mp4");
-						if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
-						{
-							File.Delete($"{folder + path + "/" + filename + ".f4"}.m4a");
-						}
-						else
-						{
-							File.Delete($"{folder + path + "/" + filename + ".f3"}.m4a");
-						}
+						File.Delete($"{folder + path + "/" + filename}.mp4");
+                        File.Delete($"{folder + path + "/" + filename}.m4a");
 						File.Delete($"{folder + path + "/" + filename}_adec.mp4");
 						File.Delete($"{folder + path + "/" + filename}_vdec.mp4");
 
@@ -997,18 +1015,41 @@ namespace OF_DL.Helpers
 						//Use ytdl-p to download the MPD as a M4A and MP4 file
 						ProcessStartInfo ytdlpstartInfo = new ProcessStartInfo();
 						ytdlpstartInfo.FileName = ytdlppath;
-						ytdlpstartInfo.Arguments = $"--allow-u --no-part --restrict-filenames -N 4 --user-agent \"{user_agent}\" --add-header \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess}\" --referer \"https://onlyfans.com/\" -o \"{folder + path + "/"}%(title)s.%(ext)s\" \"{url}\"";
-						ytdlpstartInfo.CreateNoWindow = true;
+                        ytdlpstartInfo.Arguments = $"--allow-u --no-part --restrict-filenames -N 4 --user-agent \"{user_agent}\" --add-header \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess}\" --referer \"https://onlyfans.com/\" -o \"{folder + path + "/"}%(title)s.%(ext)s\" --format \"bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best[ext=m4a]\" \"{url}\"";
+                        ytdlpstartInfo.CreateNoWindow = true;
 
 						Process ytdlpprocess = new Process();
 						ytdlpprocess.StartInfo = ytdlpstartInfo;
 						ytdlpprocess.Start();
 						ytdlpprocess.WaitForExit();
 
-						//Use mp4decrypt to decrypt the MP4 and M4A files
-						ProcessStartInfo mp4decryptStartInfoVideo = new ProcessStartInfo();
+                        //Remove .fx from filenames
+                        if (File.Exists(folder + path + "/" + filename + ".f1.mp4"))
+                        {
+                            File.Move(folder + path + "/" + filename + ".f1.mp4", folder + path + "/" + filename + ".mp4");
+                        }
+                        else if (File.Exists(folder + path + "/" + filename + ".f2.mp4"))
+                        {
+                            File.Move(folder + path + "/" + filename + ".f2.mp4", folder + path + "/" + filename + ".mp4");
+                        }
+                        else if (File.Exists(folder + path + "/" + filename + ".f3.mp4"))
+                        {
+                            File.Move(folder + path + "/" + filename + ".f3.mp4", folder + path + "/" + filename + ".mp4");
+                        }
+
+                        if (File.Exists(folder + path + "/" + filename + ".f3.m4a"))
+                        {
+                            File.Move(folder + path + "/" + filename + ".f3.mp4", folder + path + "/" + filename + ".m4a");
+                        }
+                        else if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
+                        {
+                            File.Move(folder + path + "/" + filename + ".f4.m4a", folder + path + "/" + filename + ".m4a");
+                        }
+
+                        //Use mp4decrypt to decrypt the MP4 and M4A files
+                        ProcessStartInfo mp4decryptStartInfoVideo = new ProcessStartInfo();
 						mp4decryptStartInfoVideo.FileName = mp4decryptpath;
-						mp4decryptStartInfoVideo.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f1"}.mp4 {folder + path + "/" + filename}_vdec.mp4";
+						mp4decryptStartInfoVideo.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename}.mp4 {folder + path + "/" + filename}_vdec.mp4";
 						mp4decryptStartInfoVideo.CreateNoWindow = true;
 
 						Process mp4decryptVideoProcess = new Process();
@@ -1018,15 +1059,8 @@ namespace OF_DL.Helpers
 
 						ProcessStartInfo mp4decryptStartInfoAudio = new ProcessStartInfo();
 						mp4decryptStartInfoAudio.FileName = mp4decryptpath;
-						if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
-						{
-							mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f4"}.m4a {folder + path + "/" + filename}_adec.mp4";
-						}
-						else
-						{
-							mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f3"}.m4a {folder + path + "/" + filename}_adec.mp4";
-						}
-						mp4decryptStartInfoAudio.CreateNoWindow = true;
+                        mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename}.m4a {folder + path + "/" + filename}_adec.mp4";
+                        mp4decryptStartInfoAudio.CreateNoWindow = true;
 
 						Process mp4decryptAudioProcess = new Process();
 						mp4decryptAudioProcess.StartInfo = mp4decryptStartInfoAudio;
@@ -1049,16 +1083,9 @@ namespace OF_DL.Helpers
 						long fileSizeInBytes = new FileInfo(folder + path + "/" + filename + "_source.mp4").Length;
 						task.Increment(fileSizeInBytes);
 						await dBHelper.UpdateMedia(folder, media_id, folder + path, filename + "_source.mp4", fileSizeInBytes, true, lastModified);
-						File.Delete($"{folder + path + "/" + filename + ".f1"}.mp4");
-						if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
-						{
-							File.Delete($"{folder + path + "/" + filename + ".f4"}.m4a");
-						}
-						else
-						{
-							File.Delete($"{folder + path + "/" + filename + ".f3"}.m4a");
-						}
-						File.Delete($"{folder + path + "/" + filename}_adec.mp4");
+						File.Delete($"{folder + path + "/" + filename}.mp4");
+                        File.Delete($"{folder + path + "/" + filename}.m4a");
+                        File.Delete($"{folder + path + "/" + filename}_adec.mp4");
 						File.Delete($"{folder + path + "/" + filename}_vdec.mp4");
 
 						return true;
@@ -1109,18 +1136,41 @@ namespace OF_DL.Helpers
 						//Use ytdl-p to download the MPD as a M4A and MP4 file
 						ProcessStartInfo ytdlpstartInfo = new ProcessStartInfo();
 						ytdlpstartInfo.FileName = ytdlppath;
-						ytdlpstartInfo.Arguments = $"--allow-u --no-part --restrict-filenames -N 4 --user-agent \"{user_agent}\" --add-header \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess}\" --referer \"https://onlyfans.com/\" -o \"{folder + path + "/"}%(title)s.%(ext)s\" \"{url}\"";
-						ytdlpstartInfo.CreateNoWindow = true;
+                        ytdlpstartInfo.Arguments = $"--allow-u --no-part --restrict-filenames -N 4 --user-agent \"{user_agent}\" --add-header \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess}\" --referer \"https://onlyfans.com/\" -o \"{folder + path + "/"}%(title)s.%(ext)s\" --format \"bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best[ext=m4a]\" \"{url}\"";
+                        ytdlpstartInfo.CreateNoWindow = true;
 
 						Process ytdlpprocess = new Process();
 						ytdlpprocess.StartInfo = ytdlpstartInfo;
 						ytdlpprocess.Start();
 						ytdlpprocess.WaitForExit();
 
-						//Use mp4decrypt to decrypt the MP4 and M4A files
-						ProcessStartInfo mp4decryptStartInfoVideo = new ProcessStartInfo();
+                        //Remove .fx from filenames
+                        if (File.Exists(folder + path + "/" + filename + ".f1.mp4"))
+                        {
+                            File.Move(folder + path + "/" + filename + ".f1.mp4", folder + path + "/" + filename + ".mp4");
+                        }
+                        else if (File.Exists(folder + path + "/" + filename + ".f2.mp4"))
+                        {
+                            File.Move(folder + path + "/" + filename + ".f2.mp4", folder + path + "/" + filename + ".mp4");
+                        }
+                        else if (File.Exists(folder + path + "/" + filename + ".f3.mp4"))
+                        {
+                            File.Move(folder + path + "/" + filename + ".f3.mp4", folder + path + "/" + filename + ".mp4");
+                        }
+
+                        if (File.Exists(folder + path + "/" + filename + ".f3.m4a"))
+                        {
+                            File.Move(folder + path + "/" + filename + ".f3.mp4", folder + path + "/" + filename + ".m4a");
+                        }
+                        else if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
+                        {
+                            File.Move(folder + path + "/" + filename + ".f4.m4a", folder + path + "/" + filename + ".m4a");
+                        }
+
+                        //Use mp4decrypt to decrypt the MP4 and M4A files
+                        ProcessStartInfo mp4decryptStartInfoVideo = new ProcessStartInfo();
 						mp4decryptStartInfoVideo.FileName = mp4decryptpath;
-						mp4decryptStartInfoVideo.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f1"}.mp4 {folder + path + "/" + filename}_vdec.mp4";
+						mp4decryptStartInfoVideo.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename}.mp4 {folder + path + "/" + filename}_vdec.mp4";
 						mp4decryptStartInfoVideo.CreateNoWindow = true;
 
 						Process mp4decryptVideoProcess = new Process();
@@ -1130,15 +1180,8 @@ namespace OF_DL.Helpers
 
 						ProcessStartInfo mp4decryptStartInfoAudio = new ProcessStartInfo();
 						mp4decryptStartInfoAudio.FileName = mp4decryptpath;
-						if (File.Exists(folder + path + "/" + filename + ".f4.m4a"))
-						{
-							mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f4"}.m4a {folder + path + "/" + filename}_adec.mp4";
-						}
-						else
-						{
-							mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename + ".f3"}.m4a {folder + path + "/" + filename}_adec.mp4";
-						}
-						mp4decryptStartInfoAudio.CreateNoWindow = true;
+                        mp4decryptStartInfoAudio.Arguments = $"--key {decryptionKey} {folder + path + "/" + filename}.m4a {folder + path + "/" + filename}_adec.mp4";
+                        mp4decryptStartInfoAudio.CreateNoWindow = true;
 
 						Process mp4decryptAudioProcess = new Process();
 						mp4decryptAudioProcess.StartInfo = mp4decryptStartInfoAudio;
@@ -1205,9 +1248,9 @@ namespace OF_DL.Helpers
         public async Task<long> CalculateTotalFileSize(List<string> urls)
         {
             long totalFileSize = 0;
-            if (urls.Count > 500)
+            if (urls.Count > 250)
 			{
-                int batchSize = 500; 
+                int batchSize = 250; 
                 
                 var tasks = new List<Task<long>>();
 
@@ -1220,7 +1263,7 @@ namespace OF_DL.Helpers
 
                     await Task.WhenAll(batchTasks);
 
-                    await Task.Delay(3000);
+                    await Task.Delay(5000);
                 }
 
                 long[] fileSizes = await Task.WhenAll(tasks);
@@ -1254,9 +1297,10 @@ namespace OF_DL.Helpers
 
             try
             {
-                if (url.Contains("cdn3.onlyfans.com/dash/files"))
+                Uri uri = new Uri(url);
+                Program program = new Program(new APIHelper(), new DownloadHelper(), new DBHelper());
+                if (uri.Host == "cdn3.onlyfans.com" && uri.LocalPath.Contains("/dash/files"))
                 {
-                    Program program = new Program(new APIHelper(), new DownloadHelper(), new DBHelper());
                     string[] messageUrlParsed = url.Split(',');
                     string mpdURL = messageUrlParsed[0];
                     string policy = messageUrlParsed[1];
@@ -1283,7 +1327,8 @@ namespace OF_DL.Helpers
                 {
                     using (HttpClient client = new HttpClient())
                     {
-                        using (HttpResponseMessage response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead))
+						client.DefaultRequestHeaders.Add("User-Agent", program.auth.USER_AGENT);
+                        using (HttpResponseMessage response = await client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead))
                         {
                             if (response.IsSuccessStatusCode)
                             {
@@ -1300,6 +1345,5 @@ namespace OF_DL.Helpers
 
             return fileSize;
         }
-
     }
 }

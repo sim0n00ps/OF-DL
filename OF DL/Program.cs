@@ -107,7 +107,7 @@ namespace OF_DL
                 else
                 {
                     AnsiConsole.Markup($"[green]Logged In successfully as {validate.name} {validate.username}\n[/]");
-                    Dictionary<string, int> users = await program.apiHelper.GetSubscriptions("/subscriptions/subscribes");
+                    Dictionary<string, int> users = await program.apiHelper.GetSubscriptions("/subscriptions/subscribes", program.auth.IncludeExpiredSubscriptions);
                     Dictionary<string, int> lists = await program.apiHelper.GetLists("/lists");
                     Dictionary<string, int> selectedUsers = new Dictionary<string, int>();
                     do

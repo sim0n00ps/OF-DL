@@ -152,19 +152,33 @@ namespace OF_DL.Helpers
 			}
 			return null;
 		}
-		public async Task<Dictionary<string, int>> GetSubscriptions(string endpoint)
+		public async Task<Dictionary<string, int>> GetSubscriptions(string endpoint, bool includeExpiredSubscriptions)
 		{
 			try
 			{
 				int post_limit = 50;
 				int offset = 0;
 				bool loop = true;
-				Dictionary<string, string> GetParams = new Dictionary<string, string>
+				Dictionary<string, string> GetParams = new Dictionary<string, string>();
+
+                if (includeExpiredSubscriptions)
 				{
-					{ "limit", post_limit.ToString() },
-					{ "order", "publish_date_asc" },
-					{ "type", "all" }
-				};
+                    GetParams = new Dictionary<string, string>
+					{
+						{ "limit", post_limit.ToString() },
+						{ "order", "publish_date_asc" },
+						{ "type", "all" }
+					};
+                }
+				else
+				{
+                    GetParams = new Dictionary<string, string>
+					{
+						{ "limit", post_limit.ToString() },
+						{ "order", "publish_date_asc" },
+						{ "type", "active" }
+					};
+                }
 				Dictionary<string, int> users = new Dictionary<string, int>();
 				while (loop)
 				{
@@ -422,7 +436,7 @@ namespace OF_DL.Helpers
 						GetParams = new Dictionary<string, string>
 						{
 							{ "limit", post_limit.ToString() },
-							{ "order", "publish_date_asc" },
+							{ "order", "publish_date_desc" },
 							{ "user_id", username }
 						};
 						break;
@@ -432,7 +446,7 @@ namespace OF_DL.Helpers
 						GetParams = new Dictionary<string, string>
 						{
 							{ "limit", post_limit.ToString() },
-							{ "order", "publish_date_asc" }
+							{ "order", "publish_date_desc" }
 						};
 						break;
 
@@ -441,7 +455,7 @@ namespace OF_DL.Helpers
 						GetParams = new Dictionary<string, string>
 						{
 							{ "limit", post_limit.ToString() },
-							{ "order", "publish_date_asc" }
+							{ "order", "publish_date_desc" }
 						};
 						break;
 
@@ -450,7 +464,7 @@ namespace OF_DL.Helpers
 						GetParams = new Dictionary<string, string>
 						{
 							{ "limit", post_limit.ToString() },
-							{ "order", "publish_date_asc" }
+							{ "order", "publish_date_desc" }
 						};
 						break;
 
@@ -477,7 +491,7 @@ namespace OF_DL.Helpers
 						GetParams = new Dictionary<string, string>
 						{
 							{ "limit", post_limit.ToString() },
-							{ "order", "publish_date_asc" },
+							{ "order", "publish_date_desc" },
 							{ "user_id", username }
 						};
 						break;
@@ -656,7 +670,7 @@ namespace OF_DL.Helpers
 						posts = JsonConvert.DeserializeObject<List<Post>>(body, jsonSerializerSettings);
 						if (posts.Count >= post_limit)
 						{
-							GetParams["afterPublishTime"] = posts[posts.Count - 1].postedAtPrecise;
+							GetParams["beforePublishTime"] = posts[posts.Count - 1].postedAtPrecise;
 							while (true)
 							{
 								string loopqueryParams = "?";
@@ -692,11 +706,10 @@ namespace OF_DL.Helpers
 								{
 									break;
 								}
-								GetParams["afterPublishTime"] = newposts[newposts.Count - 1].postedAtPrecise;
+								GetParams["beforePublishTime"] = newposts[newposts.Count - 1].postedAtPrecise;
 							}
 						}
 
-						posts = posts.OrderByDescending(x => x.postedAt).ToList();
 						DBHelper dBHelper = new DBHelper();
 						foreach (Post post in posts)
 						{
@@ -767,7 +780,6 @@ namespace OF_DL.Helpers
 					else if (isArchived)
 					{
 						archived = JsonConvert.DeserializeObject<List<Archived>>(body, jsonSerializerSettings);
-						archived = archived.OrderByDescending(x => x.postedAt).ToList();
 						Program program = new Program(new APIHelper(), new DownloadHelper(), new DBHelper());
 						DBHelper dBHelper = new DBHelper();
 						foreach (Archived archive in archived)
@@ -970,7 +982,10 @@ namespace OF_DL.Helpers
 												{
 													continue;
 												}
-												return_urls.Add(medium.id, item.media[0].files.source.url);
+												if (!return_urls.ContainsKey(medium.id))
+												{
+                                                    return_urls.Add(medium.id, item.media[0].files.source.url);
+                                                }
 											}
 										}
 									}
@@ -1024,7 +1039,6 @@ namespace OF_DL.Helpers
 							}
 						}
 
-						messages.list = messages.list.OrderByDescending(x => x.createdAt).ToList();
 						DBHelper dBHelper = new DBHelper();
 						foreach (Messages.List list in messages.list)
 						{
@@ -1143,7 +1157,6 @@ namespace OF_DL.Helpers
 							}
 						}
 
-						paidMessages = paidMessages.Where(z => z.responseType == "message").OrderByDescending(x => x.postedAt).ToList();
 						DBHelper dBHelper = new DBHelper();
 						foreach (Purchased purchase in paidMessages)
 						{
