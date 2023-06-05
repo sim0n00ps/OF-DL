@@ -69,8 +69,6 @@ The List option will show you all of the lists you have created on OF and you ca
 
 The Custom option allows you to select 1 or more accounts you want to scrape media from so if you only want to get media from a select number of accounts then you can do that. To navigate the menu the can use the &#8593; & &#8595; arrows, to select/deselect an account press the `space` key and after you are happy with your selection(s) press `enter` to start downloading.
 
-![image](https://user-images.githubusercontent.com/132307467/235549855-dd6efa98-24d5-479a-89c9-d89dbd3c01cc.png)
-
 After you have made your selection the content should start downloading.
 Content is downloaded in this order:
 1. Paid Posts
