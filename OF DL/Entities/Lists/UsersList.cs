@@ -32,7 +32,7 @@ namespace OF_DL.Entities.Lists
 		public int? tipsMax { get; set; }
 		public bool? canEarn { get; set; }
 		public bool? canAddSubscriber { get; set; }
-		public double? subscribePrice { get; set; }
+		public string? subscribePrice { get; set; }
 		public List<SubscriptionBundle> subscriptionBundles { get; set; }
 		public string displayName { get; set; }
 		public string notice { get; set; }

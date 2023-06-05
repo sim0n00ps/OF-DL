@@ -298,7 +298,7 @@ namespace OF_DL
                                 if (program.auth.DownloadArchived)
                                 {
                                     AnsiConsole.Markup($"[red]Getting Archived Posts\n[/]");
-                                    Dictionary<long, string> archived = await program.apiHelper.GetMedia(MediaType.Archived, $"/users/{user.Value}/posts/archived", null, path);
+                                    Dictionary<long, string> archived = await program.apiHelper.GetMedia(MediaType.Archived, $"/users/{user.Value}/posts", null, path);
 
                                     int oldArchivedCount = 0;
                                     int newArchivedCount = 0;

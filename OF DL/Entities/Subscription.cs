@@ -32,7 +32,7 @@ namespace OF_DL.Entities
         public int tipsMax { get; set; }
         public bool canEarn { get; set; }
         public bool canAddSubscriber { get; set; }
-        public double subscribePrice { get; set; }
+        public string subscribePrice { get; set; }
         public bool isPaywallRequired { get; set; }
         public bool unprofitable { get; set; }
         public List<ListsState> listsStates { get; set; }
@@ -44,7 +44,7 @@ namespace OF_DL.Entities
         public DateTime subscribedByExpireDate { get; set; }
         public bool? subscribedByAutoprolong { get; set; }
         public bool? subscribedIsExpiredNow { get; set; }
-        public double? currentSubscribePrice { get; set; }
+        public string? currentSubscribePrice { get; set; }
         public bool? subscribedOn { get; set; }
         public bool? subscribedOnExpiredNow { get; set; }
         public string subscribedOnDuration { get; set; }
@@ -98,8 +98,8 @@ namespace OF_DL.Entities
             public DateTime startDate { get; set; }
             public DateTime expireDate { get; set; }
             public object cancelDate { get; set; }
-            public double price { get; set; }
-            public double regularPrice { get; set; }
+            public string price { get; set; }
+            public string regularPrice { get; set; }
             public int discount { get; set; }
             public int earningId { get; set; }
             public string action { get; set; }
@@ -111,10 +111,10 @@ namespace OF_DL.Entities
 
         public class SubscribedByData
         {
-            public double price { get; set; }
-            public double newPrice { get; set; }
-            public double regularPrice { get; set; }
-            public double subscribePrice { get; set; }
+            public string price { get; set; }
+            public string newPrice { get; set; }
+            public string regularPrice { get; set; }
+            public string subscribePrice { get; set; }
             public int discountPercent { get; set; }
             public int discountPeriod { get; set; }
             public DateTime subscribeAt { get; set; }
@@ -132,12 +132,12 @@ namespace OF_DL.Entities
 
         public class SubscribedOnData
         {
-            public int price { get; set; }
-            public int newPrice { get; set; }
-            public int regularPrice { get; set; }
-            public int subscribePrice { get; set; }
-            public int discountPercent { get; set; }
-            public int discountPeriod { get; set; }
+            public string price { get; set; }
+            public string newPrice { get; set; }
+            public string regularPrice { get; set; }
+            public string subscribePrice { get; set; }
+            public string discountPercent { get; set; }
+            public string discountPeriod { get; set; }
             public DateTime subscribeAt { get; set; }
             public DateTime expiredAt { get; set; }
             public DateTime? renewedAt { get; set; }

@@ -76,7 +76,7 @@ namespace OF_DL.Helpers
 
 			Dictionary<string, string> headers = new Dictionary<string, string>
 			{
-				{ "accept", "application/json, text/plain, */*" },
+				{ "accept", "application/json, text/plain" },
 				{ "app-token", root.app_token },
 				{ "cookie", program.auth.COOKIE },
 				{ "sign", sign },
@@ -91,7 +91,7 @@ namespace OF_DL.Helpers
 		{
 			try
 			{
-                Entities.User user = new Entities.User();
+				Entities.User user = new Entities.User();
 				int post_limit = 50;
 				Dictionary<string, string> GetParams = new Dictionary<string, string>
 				{
@@ -161,24 +161,24 @@ namespace OF_DL.Helpers
 				bool loop = true;
 				Dictionary<string, string> GetParams = new Dictionary<string, string>();
 
-                if (includeExpiredSubscriptions)
+				if (includeExpiredSubscriptions)
 				{
-                    GetParams = new Dictionary<string, string>
+					GetParams = new Dictionary<string, string>
 					{
 						{ "limit", post_limit.ToString() },
 						{ "order", "publish_date_asc" },
 						{ "type", "all" }
 					};
-                }
+				}
 				else
 				{
-                    GetParams = new Dictionary<string, string>
+					GetParams = new Dictionary<string, string>
 					{
 						{ "limit", post_limit.ToString() },
 						{ "order", "publish_date_asc" },
 						{ "type", "active" }
 					};
-                }
+				}
 				Dictionary<string, int> users = new Dictionary<string, int>();
 				while (loop)
 				{
@@ -290,9 +290,9 @@ namespace OF_DL.Helpers
 						response.EnsureSuccessStatusCode();
 						var body = await response.Content.ReadAsStringAsync();
 						UserList userList = JsonConvert.DeserializeObject<UserList>(body);
-						if(userList != null)
+						if (userList != null)
 						{
-							foreach(UserList.List l in userList.list)
+							foreach (UserList.List l in userList.list)
 							{
 								lists.Add(l.name, l.id.Value);
 							}
@@ -412,19 +412,19 @@ namespace OF_DL.Helpers
 				int post_limit = 50;
 				int limit = 5;
 				int offset = 0;
-				List<Purchased> paidposts = new List<Purchased>();
+				Purchased paidposts = new Purchased();
 				bool isPaidPosts = false;
-				List<Post> posts = new List<Post>();
+				Post posts = new Post();
 				bool isPosts = false;
 				Messages messages = new Messages();
 				bool isMessages = false;
-				List<Archived> archived = new List<Archived>();
+				Archived archived = new Archived();
 				bool isArchived = false;
 				List<Stories> stories = new List<Stories>();
 				bool isStories = false;
 				Highlights highlights = new Highlights();
 				bool isHighlights = false;
-				List<Purchased> paidMessages = new List<Purchased>();
+				Purchased paidMessages = new Purchased();
 				bool isPurchased = false;
 
 				Dictionary<string, string> GetParams = null;
@@ -437,6 +437,7 @@ namespace OF_DL.Helpers
 						{
 							{ "limit", post_limit.ToString() },
 							{ "order", "publish_date_desc" },
+							{ "format", "infinite" },
 							{ "user_id", username }
 						};
 						break;
@@ -446,7 +447,8 @@ namespace OF_DL.Helpers
 						GetParams = new Dictionary<string, string>
 						{
 							{ "limit", post_limit.ToString() },
-							{ "order", "publish_date_desc" }
+							{ "order", "publish_date_desc" },
+							{ "format", "infinite" }
 						};
 						break;
 
@@ -455,8 +457,10 @@ namespace OF_DL.Helpers
 						GetParams = new Dictionary<string, string>
 						{
 							{ "limit", post_limit.ToString() },
-							{ "order", "publish_date_desc" }
-						};
+							{ "order", "publish_date_desc" },
+                            { "format", "infinite" },
+							{ "label", "archived" }
+                        };
 						break;
 
 					case MediaType.Stories:
@@ -492,7 +496,8 @@ namespace OF_DL.Helpers
 						{
 							{ "limit", post_limit.ToString() },
 							{ "order", "publish_date_desc" },
-							{ "user_id", username }
+                            { "format", "infinite" },
+                            { "user_id", username }
 						};
 						break;
 				}
@@ -530,10 +535,10 @@ namespace OF_DL.Helpers
 					if (isPaidPosts)
 					{
 						Program program = new Program(new APIHelper(), new DownloadHelper(), new DBHelper());
-						paidposts = JsonConvert.DeserializeObject<List<Purchased>>(body, jsonSerializerSettings);
-						if (paidposts.Count >= post_limit)
+						paidposts = JsonConvert.DeserializeObject<Purchased>(body, jsonSerializerSettings);
+						if (paidposts != null && paidposts.hasMore)
 						{
-							GetParams["offset"] = post_limit.ToString();
+							GetParams["offset"] = paidposts.list.Count.ToString();
 							while (true)
 							{
 								string loopqueryParams = "?";
@@ -548,7 +553,7 @@ namespace OF_DL.Helpers
 										loopqueryParams += $"{kvp.Key}={kvp.Value}&";
 									}
 								}
-								List<Purchased> newPaidPosts = new List<Purchased>();
+								Purchased newPaidPosts = new Purchased();
 								Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams);
 								HttpClient loopclient = new HttpClient();
 
@@ -562,20 +567,19 @@ namespace OF_DL.Helpers
 								{
 									loopresponse.EnsureSuccessStatusCode();
 									var loopbody = await loopresponse.Content.ReadAsStringAsync();
-									newPaidPosts = JsonConvert.DeserializeObject<List<Purchased>>(loopbody, jsonSerializerSettings);
+									newPaidPosts = JsonConvert.DeserializeObject<Purchased>(loopbody, jsonSerializerSettings);
 								}
-								paidposts.AddRange(newPaidPosts);
-								if (newPaidPosts.Count < post_limit)
+								paidposts.list.AddRange(newPaidPosts.list);
+								if (!newPaidPosts.hasMore)
 								{
 									break;
 								}
-								GetParams["offset"] = Convert.ToString(Convert.ToInt32(GetParams["offset"]) + post_limit);
+								GetParams["offset"] = Convert.ToString(Convert.ToInt32(GetParams["offset"]) + Convert.ToInt32(GetParams["offset"]));
 							}
 						}
 
-						paidposts = paidposts.OrderByDescending(x => x.postedAt).ToList();
 						DBHelper dBHelper = new DBHelper();
-						foreach (Purchased purchase in paidposts)
+						foreach (Purchased.List purchase in paidposts.list)
 						{
 							if (purchase.responseType == "post" && purchase.media != null && purchase.media.Count > 0)
 							{
@@ -590,17 +594,7 @@ namespace OF_DL.Helpers
 										}
 									}
 								}
-								else if (purchase.preview != null)
-								{
-									for (int i = 0; i < purchase.preview.Count; i++)
-									{
-										if (!previewids.Contains((long)purchase.preview[i]))
-										{
-											previewids.Add((long)purchase.preview[i]);
-										}
-									}
-								}
-								await dBHelper.AddPost(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price != null ? purchase.price.ToString() : "0", purchase.price != null && purchase.isOpened ? true : false, purchase.isArchived.HasValue ? purchase.isArchived.Value : false, purchase.postedAt.HasValue ? purchase.postedAt.Value : DateTime.Now);
+								await dBHelper.AddPost(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price != null ? purchase.price.ToString() : "0", purchase.price != null && purchase.isOpened ? true : false, purchase.isArchived.HasValue ? purchase.isArchived.Value : false, purchase.createdAt != null ? purchase.createdAt.Value : purchase.postedAt.Value);
 								foreach (Purchased.Medium medium in purchase.media)
 								{
 									program.paid_post_ids.Add(medium.id);
@@ -638,7 +632,7 @@ namespace OF_DL.Helpers
 											{
 												return_urls.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{purchase.id}");
 											}
-												
+
 										}
 									}
 									else
@@ -667,10 +661,10 @@ namespace OF_DL.Helpers
 					else if (isPosts)
 					{
 						Program program = new Program(new APIHelper(), new DownloadHelper(), new DBHelper());
-						posts = JsonConvert.DeserializeObject<List<Post>>(body, jsonSerializerSettings);
-						if (posts.Count >= post_limit)
+						posts = JsonConvert.DeserializeObject<Post>(body, jsonSerializerSettings);
+						if (posts != null && posts.hasMore)
 						{
-							GetParams["beforePublishTime"] = posts[posts.Count - 1].postedAtPrecise;
+							GetParams["beforePublishTime"] = posts.tailMarker;
 							while (true)
 							{
 								string loopqueryParams = "?";
@@ -685,7 +679,7 @@ namespace OF_DL.Helpers
 										loopqueryParams += $"{kvp.Key}={kvp.Value}&";
 									}
 								}
-								List<Post> newposts = new List<Post>();
+								Post newposts = new Post();
 								Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams);
 								HttpClient loopclient = new HttpClient();
 
@@ -699,30 +693,30 @@ namespace OF_DL.Helpers
 								{
 									loopresponse.EnsureSuccessStatusCode();
 									var loopbody = await loopresponse.Content.ReadAsStringAsync();
-									newposts = JsonConvert.DeserializeObject<List<Post>>(loopbody, jsonSerializerSettings);
+									newposts = JsonConvert.DeserializeObject<Post>(loopbody, jsonSerializerSettings);
 								}
-								posts.AddRange(newposts);
-								if (newposts.Count < post_limit)
+								posts.list.AddRange(newposts.list);
+								if (!newposts.hasMore)
 								{
 									break;
 								}
-								GetParams["beforePublishTime"] = newposts[newposts.Count - 1].postedAtPrecise;
+								GetParams["beforePublishTime"] = newposts.tailMarker;
 							}
 						}
 
 						DBHelper dBHelper = new DBHelper();
-						foreach (Post post in posts)
+						foreach (Post.List post in posts.list)
 						{
 							List<long> postPreviewIds = new List<long>();
 							if (post.preview != null && post.preview.Count > 0)
 							{
 								foreach (var id in post.preview)
 								{
-									if(id?.ToString() != "poll")
+									if (id?.ToString() != "poll")
 									{
-										if (!postPreviewIds.Contains((long)id))
+										if (!postPreviewIds.Contains(Convert.ToInt64(id)))
 										{
-											postPreviewIds.Add((long)id);
+											postPreviewIds.Add(Convert.ToInt64(id));
 										}
 									}
 								}
@@ -774,22 +768,63 @@ namespace OF_DL.Helpers
 									}
 								}
 							}
-
 						}
 					}
 					else if (isArchived)
 					{
-						archived = JsonConvert.DeserializeObject<List<Archived>>(body, jsonSerializerSettings);
-						Program program = new Program(new APIHelper(), new DownloadHelper(), new DBHelper());
+                        Program program = new Program(new APIHelper(), new DownloadHelper(), new DBHelper());
+                        archived = JsonConvert.DeserializeObject<Archived>(body, jsonSerializerSettings);
+						if(archived != null && archived.hasMore)
+						{
+							GetParams["beforePublishTime"] = archived.tailMarker;
+                            while (true)
+                            {
+                                string loopqueryParams = "?";
+                                foreach (KeyValuePair<string, string> kvp in GetParams)
+                                {
+                                    if (kvp.Key == GetParams.Keys.Last())
+                                    {
+                                        loopqueryParams += $"{kvp.Key}={kvp.Value}";
+                                    }
+                                    else
+                                    {
+                                        loopqueryParams += $"{kvp.Key}={kvp.Value}&";
+                                    }
+                                }
+                                Archived newarchived = new Archived();
+                                Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams);
+                                HttpClient loopclient = new HttpClient();
+
+                                HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
+
+                                foreach (KeyValuePair<string, string> keyValuePair in loopheaders)
+                                {
+                                    looprequest.Headers.Add(keyValuePair.Key, keyValuePair.Value);
+                                }
+                                using (var loopresponse = await loopclient.SendAsync(looprequest))
+                                {
+                                    loopresponse.EnsureSuccessStatusCode();
+                                    var loopbody = await loopresponse.Content.ReadAsStringAsync();
+                                    newarchived = JsonConvert.DeserializeObject<Archived>(loopbody, jsonSerializerSettings);
+                                }
+                                archived.list.AddRange(newarchived.list);
+                                if (!newarchived.hasMore)
+                                {
+                                    break;
+                                }
+                                GetParams["beforePublishTime"] = newarchived.tailMarker;
+                            }
+                        }
+
 						DBHelper dBHelper = new DBHelper();
-						foreach (Archived archive in archived)
+						foreach (Archived.List archive in archived.list)
 						{
 							List<long> previewids = new List<long>();
 							if (archive.preview != null)
 							{
 								for (int i = 0; i < archive.preview.Count; i++)
 								{
-									if(archive.preview[i]?.ToString() != "poll")
+									if (archive.preview[i]?.ToString() != "poll")
 									{
 										if (!previewids.Contains((long)archive.preview[i]))
 										{
@@ -839,7 +874,7 @@ namespace OF_DL.Helpers
 						DBHelper dBHelper = new DBHelper();
 						foreach (Stories story in stories)
 						{
-							if(story.createdAt != null)
+							if (story.createdAt != null)
 							{
 								await dBHelper.AddStory(folder, story.id, string.Empty, "0", false, false, story.createdAt);
 							}
@@ -984,8 +1019,8 @@ namespace OF_DL.Helpers
 												}
 												if (!return_urls.ContainsKey(medium.id))
 												{
-                                                    return_urls.Add(medium.id, item.media[0].files.source.url);
-                                                }
+													return_urls.Add(medium.id, item.media[0].files.source.url);
+												}
 											}
 										}
 									}
@@ -1043,9 +1078,9 @@ namespace OF_DL.Helpers
 						foreach (Messages.List list in messages.list)
 						{
 							List<long> messagePreviewIds = new List<long>();
-							if(list.previews != null && list.previews.Count > 0)
+							if (list.previews != null && list.previews.Count > 0)
 							{
-								foreach(var id in list.previews)
+								foreach (var id in list.previews)
 								{
 									if (!messagePreviewIds.Contains((long)id))
 									{
@@ -1081,9 +1116,9 @@ namespace OF_DL.Helpers
 										if (!return_urls.ContainsKey(medium.id))
 										{
 											return_urls.Add(medium.id, medium.source.source.ToString());
-										}	
+										}
 									}
-									else if(medium.canView && medium.files != null && medium.files.drm != null)
+									else if (medium.canView && medium.files != null && medium.files.drm != null)
 									{
 										await dBHelper.AddMedia(folder, medium.id, list.id, medium.files.drm.manifest.dash, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), messagePreviewIds.Contains(medium.id) ? true : false, false, null);
 										if (medium.type == "photo" && !program.auth.DownloadImages)
@@ -1113,11 +1148,11 @@ namespace OF_DL.Helpers
 					}
 					else if (isPurchased)
 					{
-						paidMessages = JsonConvert.DeserializeObject<List<Purchased>>(body, jsonSerializerSettings);
+						paidMessages = JsonConvert.DeserializeObject<Purchased>(body, jsonSerializerSettings);
 						Program program = new Program(new APIHelper(), new DownloadHelper(), new DBHelper());
-						if (paidMessages.Count >= post_limit)
+						if (paidMessages != null && paidMessages.hasMore)
 						{
-							GetParams["offset"] = post_limit.ToString();
+							GetParams["offset"] = paidMessages.list.Count.ToString();
 							while (true)
 							{
 								string loopqueryParams = "?";
@@ -1132,7 +1167,7 @@ namespace OF_DL.Helpers
 										loopqueryParams += $"{kvp.Key}={kvp.Value}&";
 									}
 								}
-								List<Purchased> newpaidMessages = new List<Purchased>();
+								Purchased newpaidMessages = new Purchased();
 								Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams);
 								HttpClient loopclient = new HttpClient();
 
@@ -1146,10 +1181,10 @@ namespace OF_DL.Helpers
 								{
 									loopresponse.EnsureSuccessStatusCode();
 									var loopbody = await loopresponse.Content.ReadAsStringAsync();
-									newpaidMessages = JsonConvert.DeserializeObject<List<Purchased>>(loopbody, jsonSerializerSettings);
+									newpaidMessages = JsonConvert.DeserializeObject<Purchased>(loopbody, jsonSerializerSettings);
 								}
-								paidMessages.AddRange(newpaidMessages);
-								if (newpaidMessages.Count < post_limit)
+								paidMessages.list.AddRange(newpaidMessages.list);
+								if (!newpaidMessages.hasMore)
 								{
 									break;
 								}
@@ -1158,17 +1193,17 @@ namespace OF_DL.Helpers
 						}
 
 						DBHelper dBHelper = new DBHelper();
-						foreach (Purchased purchase in paidMessages)
-						{
-							if(purchase.postedAt != null)
+						foreach (Purchased.List purchase in paidMessages.list.Where(p => p.responseType == "message").OrderByDescending(p => p.postedAt ?? p.createdAt))
+                        {
+							if (purchase.postedAt != null)
 							{
-								await dBHelper.AddMessage(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price != null ? purchase.price : "0", true, false, purchase.postedAt.Value, purchase.fromUser != null ? purchase.fromUser.id : purchase.author.id);
+								await dBHelper.AddMessage(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price != null ? purchase.price : "0", true, false, purchase.postedAt.Value, purchase.fromUser.id);
 							}
 							else
 							{
-								await dBHelper.AddMessage(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price != null ? purchase.price : "0", true, false, purchase.createdAt, purchase.fromUser != null ? purchase.fromUser.id : purchase.author.id);
+								await dBHelper.AddMessage(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price != null ? purchase.price : "0", true, false, purchase.createdAt.Value, purchase.fromUser.id);
 							}
-							
+
 							if (purchase.media != null && purchase.media.Count > 0)
 							{
 								List<long> previewids = new List<long>();
@@ -1217,7 +1252,7 @@ namespace OF_DL.Helpers
 											{
 												continue;
 											}
-											if(!return_urls.ContainsKey(medium.id))
+											if (!return_urls.ContainsKey(medium.id))
 											{
 												return_urls.Add(medium.id, medium.source.source);
 											}
@@ -1241,7 +1276,7 @@ namespace OF_DL.Helpers
 											{
 												continue;
 											}
-											if(!return_urls.ContainsKey(medium.id))
+											if (!return_urls.ContainsKey(medium.id))
 											{
 												return_urls.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{purchase.id}");
 											}
@@ -1268,7 +1303,7 @@ namespace OF_DL.Helpers
 											{
 												continue;
 											}
-											if(!return_urls.ContainsKey(medium.id))
+											if (!return_urls.ContainsKey(medium.id))
 											{
 												return_urls.Add(medium.id, medium.source.source);
 											}
@@ -1292,7 +1327,7 @@ namespace OF_DL.Helpers
 											{
 												continue;
 											}
-											if(!return_urls.ContainsKey(medium.id)) 
+											if (!return_urls.ContainsKey(medium.id))
 											{
 												return_urls.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{purchase.id}");
 											}
@@ -1326,8 +1361,8 @@ namespace OF_DL.Helpers
 				HttpClient client = new HttpClient();
 				HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, mpdUrl);
 				request.Headers.Add("user-agent", program.auth.USER_AGENT);
-				request.Headers.Add("Accept", "*/*");
-				request.Headers.Add("Cookie", $"CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {program.auth.COOKIE};");
+                request.Headers.Add("Accept", "*/*");
+                request.Headers.Add("Cookie", $"CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {program.auth.COOKIE};");
 				using (var response = await client.SendAsync(request))
 				{
 					response.EnsureSuccessStatusCode();
