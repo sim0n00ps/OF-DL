@@ -82,6 +82,3 @@ Content is downloaded in this order:
 You can select what media you want to download from each account by changing the values in auth.json, by default the script downloads everything.
 
 For instance, setting "DownloadPosts" to "false" will disable the download of media from a users main feed.
-
-# Supporting the project
-If you want to support the project then you can donate here https://www.buymeacoffee.com/sim0n00ps Any donations are greatly appreciated and are not required 
