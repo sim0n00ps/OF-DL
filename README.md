@@ -9,6 +9,7 @@ This app is written in .NET 7.0 so you will need to have the .NET runtime instal
 1. Get version 7.0.5 here https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-7.0.5-windows-x86-installer.
 2. Download and run the installer.
 3. Verfiy installation by opening Command Prompt or Powershell, change the directory to your C:\ drive by running `cd C:\`, then change directory to `Program Files (x86)/dotnet` by running `cd Program Files (x86)\dotnet` and finally run the `dotnet --list-runtimes` command, you should see that .NET 7.0.5 is listed.
+4. Head to https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2015-2017-2019-and-2022 and download the C++ Redistributable Packages, run the installer. If you already have this installed then you can skip this step.
 
 Next you need to download yt-dlp, ffmpeg and mp4decrypt in order to download DRM protected videos.
 1. Download `yt-dlp.exe` from the latest release which you can find here https://github.com/yt-dlp/yt-dlp/releases.
