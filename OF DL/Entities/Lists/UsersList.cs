@@ -80,16 +80,16 @@ namespace OF_DL.Entities.Lists
 			public string w760 { get; set; }
 		}
 
-		public class ListsState
-		{
-			public int? id { get; set; }
-			public string type { get; set; }
-			public string name { get; set; }
-			public bool? hasUser { get; set; }
-			public bool? canAddUser { get; set; }
-		}
+        public class ListsState
+        {
+            public string id { get; set; }
+            public string type { get; set; }
+            public string name { get; set; }
+            public bool hasUser { get; set; }
+            public bool canAddUser { get; set; }
+        }
 
-		public class Subscribe
+        public class Subscribe
 		{
 			public object id { get; set; }
 			public int? userId { get; set; }

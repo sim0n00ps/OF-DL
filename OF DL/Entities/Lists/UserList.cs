@@ -12,7 +12,7 @@ namespace OF_DL.Entities.Lists
 		public bool? hasMore { get; set; }
 		public class List
 		{
-			public int? id { get; set; }
+			public string id { get; set; }
 			public string type { get; set; }
 			public string name { get; set; }
 			public int? usersCount { get; set; }

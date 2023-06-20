@@ -294,7 +294,10 @@ namespace OF_DL.Helpers
 						{
 							foreach (UserList.List l in userList.list)
 							{
-								lists.Add(l.name, l.id.Value);
+								if(l.id != "following")
+								{
+                                    lists.Add(l.name, Convert.ToInt32(l.id));
+                                }
 							}
 							if (userList.hasMore.Value)
 							{
