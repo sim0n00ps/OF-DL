@@ -9,6 +9,7 @@ This app is written in .NET 7.0 so you will need to have the .NET runtime instal
 1. Get version 7.0.5 here https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-7.0.5-windows-x86-installer.
 2. Download and run the installer.
 3. Verfiy installation by opening Command Prompt or Powershell, change the directory to your C:\ drive by running `cd C:\`, then change directory to `Program Files (x86)/dotnet` by running `cd Program Files (x86)\dotnet` and finally run the `dotnet --list-runtimes` command, you should see that .NET 7.0.5 is listed.
+4. Head to https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2015-2017-2019-and-2022 and download the C++ Redistributable Packages, run the installer. If you already have this installed then you can skip this step.
 
 Next you need to download yt-dlp, ffmpeg and mp4decrypt in order to download DRM protected videos.
 1. Download `yt-dlp.exe` from the latest release which you can find here https://github.com/yt-dlp/yt-dlp/releases.
@@ -68,8 +69,6 @@ The Select All option will go through every account you are currently subscribed
 The List option will show you all of the lists you have created on OF and you can then select 1 or more lists to download the content of the users within those lists.
 
 The Custom option allows you to select 1 or more accounts you want to scrape media from so if you only want to get media from a select number of accounts then you can do that. To navigate the menu the can use the &#8593; & &#8595; arrows, to select/deselect an account press the `space` key and after you are happy with your selection(s) press `enter` to start downloading.
-
-![image](https://user-images.githubusercontent.com/132307467/235549855-dd6efa98-24d5-479a-89c9-d89dbd3c01cc.png)
 
 After you have made your selection the content should start downloading.
 Content is downloaded in this order:
