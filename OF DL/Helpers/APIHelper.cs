@@ -294,10 +294,10 @@ namespace OF_DL.Helpers
 						{
 							foreach (UserList.List l in userList.list)
 							{
-								if(l.id != "following")
+								if (IsStringOnlyDigits(l.id))
 								{
-                                    lists.Add(l.name, Convert.ToInt32(l.id));
-                                }
+									lists.Add(l.name, Convert.ToInt32(l.id));
+								}
 							}
 							if (userList.hasMore.Value)
 							{
@@ -1484,5 +1484,16 @@ namespace OF_DL.Helpers
 			}
 			return null;
 		}
-	}
+        public static bool IsStringOnlyDigits(string input)
+        {
+            foreach (char c in input)
+            {
+                if (!char.IsDigit(c))
+                {
+                    return false; 
+                }
+            }
+            return true;
+        }
+    }
 }
