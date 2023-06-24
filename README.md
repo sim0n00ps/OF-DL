@@ -83,3 +83,6 @@ Content is downloaded in this order:
 You can select what media you want to download from each account by changing the values in auth.json, by default the script downloads everything.
 
 For instance, setting "DownloadPosts" to "false" will disable the download of media from a users main feed.
+
+# Donations
+If you would like to donate then here is a link to my ko-fi page https://ko-fi.com/sim0n00ps. Donations are not required but are very much appreciated:)
