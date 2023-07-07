@@ -169,7 +169,8 @@ namespace OF_DL.Helpers
 					{
 						{ "limit", post_limit.ToString() },
 						{ "order", "publish_date_asc" },
-						{ "type", "all" }
+						{ "type", "all" },
+						{ "format", "infinite"}
 					};
 				}
 				else
@@ -178,8 +179,9 @@ namespace OF_DL.Helpers
 					{
 						{ "limit", post_limit.ToString() },
 						{ "order", "publish_date_asc" },
-						{ "type", "active" }
-					};
+						{ "type", "active" },
+                        { "format", "infinite"}
+                    };
 				}
 				Dictionary<string, int> users = new Dictionary<string, int>();
                 string queryParams = "?";
