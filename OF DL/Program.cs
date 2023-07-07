@@ -34,8 +34,6 @@ namespace OF_DL
 			{
 				AnsiConsole.Write(new FigletText("Welcome to OF-DL").Color(Color.Red));
 				Program program = new Program(new APIHelper(), new DownloadHelper(), new DBHelper());
-				DateTime startTime = DateTime.Now;
-                bool exitProgram = false;
 
                 if (ValidateFilePath(program.auth.YTDLP_PATH))
                 {
@@ -107,11 +105,12 @@ namespace OF_DL
                 else
                 {
                     AnsiConsole.Markup($"[green]Logged In successfully as {validate.name} {validate.username}\n[/]");
-                    Dictionary<string, int> users = await program.apiHelper.GetSubscriptions("/subscriptions/subscribes", program.auth.IncludeExpiredSubscriptions);
-                    Dictionary<string, int> lists = await program.apiHelper.GetLists("/lists");
-                    Dictionary<string, int> selectedUsers = new Dictionary<string, int>();
                     do
                     {
+                        DateTime startTime = DateTime.Now;
+                        Dictionary<string, int> users = await program.apiHelper.GetSubscriptions("/subscriptions/subscribes", program.auth.IncludeExpiredSubscriptions);
+                        Dictionary<string, int> lists = await program.apiHelper.GetLists("/lists");
+                        Dictionary<string, int> selectedUsers = new Dictionary<string, int>();
                         // Call the HandleUserSelection method to handle user selection and processing
                         KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP = await HandleUserSelection(selectedUsers, users, lists);
 
@@ -717,7 +716,7 @@ namespace OF_DL
         static bool ValidateFilePath(string path)
         {
             // Regular expression pattern to validate file path
-            string pattern = @"^[A-Za-z]:/(?:[^/\n]+/)*[^/:*?<>|]+\.[^/:*?<>|]+$";
+            string pattern = @"^(?:[A-Za-z]:/)?(?:[^/\n]+/)*[^/:*?<>|]+\.[^/:*?<>|]+$";
 
             // Check if the path matches the pattern and doesn't end with a forward slash
             bool isMatch = Regex.IsMatch(path, pattern) && !path.EndsWith("/");

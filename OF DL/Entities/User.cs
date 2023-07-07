@@ -152,15 +152,15 @@ namespace OF_DL.Entities
             public int? discountPeriod { get; set; }
             public DateTime? subscribeAt { get; set; }
             public DateTime? expiredAt { get; set; }
-            public object renewedAt { get; set; }
-            public object discountFinishedAt { get; set; }
-            public object discountStartedAt { get; set; }
-            public string status { get; set; }
+            public object? renewedAt { get; set; }
+            public object? discountFinishedAt { get; set; }
+            public object? discountStartedAt { get; set; }
+            public string? status { get; set; }
             public bool? isMuted { get; set; }
-            public string unsubscribeReason { get; set; }
-            public string duration { get; set; }
+            public string? unsubscribeReason { get; set; }
+            public string? duration { get; set; }
             public bool? showPostsInFeed { get; set; }
-            public List<Subscribe> subscribes { get; set; }
+            public List<Subscribe>? subscribes { get; set; }
         }
 
         public class SubscribedOnData
@@ -174,19 +174,19 @@ namespace OF_DL.Entities
             public DateTime? subscribeAt { get; set; }
             public DateTime? expiredAt { get; set; }
             public DateTime? renewedAt { get; set; }
-            public object discountFinishedAt { get; set; }
-            public object discountStartedAt { get; set; }
-            public object status { get; set; }
+            public object? discountFinishedAt { get; set; }
+            public object? discountStartedAt { get; set; }
+            public object? status { get; set; }
             public bool? isMuted { get; set; }
-            public string unsubscribeReason { get; set; }
-            public string duration { get; set; }
+            public string? unsubscribeReason { get; set; }
+            public string? duration { get; set; }
             public int? tipsSumm { get; set; }
             public int? subscribesSumm { get; set; }
             public int? messagesSumm { get; set; }
             public int? postsSumm { get; set; }
             public int? streamsSumm { get; set; }
             public int? totalSumm { get; set; }
-            public List<Subscribe> subscribes { get; set; }
+            public List<Subscribe>? subscribes { get; set; }
         }
     }
 }

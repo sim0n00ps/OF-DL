@@ -160,8 +160,10 @@ namespace OF_DL.Helpers
 				int offset = 0;
 				bool loop = true;
 				Dictionary<string, string> GetParams = new Dictionary<string, string>();
+                Subscriptions subscriptions = new Subscriptions();
 
-				if (includeExpiredSubscriptions)
+
+                if (includeExpiredSubscriptions)
 				{
 					GetParams = new Dictionary<string, string>
 					{
@@ -180,59 +182,84 @@ namespace OF_DL.Helpers
 					};
 				}
 				Dictionary<string, int> users = new Dictionary<string, int>();
-				while (loop)
-				{
-					string queryParams = "?";
-					foreach (KeyValuePair<string, string> kvp in GetParams)
+                string queryParams = "?";
+                foreach (KeyValuePair<string, string> kvp in GetParams)
+                {
+                    if (kvp.Key == GetParams.Keys.Last())
+                    {
+                        queryParams += $"{kvp.Key}={kvp.Value}";
+                    }
+                    else
+                    {
+                        queryParams += $"{kvp.Key}={kvp.Value}&";
+                    }
+                }
+
+                Dictionary<string, string> headers = await Headers("/api2/v2" + endpoint, queryParams);
+
+                HttpClient client = new HttpClient();
+
+                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
+
+                foreach (KeyValuePair<string, string> keyValuePair in headers)
+                {
+                    request.Headers.Add(keyValuePair.Key, keyValuePair.Value);
+                }
+                var jsonSerializerSettings = new JsonSerializerSettings();
+                jsonSerializerSettings.MissingMemberHandling = MissingMemberHandling.Ignore;
+                using (var response = await client.SendAsync(request))
+                {
+                    response.EnsureSuccessStatusCode();
+                    var body = await response.Content.ReadAsStringAsync();
+                    subscriptions = JsonConvert.DeserializeObject<Subscriptions>(body);
+                    if (subscriptions != null && subscriptions.hasMore)
+                    {
+                        GetParams["offset"] = subscriptions.list.Count.ToString();
+                        while (true)
+                        {
+                            string loopqueryParams = "?";
+                            foreach (KeyValuePair<string, string> kvp in GetParams)
+                            {
+                                if (kvp.Key == GetParams.Keys.Last())
+                                {
+                                    loopqueryParams += $"{kvp.Key}={kvp.Value}";
+                                }
+                                else
+                                {
+                                    loopqueryParams += $"{kvp.Key}={kvp.Value}&";
+                                }
+                            }
+                            Subscriptions newSubscriptions = new Subscriptions();
+                            Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams);
+                            HttpClient loopclient = new HttpClient();
+
+                            HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
+
+                            foreach (KeyValuePair<string, string> keyValuePair in loopheaders)
+                            {
+                                looprequest.Headers.Add(keyValuePair.Key, keyValuePair.Value);
+                            }
+                            using (var loopresponse = await loopclient.SendAsync(looprequest))
+                            {
+                                loopresponse.EnsureSuccessStatusCode();
+                                var loopbody = await loopresponse.Content.ReadAsStringAsync();
+                                newSubscriptions = JsonConvert.DeserializeObject<Subscriptions>(loopbody, jsonSerializerSettings);
+                            }
+                            subscriptions.list.AddRange(newSubscriptions.list);
+                            if (!newSubscriptions.hasMore)
+                            {
+                                break;
+                            }
+                            GetParams["offset"] = Convert.ToString(Convert.ToInt32(GetParams["offset"]) + Convert.ToInt32(GetParams["offset"]));
+                        }
+                    }
+
+					foreach(Subscriptions.List subscription in subscriptions.list)
 					{
-						if (kvp.Key == GetParams.Keys.Last())
-						{
-							queryParams += $"{kvp.Key}={kvp.Value}";
-						}
-						else
-						{
-							queryParams += $"{kvp.Key}={kvp.Value}&";
-						}
+						users.Add(subscription.username, subscription.id);
 					}
-
-					Dictionary<string, string> headers = await Headers("/api2/v2" + endpoint, queryParams);
-
-					HttpClient client = new HttpClient();
-
-					HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
-
-					foreach (KeyValuePair<string, string> keyValuePair in headers)
-					{
-						request.Headers.Add(keyValuePair.Key, keyValuePair.Value);
-					}
-					using (var response = await client.SendAsync(request))
-					{
-						response.EnsureSuccessStatusCode();
-						var body = await response.Content.ReadAsStringAsync();
-						List<Subscription> subscriptions = JsonConvert.DeserializeObject<List<Subscription>>(body);
-						if (subscriptions != null)
-						{
-							foreach (Subscription sub in subscriptions)
-							{
-								users.Add(sub.username, sub.id);
-							}
-							if (subscriptions.Count >= 50)
-							{
-								offset = offset + 50;
-								GetParams["offset"] = Convert.ToString(offset);
-							}
-							else
-							{
-								loop = false;
-							}
-						}
-						else
-						{
-							loop = false;
-						}
-					}
-				}
-				return users.OrderBy(x => x.Key).ToDictionary(x => x.Key, x => x.Value);
+                }
+                return users.OrderBy(x => x.Key).ToDictionary(x => x.Key, x => x.Value);
 			}
 			catch (Exception ex)
 			{
@@ -764,7 +791,7 @@ namespace OF_DL.Helpers
 										{
 											if (!return_urls.ContainsKey(medium.id))
 											{
-												await dBHelper.AddMedia(folder, medium.id, post.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), postPreviewIds.Contains((long)medium.id) ? true : false, false, null);
+												await dBHelper.AddMedia(folder, medium.id, post.id, medium.files.drm.manifest.dash, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), postPreviewIds.Contains((long)medium.id) ? true : false, false, null);
 												return_urls.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{post.id}");
 											}
 										}
@@ -1262,7 +1289,7 @@ namespace OF_DL.Helpers
 										}
 										else if (!has && medium.canView && medium.files != null && medium.files.drm != null)
 										{
-											await dBHelper.AddMedia(folder, medium.id, purchase.id, medium.source.source, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
+											await dBHelper.AddMedia(folder, medium.id, purchase.id, medium.files.drm.manifest.dash, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
 											if (medium.type == "photo" && !program.auth.DownloadImages)
 											{
 												continue;
@@ -1313,7 +1340,7 @@ namespace OF_DL.Helpers
 										}
 										else if (medium.canView && medium.files != null && medium.files.drm != null)
 										{
-											await dBHelper.AddMedia(folder, medium.id, purchase.id, medium.source.source, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
+											await dBHelper.AddMedia(folder, medium.id, purchase.id, medium.files.drm.manifest.dash, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
 											if (medium.type == "photo" && !program.auth.DownloadImages)
 											{
 												continue;
