@@ -5,6 +5,8 @@ Future Developments
 1. Custom File Formats
 
 # Prerequisites
+Video Tutorial - https://gofile.io/d/RKC2EW
+
 This app is written in .NET 7.0 so you will need to have the .NET runtime installed in order to run the program.
 1. Get version 7.0.5 here https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-7.0.5-windows-x86-installer.
 2. Download and run the installer.
@@ -83,3 +85,6 @@ Content is downloaded in this order:
 You can select what media you want to download from each account by changing the values in auth.json, by default the script downloads everything.
 
 For instance, setting "DownloadPosts" to "false" will disable the download of media from a users main feed.
+
+# Donations
+If you would like to donate then here is a link to my ko-fi page https://ko-fi.com/sim0n00ps. Donations are not required but are very much appreciated:)
