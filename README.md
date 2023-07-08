@@ -20,6 +20,9 @@ Next you need to download yt-dlp, ffmpeg and mp4decrypt in order to download DRM
 4. Open the auth.json file in Notepad/Wordpad/Notepad++/VS Code
 
 I would recommend copying all 3 of the .exe files somewhere safe where you can then add the path of each file to `auth.json` file. You can do this easily by holding `shift` when right clicking on the .exe file which should give you the option to `copy as path`, this will include `\` so you will need to replace them with `/`. In the auth.json file the lines should look something like this `"YTDLP_PATH": "C:/yt-dlp.exe"`, `"FFMPEG_PATH": "C:/ffmpeg.exe"` and `"MP4DECRYPT_PATH": "C:/mp4decrypt.exe"`
+
+Finally you will need to get 2 files, device_client_id_blob and device_private_key. These are used to get the decryption keys needed for downloading DRM videos. You can find a tutorial on how to do this here https://forum.videohelp.com/threads/408031-Dumping-Your-own-L3-CDM-with-Android-Studio, you need to place device_client_id_blob and device_private_key files in `cdm/devices/chrome_1610/`.
+
 # Running the program
 Make sure you download the latest release from the [releases](https://github.com/sim0n00ps/OF-DL/releases) page and unzip the .zip file to a location where you want to download content to.
 You should have 3 files in the folder you just created by unzipping the zip file, OF DL.exe, auth.json and e_sqlite3.dll. 
@@ -35,7 +38,6 @@ First you need to fill out the auth.json file.
 5. After clicking on a request, make sure the headers tab is selected and then scroll down to find the 'Request Headers' section, this is where you should be able to find the information you need.
 6. Copy the values of `cookie`, `user-agent`, `user-id` (this should just be a number, do not include a `u`) and `x-bc` to the `auth.json` file where the paths to yt-dlp, ffmpeg and mp4decrypt should already be.
 7. Save the file.
-8. Finally you will need to get 2 files, device_client_id_blob and device_private_key. These are used to get the decryption keys needed for downloading DRM videos. You can find a tutorial on how to do this here https://forum.videohelp.com/threads/408031-Dumping-Your-own-L3-CDM-with-Android-Studio, you need to place device_client_id_blob and device_private_key files in `cdm/devices/chrome_1610/`.
 
 You should have something like this:
 
