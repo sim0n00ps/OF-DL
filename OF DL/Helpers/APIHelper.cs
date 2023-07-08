@@ -9,25 +9,11 @@ using OF_DL.Entities.Post;
 using OF_DL.Entities.Purchased;
 using OF_DL.Entities.Stories;
 using OF_DL.Enumurations;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Data.SqlTypes;
-using System.Linq;
-using System.Net;
-using System.Net.Http.Headers;
-using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 using System.Xml.Linq;
-using static OF_DL.Entities.DecryptionKey;
-using static OF_DL.Entities.Highlights.HighlightMedia;
-using static OF_DL.Entities.Highlights.Highlights;
-using static OF_DL.Entities.Lists.UserList;
-using static OF_DL.Entities.Messages.Messages;
-using static OF_DL.Entities.Post.Post;
+using WidevineClient.Widevine;
+using static WidevineClient.HttpUtil;
 
 namespace OF_DL.Helpers
 {
@@ -1513,6 +1499,35 @@ namespace OF_DL.Helpers
 			}
 			return null;
 		}
+        public async Task<string> GetDecryptionKeyNew(Dictionary<string, string> drmHeaders, string licenceURL, string pssh)
+        {
+            try
+            {
+                var resp1 = PostData(licenceURL, drmHeaders, new byte[] { 0x08, 0x04 });
+                var certDataB64 = Convert.ToBase64String(resp1);
+                var cdm = new CDMApi();
+                var challenge = cdm.GetChallenge(pssh, certDataB64, false, false);
+                var resp2 = PostData(licenceURL, drmHeaders, challenge);
+                var licenseB64 = Convert.ToBase64String(resp2);
+                cdm.ProvideLicense(licenseB64);
+                List<ContentKey> keys = cdm.GetKeys();
+                if (keys.Count > 0)
+                {
+                    return keys[0].ToString();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine("\nInner Exception:");
+                    Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                }
+            }
+            return null;
+        }
         public static bool IsStringOnlyDigits(string input)
         {
             foreach (char c in input)
