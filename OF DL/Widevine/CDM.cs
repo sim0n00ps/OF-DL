@@ -219,7 +219,6 @@ namespace WidevineClient.Widevine
                         Type = LicenseRequest.RequestType.New,
                         KeyControlNonce = 1093602366,
                         ProtocolVersion = ProtocolVersion.Current,
-                        RequestTime = uint.Parse((DateTime.Now - DateTime.UnixEpoch).TotalSeconds.ToString().Split(".")[0]),
                         ContentId = new LicenseRequest.ContentIdentification
                         {
                             CencId = new LicenseRequest.ContentIdentification.Cenc
@@ -242,7 +241,6 @@ namespace WidevineClient.Widevine
                         Type = LicenseRequestRaw.RequestType.New,
                         KeyControlNonce = 1093602366,
                         ProtocolVersion = ProtocolVersion.Current,
-                        RequestTime = uint.Parse((DateTime.Now - DateTime.UnixEpoch).TotalSeconds.ToString().Split(".")[0]),
                         ContentId = new LicenseRequestRaw.ContentIdentification
                         {
                             CencId = new LicenseRequestRaw.ContentIdentification.Cenc
