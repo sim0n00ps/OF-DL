@@ -663,6 +663,8 @@ namespace OF_DL
                         while (true)
                         {
                             var selectedNamesPrompt = new MultiSelectionPrompt<string>();
+                            selectedNamesPrompt.MoreChoicesText("[grey](Move up and down to reveal more choices)[/]");
+                            selectedNamesPrompt.InstructionsText("[grey](Press <space> to select, <enter> to accept)[/]\n[grey](Press A-Z to easily navigate the list)[/]");
                             selectedNamesPrompt.Title("[red]Select users[/]");
                             selectedNamesPrompt.PageSize(10);
                             selectedNamesPrompt.AddChoice("[red]Go Back[/]");
