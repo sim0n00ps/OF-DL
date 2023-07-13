@@ -15,31 +15,29 @@ namespace OF_DL
 {
 	public class Program
 	{
-		private readonly APIHelper apiHelper;
-		private readonly DownloadHelper downloadHelper;
-		private readonly DBHelper dBHelper;
-		public Program(APIHelper _aPIHelper, DownloadHelper _downloadHelper, DBHelper _dBHelper)
+        public static Auth auth { get; set; } = JsonConvert.DeserializeObject<Auth>(File.ReadAllText("auth.json"));
+        public int MAX_AGE = 0;
+        public static List<long> paid_post_ids = new List<long>();
+        private static IAPIHelper apiHelper;
+        private static IDBHelper dBHelper;
+        private static IDownloadHelper downloadHelper;
+        static Program()
 		{
-			apiHelper = _aPIHelper;
-			downloadHelper = _downloadHelper;
-			dBHelper = _dBHelper;
-		}
-
-		public Auth auth = JsonConvert.DeserializeObject<Auth>(File.ReadAllText("auth.json"));
-		public int MAX_AGE = 0;
-		public List<long> paid_post_ids = new List<long>();
+            apiHelper = new APIHelper();
+            dBHelper = new DBHelper();
+            downloadHelper = new DownloadHelper();
+        }
 		public async static Task Main()
 		{
 			try
 			{
 				AnsiConsole.Write(new FigletText("Welcome to OF-DL").Color(Color.Red));
-				Program program = new Program(new APIHelper(), new DownloadHelper(), new DBHelper());
 
-                if (ValidateFilePath(program.auth.YTDLP_PATH))
+                if (ValidateFilePath(auth.YTDLP_PATH))
                 {
-                    if (!File.Exists(program.auth.YTDLP_PATH))
+                    if (!File.Exists(auth.YTDLP_PATH))
                     {
-                        AnsiConsole.Markup($"[red]Cannot locate yt-dlp.exe with specified path {program.auth.YTDLP_PATH}, please modify auth.json with the correct path, press any key to exit[/]");
+                        AnsiConsole.Markup($"[red]Cannot locate yt-dlp.exe with specified path {auth.YTDLP_PATH}, please modify auth.json with the correct path, press any key to exit[/]");
                         Console.ReadKey();
                         Environment.Exit(0);
                     }
@@ -50,16 +48,16 @@ namespace OF_DL
                 }
                 else
                 {
-                    AnsiConsole.Markup(@$"[red]Specified path {program.auth.YTDLP_PATH} does not match the required format, please remove any \ from the path and replace them with / and make sure the path does not have a / at the end, press any key to exit[/]");
+                    AnsiConsole.Markup(@$"[red]Specified path {auth.YTDLP_PATH} does not match the required format, please remove any \ from the path and replace them with / and make sure the path does not have a / at the end, press any key to exit[/]");
                     Console.ReadKey();
                     Environment.Exit(0);
                 }
 
-                if (ValidateFilePath(program.auth.FFMPEG_PATH))
+                if (ValidateFilePath(auth.FFMPEG_PATH))
                 {
-                    if (!File.Exists(program.auth.FFMPEG_PATH))
+                    if (!File.Exists(auth.FFMPEG_PATH))
                     {
-                        AnsiConsole.Markup($"[red]Cannot locate ffmpeg.exe with specified path {program.auth.FFMPEG_PATH}, please modify auth.json with the correct path, press any key to exit[/]");
+                        AnsiConsole.Markup($"[red]Cannot locate ffmpeg.exe with specified path {auth.FFMPEG_PATH}, please modify auth.json with the correct path, press any key to exit[/]");
                         Console.ReadKey();
                         Environment.Exit(0);
                     }
@@ -70,16 +68,16 @@ namespace OF_DL
                 }
                 else
                 {
-                    AnsiConsole.Markup(@$"[red]Specified path {program.auth.FFMPEG_PATH} does not match the required format, please remove any \ from the path and replace them with / and make sure the path does not have a / at the end, press any key to exit[/]");
+                    AnsiConsole.Markup(@$"[red]Specified path {auth.FFMPEG_PATH} does not match the required format, please remove any \ from the path and replace them with / and make sure the path does not have a / at the end, press any key to exit[/]");
                     Console.ReadKey();
                     Environment.Exit(0);
                 }
 
-                if (ValidateFilePath(program.auth.MP4DECRYPT_PATH))
+                if (ValidateFilePath(auth.MP4DECRYPT_PATH))
                 {
-                    if (!File.Exists(program.auth.MP4DECRYPT_PATH))
+                    if (!File.Exists(auth.MP4DECRYPT_PATH))
                     {
-                        AnsiConsole.Markup($"[red]Cannot locate mp4decrypt.exe with specified path {program.auth.MP4DECRYPT_PATH}, please modify auth.json with the correct path, press any key to exit[/]");
+                        AnsiConsole.Markup($"[red]Cannot locate mp4decrypt.exe with specified path {auth.MP4DECRYPT_PATH}, please modify auth.json with the correct path, press any key to exit[/]");
                         Console.ReadKey();
                         Environment.Exit(0);
                     }
@@ -90,13 +88,13 @@ namespace OF_DL
                 }
                 else
                 {
-                    AnsiConsole.Markup(@$"[red]Specified path {program.auth.MP4DECRYPT_PATH} does not match the required format, please remove any \ from the path and replace them with / and make sure the path does not have a / at the end, press any key to exit[/]");
+                    AnsiConsole.Markup(@$"[red]Specified path {auth.MP4DECRYPT_PATH} does not match the required format, please remove any \ from the path and replace them with / and make sure the path does not have a / at the end, press any key to exit[/]");
                     Console.ReadKey();
                     Environment.Exit(0);
                 }
 
                 //Check if auth is valid
-                Entities.User validate = await program.apiHelper.GetUserInfo($"/users/me");
+                Entities.User validate = await apiHelper.GetUserInfo($"/users/me", auth);
                 if (validate.name == null && validate.username == null)
                 {
                     AnsiConsole.Markup($"[red]Auth failed, please check the values in auth.json are correct, press any key to exit[/]");
@@ -108,8 +106,8 @@ namespace OF_DL
                     do
                     {
                         DateTime startTime = DateTime.Now;
-                        Dictionary<string, int> users = await program.apiHelper.GetSubscriptions("/subscriptions/subscribes", program.auth.IncludeExpiredSubscriptions);
-                        Dictionary<string, int> lists = await program.apiHelper.GetLists("/lists");
+                        Dictionary<string, int> users = await apiHelper.GetSubscriptions("/subscriptions/subscribes", auth.IncludeExpiredSubscriptions, auth);
+                        Dictionary<string, int> lists = await apiHelper.GetLists("/lists", auth);
                         Dictionary<string, int> selectedUsers = new Dictionary<string, int>();
                         // Call the HandleUserSelection method to handle user selection and processing
                         KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP = await HandleUserSelection(selectedUsers, users, lists);
@@ -140,19 +138,19 @@ namespace OF_DL
                                     AnsiConsole.Markup($"[red]Folder for {user.Key} already created\n[/]");
                                 }
 
-                                Entities.User user_info = await program.apiHelper.GetUserInfo($"/users/{user.Key}");
+                                Entities.User user_info = await apiHelper.GetUserInfo($"/users/{user.Key}", auth);
 
-                                await program.dBHelper.CreateDB(path);
+                                await dBHelper.CreateDB(path);
 
-                                if (program.auth.DownloadAvatarHeaderPhoto)
+                                if (auth.DownloadAvatarHeaderPhoto)
                                 {
-                                    await program.downloadHelper.DownloadAvatarHeader(user_info.avatar, user_info.header, path);
+                                    await downloadHelper.DownloadAvatarHeader(user_info.avatar, user_info.header, path);
                                 }
 
-                                if (program.auth.DownloadPaidPosts)
+                                if (auth.DownloadPaidPosts)
                                 {
                                     AnsiConsole.Markup($"[red]Getting Paid Posts\n[/]");
-                                    Dictionary<long, string> purchasedPosts = await program.apiHelper.GetMedia(MediaType.PaidPosts, "/posts/paid", user.Key, path);
+                                    Dictionary<long, string> purchasedPosts = await apiHelper.GetMedia(MediaType.PaidPosts, "/posts/paid", user.Key, path, auth, paid_post_ids);
 
                                     int oldPaidPostCount = 0;
                                     int newPaidPostCount = 0;
@@ -160,7 +158,7 @@ namespace OF_DL
                                     {
                                         AnsiConsole.Markup($"[red]Found {purchasedPosts.Count} Paid Posts\n[/]");
                                         paidPostCount = purchasedPosts.Count;
-                                        long totalSize = await program.downloadHelper.CalculateTotalFileSize(purchasedPosts.Values.ToList());
+                                        long totalSize = await downloadHelper.CalculateTotalFileSize(purchasedPosts.Values.ToList(), auth);
                                         await AnsiConsole.Progress()
                                         .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
                                         .StartAsync(async ctx =>
@@ -182,13 +180,13 @@ namespace OF_DL
                                                     string mediaId = messageUrlParsed[4];
                                                     string postId = messageUrlParsed[5];
                                                     string? licenseURL = null;
-                                                    string? pssh = await program.apiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp);
+                                                    string? pssh = await apiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp, auth);
                                                     if (pssh != null)
                                                     {
-                                                        DateTime lastModified = await program.apiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
-                                                        Dictionary<string, string> drmHeaders = await program.apiHelper.Headers($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
-                                                        string decryptionKey = await program.apiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
-                                                        isNew = await program.downloadHelper.DownloadPurchasedPostDRMVideo(program.auth.YTDLP_PATH, program.auth.MP4DECRYPT_PATH, program.auth.FFMPEG_PATH, program.auth.USER_AGENT, policy, signature, kvp, program.auth.COOKIE, mpdURL, decryptionKey, path, lastModified, purchasedPostKVP.Key, task);
+                                                        DateTime lastModified = await apiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp, auth);
+                                                        Dictionary<string, string> drmHeaders = await apiHelper.Headers($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine", auth);
+                                                        string decryptionKey = await apiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, auth);
+                                                        isNew = await downloadHelper.DownloadPurchasedPostDRMVideo(auth.YTDLP_PATH, auth.MP4DECRYPT_PATH, auth.FFMPEG_PATH, auth.USER_AGENT, policy, signature, kvp, auth.COOKIE, mpdURL, decryptionKey, path, lastModified, purchasedPostKVP.Key, task);
                                                         if (isNew)
                                                         {
                                                             newPaidPostCount++;
@@ -201,7 +199,7 @@ namespace OF_DL
                                                 }
                                                 else
                                                 {
-                                                    isNew = await program.downloadHelper.DownloadPurchasedPostMedia(purchasedPostKVP.Value, path, purchasedPostKVP.Key, task);
+                                                    isNew = await downloadHelper.DownloadPurchasedPostMedia(purchasedPostKVP.Value, path, purchasedPostKVP.Key, task);
                                                     if (isNew)
                                                     {
                                                         newPaidPostCount++;
@@ -223,17 +221,17 @@ namespace OF_DL
                                     }
                                 }
 
-                                if (program.auth.DownloadPosts)
+                                if (auth.DownloadPosts)
                                 {
                                     AnsiConsole.Markup($"[red]Getting Posts\n[/]");
-                                    Dictionary<long, string> posts = await program.apiHelper.GetMedia(MediaType.Posts, $"/users/{user.Value}/posts", null, path);
+                                    Dictionary<long, string> posts = await apiHelper.GetMedia(MediaType.Posts, $"/users/{user.Value}/posts", null, path, auth, paid_post_ids);
                                     int oldPostCount = 0;
                                     int newPostCount = 0;
                                     if (posts != null && posts.Count > 0)
                                     {
                                         AnsiConsole.Markup($"[red]Found {posts.Count} Posts\n[/]");
                                         postCount = posts.Count;
-                                        long totalSize = await program.downloadHelper.CalculateTotalFileSize(posts.Values.ToList());
+                                        long totalSize = await downloadHelper.CalculateTotalFileSize(posts.Values.ToList(), auth);
                                         await AnsiConsole.Progress()
                                         .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
                                         .StartAsync(async ctx =>
@@ -254,13 +252,13 @@ namespace OF_DL
                                                     string mediaId = messageUrlParsed[4];
                                                     string postId = messageUrlParsed[5];
                                                     string? licenseURL = null;
-                                                    string? pssh = await program.apiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp);
+                                                    string? pssh = await apiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp, auth);
                                                     if (pssh != null)
                                                     {
-                                                        DateTime lastModified = await program.apiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
-                                                        Dictionary<string, string> drmHeaders = await program.apiHelper.Headers($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
-                                                        string decryptionKey = await program.apiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
-                                                        isNew = await program.downloadHelper.DownloadPostDRMVideo(program.auth.YTDLP_PATH, program.auth.MP4DECRYPT_PATH, program.auth.FFMPEG_PATH, program.auth.USER_AGENT, policy, signature, kvp, program.auth.COOKIE, mpdURL, decryptionKey, path, lastModified, postKVP.Key, task);
+                                                        DateTime lastModified = await apiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp, auth);
+                                                        Dictionary<string, string> drmHeaders = await apiHelper.Headers($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine", auth);
+                                                        string decryptionKey = await apiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, auth);
+                                                        isNew = await downloadHelper.DownloadPostDRMVideo(auth.YTDLP_PATH, auth.MP4DECRYPT_PATH, auth.FFMPEG_PATH, auth.USER_AGENT, policy, signature, kvp, auth.COOKIE, mpdURL, decryptionKey, path, lastModified, postKVP.Key, task);
                                                         if (isNew)
                                                         {
                                                             newPostCount++;
@@ -273,7 +271,7 @@ namespace OF_DL
                                                 }
                                                 else
                                                 {
-                                                    isNew = await program.downloadHelper.DownloadPostMedia(postKVP.Value, path, postKVP.Key, task);
+                                                    isNew = await downloadHelper.DownloadPostMedia(postKVP.Value, path, postKVP.Key, task);
                                                     if (isNew)
                                                     {
                                                         newPostCount++;
@@ -294,10 +292,10 @@ namespace OF_DL
                                     }
                                 }
 
-                                if (program.auth.DownloadArchived)
+                                if (auth.DownloadArchived)
                                 {
                                     AnsiConsole.Markup($"[red]Getting Archived Posts\n[/]");
-                                    Dictionary<long, string> archived = await program.apiHelper.GetMedia(MediaType.Archived, $"/users/{user.Value}/posts", null, path);
+                                    Dictionary<long, string> archived = await apiHelper.GetMedia(MediaType.Archived, $"/users/{user.Value}/posts", null, path, auth, paid_post_ids);
 
                                     int oldArchivedCount = 0;
                                     int newArchivedCount = 0;
@@ -305,7 +303,7 @@ namespace OF_DL
                                     {
                                         AnsiConsole.Markup($"[red]Found {archived.Count} Archived Posts\n[/]");
                                         archivedCount = archived.Count;
-                                        long totalSize = await program.downloadHelper.CalculateTotalFileSize(archived.Values.ToList());
+                                        long totalSize = await downloadHelper.CalculateTotalFileSize(archived.Values.ToList(), auth);
                                         await AnsiConsole.Progress()
                                         .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
                                         .StartAsync(async ctx =>
@@ -316,7 +314,7 @@ namespace OF_DL
                                             task.StartTask();
                                             foreach (KeyValuePair<long, string> archivedKVP in archived)
                                             {
-                                                bool isNew = await program.downloadHelper.DownloadArchivedMedia(archivedKVP.Value, path, archivedKVP.Key, task);
+                                                bool isNew = await downloadHelper.DownloadArchivedMedia(archivedKVP.Value, path, archivedKVP.Key, task);
                                                 task.Increment(1.0);
                                                 if (isNew)
                                                 {
@@ -337,17 +335,17 @@ namespace OF_DL
                                     }
                                 }
 
-                                if (program.auth.DownloadStories)
+                                if (auth.DownloadStories)
                                 {
                                     AnsiConsole.Markup($"[red]Getting Stories\n[/]");
-                                    Dictionary<long, string> stories = await program.apiHelper.GetMedia(MediaType.Stories, $"/users/{user.Value}/stories", null, path);
+                                    Dictionary<long, string> stories = await apiHelper.GetMedia(MediaType.Stories, $"/users/{user.Value}/stories", null, path, auth, paid_post_ids);
                                     int oldStoriesCount = 0;
                                     int newStoriesCount = 0;
                                     if (stories != null && stories.Count > 0)
                                     {
                                         AnsiConsole.Markup($"[red]Found {stories.Count} Stories\n[/]");
                                         storiesCount = stories.Count;
-                                        long totalSize = await program.downloadHelper.CalculateTotalFileSize(stories.Values.ToList());
+                                        long totalSize = await downloadHelper.CalculateTotalFileSize(stories.Values.ToList(), auth);
                                         await AnsiConsole.Progress()
                                         .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
                                         .StartAsync(async ctx =>
@@ -358,7 +356,7 @@ namespace OF_DL
                                             task.StartTask();
                                             foreach (KeyValuePair<long, string> storyKVP in stories)
                                             {
-                                                bool isNew = await program.downloadHelper.DownloadStoryMedia(storyKVP.Value, path, storyKVP.Key, task);
+                                                bool isNew = await downloadHelper.DownloadStoryMedia(storyKVP.Value, path, storyKVP.Key, task);
                                                 task.Increment(1.0);
                                                 if (isNew)
                                                 {
@@ -379,17 +377,17 @@ namespace OF_DL
                                     }
                                 }
 
-                                if (program.auth.DownloadHighlights)
+                                if (auth.DownloadHighlights)
                                 {
                                     AnsiConsole.Markup($"[red]Getting Highlights\n[/]");
-                                    Dictionary<long, string> highlights = await program.apiHelper.GetMedia(MediaType.Highlights, $"/users/{user.Value}/stories/highlights", null, path);
+                                    Dictionary<long, string> highlights = await apiHelper.GetMedia(MediaType.Highlights, $"/users/{user.Value}/stories/highlights", null, path, auth, paid_post_ids);
                                     int oldHighlightsCount = 0;
                                     int newHighlightsCount = 0;
                                     if (highlights != null && highlights.Count > 0)
                                     {
                                         AnsiConsole.Markup($"[red]Found {highlights.Count} Highlights\n[/]");
                                         highlightsCount = highlights.Count;
-                                        long totalSize = await program.downloadHelper.CalculateTotalFileSize(highlights.Values.ToList());
+                                        long totalSize = await downloadHelper.CalculateTotalFileSize(highlights.Values.ToList(), auth);
                                         await AnsiConsole.Progress()
                                         .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
                                         .StartAsync(async ctx =>
@@ -400,7 +398,7 @@ namespace OF_DL
                                             task.StartTask();
                                             foreach (KeyValuePair<long, string> highlightKVP in highlights)
                                             {
-                                                bool isNew = await program.downloadHelper.DownloadStoryMedia(highlightKVP.Value, path, highlightKVP.Key, task);
+                                                bool isNew = await downloadHelper.DownloadStoryMedia(highlightKVP.Value, path, highlightKVP.Key, task);
                                                 task.Increment(1.0);
                                                 if (isNew)
                                                 {
@@ -421,17 +419,17 @@ namespace OF_DL
                                     }
                                 }
 
-                                if (program.auth.DownloadMessages)
+                                if (auth.DownloadMessages)
                                 {
                                     AnsiConsole.Markup($"[red]Getting Messages\n[/]");
-                                    Dictionary<long, string> messages = await program.apiHelper.GetMedia(MediaType.Messages, $"/chats/{user.Value}/messages", null, path);
+                                    Dictionary<long, string> messages = await apiHelper.GetMedia(MediaType.Messages, $"/chats/{user.Value}/messages", null, path, auth, paid_post_ids);
                                     int oldMessagesCount = 0;
                                     int newMessagesCount = 0;
                                     if (messages != null && messages.Count > 0)
                                     {
                                         AnsiConsole.Markup($"[red]Found {messages.Count} Messages\n[/]");
                                         messagesCount = messages.Count;
-                                        long totalSize = await program.downloadHelper.CalculateTotalFileSize(messages.Values.ToList());
+                                        long totalSize = await downloadHelper.CalculateTotalFileSize(messages.Values.ToList(), auth);
                                         await AnsiConsole.Progress()
                                         .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
                                         .StartAsync(async ctx =>
@@ -453,13 +451,13 @@ namespace OF_DL
                                                     string mediaId = messageUrlParsed[4];
                                                     string messageId = messageUrlParsed[5];
                                                     string? licenseURL = null;
-                                                    string? pssh = await program.apiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp);
+                                                    string? pssh = await apiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp, auth);
                                                     if (pssh != null)
                                                     {
-                                                        DateTime lastModified = await program.apiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
-                                                        Dictionary<string, string> drmHeaders = await program.apiHelper.Headers($"/api2/v2/users/media/{mediaId}/drm/message/{messageId}", "?type=widevine");
-                                                        string decryptionKey = await program.apiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
-                                                        isNew = await program.downloadHelper.DownloadMessageDRMVideo(program.auth.YTDLP_PATH, program.auth.MP4DECRYPT_PATH, program.auth.FFMPEG_PATH, program.auth.USER_AGENT, policy, signature, kvp, program.auth.COOKIE, mpdURL, decryptionKey, path, lastModified, messageKVP.Key, task);
+                                                        DateTime lastModified = await apiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp, auth);
+                                                        Dictionary<string, string> drmHeaders = await apiHelper.Headers($"/api2/v2/users/media/{mediaId}/drm/message/{messageId}", "?type=widevine", auth);
+                                                        string decryptionKey = await apiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh, auth);
+                                                        isNew = await downloadHelper.DownloadMessageDRMVideo(auth.YTDLP_PATH, auth.MP4DECRYPT_PATH, auth.FFMPEG_PATH, auth.USER_AGENT, policy, signature, kvp, auth.COOKIE, mpdURL, decryptionKey, path, lastModified, messageKVP.Key, task);
                                                         if (isNew)
                                                         {
                                                             newMessagesCount++;
@@ -472,7 +470,7 @@ namespace OF_DL
                                                 }
                                                 else
                                                 {
-                                                    isNew = await program.downloadHelper.DownloadMessageMedia(messageKVP.Value, path, messageKVP.Key, task);
+                                                    isNew = await downloadHelper.DownloadMessageMedia(messageKVP.Value, path, messageKVP.Key, task);
                                                     if (isNew)
                                                     {
                                                         newMessagesCount++;
@@ -494,10 +492,10 @@ namespace OF_DL
                                     }
                                 }
 
-                                if (program.auth.DownloadPaidMessages)
+                                if (auth.DownloadPaidMessages)
                                 {
                                     AnsiConsole.Markup($"[red]Getting Paid Messages\n[/]");
-                                    Dictionary<long, string> purchased = await program.apiHelper.GetMedia(MediaType.PaidMessages, "/posts/paid", user.Key, path);
+                                    Dictionary<long, string> purchased = await apiHelper.GetMedia(MediaType.PaidMessages, "/posts/paid", user.Key, path, auth, paid_post_ids);
 
                                     int oldPaidMessagesCount = 0;
                                     int newPaidMessagesCount = 0;
@@ -505,7 +503,7 @@ namespace OF_DL
                                     {
                                         AnsiConsole.Markup($"[red]Found {purchased.Count} Paid Messages\n[/]");
                                         paidMessagesCount = purchased.Count;
-                                        long totalSize = await program.downloadHelper.CalculateTotalFileSize(purchased.Values.ToList());
+                                        long totalSize = await downloadHelper.CalculateTotalFileSize(purchased.Values.ToList(), auth);
                                         await AnsiConsole.Progress()
                                         .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
                                         .StartAsync(async ctx =>
@@ -527,13 +525,13 @@ namespace OF_DL
                                                     string mediaId = messageUrlParsed[4];
                                                     string messageId = messageUrlParsed[5];
                                                     string? licenseURL = null;
-                                                    string? pssh = await program.apiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp);
+                                                    string? pssh = await apiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp, auth);
                                                     if (pssh != null)
                                                     {
-                                                        DateTime lastModified = await program.apiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
-                                                        Dictionary<string, string> drmHeaders = await program.apiHelper.Headers($"/api2/v2/users/media/{mediaId}/drm/message/{messageId}", "?type=widevine");
-                                                        string decryptionKey = await program.apiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
-                                                        isNew = await program.downloadHelper.DownloadPurchasedMessageDRMVideo(program.auth.YTDLP_PATH, program.auth.MP4DECRYPT_PATH, program.auth.FFMPEG_PATH, program.auth.USER_AGENT, policy, signature, kvp, program.auth.COOKIE, mpdURL, decryptionKey, path, lastModified, paidMessageKVP.Key, task);
+                                                        DateTime lastModified = await apiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp, auth);
+                                                        Dictionary<string, string> drmHeaders = await apiHelper.Headers($"/api2/v2/users/media/{mediaId}/drm/message/{messageId}", "?type=widevine", auth);
+                                                        string decryptionKey = await apiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh, auth);
+                                                        isNew = await downloadHelper.DownloadPurchasedMessageDRMVideo(auth.YTDLP_PATH, auth.MP4DECRYPT_PATH, auth.FFMPEG_PATH, auth.USER_AGENT, policy, signature, kvp, auth.COOKIE, mpdURL, decryptionKey, path, lastModified, paidMessageKVP.Key, task);
                                                         if (isNew)
                                                         {
                                                             newPaidMessagesCount++;
@@ -546,7 +544,7 @@ namespace OF_DL
                                                 }
                                                 else
                                                 {
-                                                    isNew = await program.downloadHelper.DownloadPurchasedMedia(paidMessageKVP.Value, path, paidMessageKVP.Key, task);
+                                                    isNew = await downloadHelper.DownloadPurchasedMedia(paidMessageKVP.Value, path, paidMessageKVP.Key, task);
                                                     if (isNew)
                                                     {
                                                         newPaidMessagesCount++;
@@ -616,7 +614,7 @@ namespace OF_DL
                         .Title("[red]Select Accounts to Scrape | Select All = All Accounts | List = Download content from users on List | Custom = Specific Account(s)[/]")
                         .AddChoices(mainMenuOptions)
                 );
-				Program program = new Program(new APIHelper(), new DownloadHelper(), new DBHelper());
+				
                 switch (mainMenuSelection)
                 {
                     case "[red]Select All[/]":
@@ -647,7 +645,7 @@ namespace OF_DL
                                 foreach (var item in listSelection)
                                 {
                                     int listId = lists[item.Replace("[red]", "").Replace("[/]", "")];
-                                    List<string> usernames = await program.apiHelper.GetListUsers($"/lists/{listId}/users");
+                                    List<string> usernames = await apiHelper.GetListUsers($"/lists/{listId}/users", auth);
                                     foreach (string user in usernames)
                                     {
                                         listUsernames.Add(user);
@@ -685,6 +683,156 @@ namespace OF_DL
                             }
                         }
                         break;
+                    case "[red]Edit Auth.json[/]":
+                        while (true)
+                        {
+                            MultiSelectionPrompt<string> multiSelectionPrompt = new MultiSelectionPrompt<string>()
+        .Title("[red]Edit Auth.json[/]")
+        .PageSize(13)
+        .AddChoices(new[] { "[red]Go Back[/]", "[red]DownloadAvatarHeaderPhoto[/]", "[red]DownloadPaidPosts[/]", "[red]DownloadPosts[/]", "[red]DownloadArchived[/]", "[red]DownloadStories[/]", "[red]DownloadHighlights[/]", "[red]DownloadMessages[/]", "[red]DownloadPaidMessages[/]", "[red]DownloadImages[/]", "[red]DownloadVideos[/]", "[red]DownloadAudios[/]", "[red]IncludeExpiredSubscriptions[/]" });
+                            var items = multiSelectionPrompt.GetItems();
+                            items[1].IsSelected = auth.DownloadAvatarHeaderPhoto;
+                            items[2].IsSelected = auth.DownloadPaidPosts;
+                            items[3].IsSelected = auth.DownloadPosts;
+                            items[4].IsSelected = auth.DownloadArchived;
+                            items[5].IsSelected = auth.DownloadStories;
+                            items[6].IsSelected = auth.DownloadHighlights;
+                            items[7].IsSelected = auth.DownloadMessages;
+                            items[8].IsSelected = auth.DownloadPaidMessages;
+                            items[9].IsSelected = auth.DownloadImages;
+                            items[10].IsSelected = auth.DownloadVideos;
+                            items[11].IsSelected = auth.DownloadAudios;
+                            items[12].IsSelected = auth.IncludeExpiredSubscriptions;
+                            var authOptions = AnsiConsole.Prompt(multiSelectionPrompt);
+
+                            if(authOptions.Contains("[red]Go Back[/]"))
+                            {
+                                break;
+                            }
+
+                            Auth newAuth = new Auth();
+                            newAuth.USER_ID = auth.USER_ID;
+                            newAuth.USER_AGENT = auth.USER_AGENT;
+                            newAuth.X_BC = auth.X_BC;
+                            newAuth.COOKIE = auth.COOKIE;
+                            newAuth.YTDLP_PATH = auth.YTDLP_PATH;
+                            newAuth.FFMPEG_PATH = auth.FFMPEG_PATH;
+                            newAuth.MP4DECRYPT_PATH = auth.MP4DECRYPT_PATH;
+
+                            if (authOptions.Contains("[red]DownloadAvatarHeaderPhoto[/]"))
+                            {
+                                newAuth.DownloadAvatarHeaderPhoto = true;
+                            }
+                            else
+                            {
+                                newAuth.DownloadAvatarHeaderPhoto = false;
+                            }
+
+                            if (authOptions.Contains("[red]DownloadPaidPosts[/]"))
+                            {
+                                newAuth.DownloadPaidPosts = true;
+                            }
+                            else
+                            {
+                                newAuth.DownloadPaidPosts = false;
+                            }
+
+                            if (authOptions.Contains("[red]DownloadPosts[/]"))
+                            {
+                                newAuth.DownloadPosts = true;
+                            }
+                            else
+                            {
+                                newAuth.DownloadPosts = false;
+                            }
+
+                            if (authOptions.Contains("[red]DownloadArchived[/]"))
+                            {
+                                newAuth.DownloadArchived = true;
+                            }
+                            else
+                            {
+                                newAuth.DownloadArchived = false;
+                            }
+
+                            if (authOptions.Contains("[red]DownloadStories[/]"))
+                            {
+                                newAuth.DownloadStories = true;
+                            }
+                            else
+                            {
+                                newAuth.DownloadStories = false;
+                            }
+
+                            if (authOptions.Contains("[red]DownloadHighlights[/]"))
+                            {
+                                newAuth.DownloadHighlights = true;
+                            }
+                            else
+                            {
+                                newAuth.DownloadHighlights = false;
+                            }
+
+                            if (authOptions.Contains("[red]DownloadMessages[/]"))
+                            {
+                                newAuth.DownloadMessages = true;
+                            }
+                            else
+                            {
+                                newAuth.DownloadMessages = false;
+                            }
+
+                            if (authOptions.Contains("[red]DownloadPaidMessages[/]"))
+                            {
+                                newAuth.DownloadPaidMessages = true;
+                            }
+                            else
+                            {
+                                newAuth.DownloadPaidMessages = false;
+                            }
+
+                            if (authOptions.Contains("[red]DownloadImages[/]"))
+                            {
+                                newAuth.DownloadImages = true;
+                            }
+                            else
+                            {
+                                newAuth.DownloadImages = false;
+                            }
+
+                            if (authOptions.Contains("[red]DownloadVideos[/]"))
+                            {
+                                newAuth.DownloadVideos = true;
+                            }
+                            else
+                            {
+                                newAuth.DownloadVideos = false;
+                            }
+
+                            if (authOptions.Contains("[red]DownloadAudios[/]"))
+                            {
+                                newAuth.DownloadAudios = true;
+                            }
+                            else
+                            {
+                                newAuth.DownloadAudios = false;
+                            }
+
+                            if (authOptions.Contains("[red]IncludeExpiredSubscriptions[/]"))
+                            {
+                                newAuth.IncludeExpiredSubscriptions = true;
+                            }
+                            else
+                            {
+                                newAuth.IncludeExpiredSubscriptions = false;
+                            }
+
+                            string newAuthString = JsonConvert.SerializeObject(newAuth, Formatting.Indented);
+                            File.WriteAllText("auth.json", newAuthString);
+                            auth = JsonConvert.DeserializeObject<Auth>(File.ReadAllText("auth.json"));
+                            break;
+                        }
+                        break;
                     case "[red]Exit[/]":
                         return new KeyValuePair<bool, Dictionary<string, int>>(false, null); // Return false to indicate exit
                 }
@@ -702,6 +850,7 @@ namespace OF_DL
 					"[red]Select All[/]",
 					"[red]List[/]",
 					"[red]Custom[/]",
+                    "[red]Edit Auth.json[/]",
 					"[red]Exit[/]"
 				};
             }
@@ -711,7 +860,8 @@ namespace OF_DL
 				{
 					"[red]Select All[/]",
 					"[red]Custom[/]",
-					"[red]Exit[/]"
+                    "[red]Edit Auth.json[/]",
+                    "[red]Exit[/]"
 				};
             }
         }

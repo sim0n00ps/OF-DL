@@ -1,0 +1,19 @@
+﻿using OF_DL.Entities;
+using OF_DL.Enumurations;
+
+namespace OF_DL.Helpers
+{
+    public interface IAPIHelper
+    {
+        Task<string> GetDecryptionKey(Dictionary<string, string> drmHeaders, string licenceURL, string pssh, Auth auth);
+        Task<string> GetDecryptionKeyNew(Dictionary<string, string> drmHeaders, string licenceURL, string pssh, Auth auth);
+        Task<DateTime> GetDRMMPDLastModified(string mpdUrl, string policy, string signature, string kvp, Auth auth);
+        Task<string> GetDRMMPDPSSH(string mpdUrl, string policy, string signature, string kvp, Auth auth);
+        Task<Dictionary<string, int>> GetLists(string endpoint, Auth auth);
+        Task<List<string>> GetListUsers(string endpoint, Auth auth);
+        Task<Dictionary<long, string>> GetMedia(MediaType mediatype, string endpoint, string? username, string folder, Auth auth, List<long> paid_post_ids);
+        Task<Dictionary<string, int>> GetSubscriptions(string endpoint, bool includeExpiredSubscriptions, Auth auth);
+        Task<User> GetUserInfo(string endpoint, Auth auth);
+        Task<Dictionary<string, string>> Headers(string path, string queryParam, Auth auth);
+    }
+}
