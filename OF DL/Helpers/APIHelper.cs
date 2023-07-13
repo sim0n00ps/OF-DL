@@ -142,32 +142,17 @@ namespace OF_DL.Helpers
             try
             {
                 int post_limit = 50;
-                int offset = 0;
-                bool loop = true;
                 Dictionary<string, string> GetParams = new Dictionary<string, string>();
                 Subscriptions subscriptions = new Subscriptions();
 
+                GetParams = new Dictionary<string, string>
+                {
+                    { "limit", post_limit.ToString() },
+                    { "order", "publish_date_asc" },
+                    { "type", "all" },
+                    { "format", "infinite"}
+                };
 
-                if (includeExpiredSubscriptions)
-                {
-                    GetParams = new Dictionary<string, string>
-                    {
-                        { "limit", post_limit.ToString() },
-                        { "order", "publish_date_asc" },
-                        { "type", "all" },
-                        { "format", "infinite"}
-                    };
-                }
-                else
-                {
-                    GetParams = new Dictionary<string, string>
-                    {
-                        { "limit", post_limit.ToString() },
-                        { "order", "publish_date_asc" },
-                        { "type", "active" },
-                        { "format", "infinite"}
-                    };
-                }
                 Dictionary<string, int> users = new Dictionary<string, int>();
                 string queryParams = "?";
                 foreach (KeyValuePair<string, string> kvp in GetParams)
@@ -237,13 +222,23 @@ namespace OF_DL.Helpers
                             {
                                 break;
                             }
-                            GetParams["offset"] = Convert.ToString(Convert.ToInt32(GetParams["offset"]) + Convert.ToInt32(GetParams["offset"]));
+                            GetParams["offset"] = Convert.ToString(Convert.ToInt32(GetParams["offset"]) + post_limit);
                         }
                     }
 
-                    foreach (Subscriptions.List subscription in subscriptions.list)
+                    if (includeExpiredSubscriptions)
                     {
-                        users.Add(subscription.username, subscription.id);
+                        foreach (Subscriptions.List subscription in subscriptions.list)
+                        {
+                            users.Add(subscription.username, subscription.id);
+                        }
+                    }
+                    else
+                    {
+                        foreach (Subscriptions.List subscription in subscriptions.list.Where(s => s.subscribedBy.HasValue))
+                        {
+                            users.Add(subscription.username, subscription.id);
+                        }
                     }
                 }
                 return users.OrderBy(x => x.Key).ToDictionary(x => x.Key, x => x.Value);

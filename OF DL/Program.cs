@@ -112,7 +112,7 @@ namespace OF_DL
                         // Call the HandleUserSelection method to handle user selection and processing
                         KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP = await HandleUserSelection(selectedUsers, users, lists);
 
-                        if (hasSelectedUsersKVP.Key)
+                        if (hasSelectedUsersKVP.Key && !hasSelectedUsersKVP.Value.ContainsKey("AuthChanged"))
                         {
                             //Iterate over each user in the list of users
                             foreach (KeyValuePair<string, int> user in hasSelectedUsersKVP.Value)
@@ -582,6 +582,10 @@ namespace OF_DL
                             TimeSpan totalTime = endTime - startTime;
                             AnsiConsole.Markup($"[green]Scrape Completed in {totalTime.TotalMinutes.ToString("0.00")} minutes\n[/]");
                         }
+                        else if (hasSelectedUsersKVP.Key && hasSelectedUsersKVP.Value != null ? hasSelectedUsersKVP.Value.ContainsKey("AuthChanged") : false)
+                        {
+                            continue;
+                        }
                         else
                         {
                             break;
@@ -705,6 +709,8 @@ namespace OF_DL
                             items[12].IsSelected = auth.IncludeExpiredSubscriptions;
                             var authOptions = AnsiConsole.Prompt(multiSelectionPrompt);
 
+                            bool reload = false;
+
                             if(authOptions.Contains("[red]Go Back[/]"))
                             {
                                 break;
@@ -821,15 +827,21 @@ namespace OF_DL
                             if (authOptions.Contains("[red]IncludeExpiredSubscriptions[/]"))
                             {
                                 newAuth.IncludeExpiredSubscriptions = true;
+                                reload = true;
                             }
                             else
                             {
                                 newAuth.IncludeExpiredSubscriptions = false;
+                                reload = true;
                             }
 
                             string newAuthString = JsonConvert.SerializeObject(newAuth, Formatting.Indented);
                             File.WriteAllText("auth.json", newAuthString);
                             auth = JsonConvert.DeserializeObject<Auth>(File.ReadAllText("auth.json"));
+                            if (reload)
+                            {
+                                return new KeyValuePair<bool, Dictionary<string, int>>(true, new Dictionary<string, int> { { "AuthChanged", 0 } });
+                            }
                             break;
                         }
                         break;
