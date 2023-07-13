@@ -709,8 +709,6 @@ namespace OF_DL
                             items[12].IsSelected = auth.IncludeExpiredSubscriptions;
                             var authOptions = AnsiConsole.Prompt(multiSelectionPrompt);
 
-                            bool reload = false;
-
                             if(authOptions.Contains("[red]Go Back[/]"))
                             {
                                 break;
@@ -827,21 +825,20 @@ namespace OF_DL
                             if (authOptions.Contains("[red]IncludeExpiredSubscriptions[/]"))
                             {
                                 newAuth.IncludeExpiredSubscriptions = true;
-                                reload = true;
                             }
                             else
                             {
                                 newAuth.IncludeExpiredSubscriptions = false;
-                                reload = true;
                             }
 
                             string newAuthString = JsonConvert.SerializeObject(newAuth, Formatting.Indented);
                             File.WriteAllText("auth.json", newAuthString);
-                            auth = JsonConvert.DeserializeObject<Auth>(File.ReadAllText("auth.json"));
-                            if (reload)
+                            if (newAuth.IncludeExpiredSubscriptions != auth.IncludeExpiredSubscriptions)
                             {
+                                auth = JsonConvert.DeserializeObject<Auth>(File.ReadAllText("auth.json"));
                                 return new KeyValuePair<bool, Dictionary<string, int>>(true, new Dictionary<string, int> { { "AuthChanged", 0 } });
                             }
+                            auth = JsonConvert.DeserializeObject<Auth>(File.ReadAllText("auth.json"));
                             break;
                         }
                         break;
