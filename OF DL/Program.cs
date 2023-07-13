@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using OF_DL.Entities;
 using OF_DL.Entities.Archived;
 using OF_DL.Entities.Highlights;
@@ -126,7 +126,15 @@ namespace OF_DL
                                 int paidMessagesCount = 0;
                                 AnsiConsole.Markup($"[red]\nScraping Data for {user.Key}\n[/]");
 
-                                string path = $"__user_data__/sites/OnlyFans/{user.Key}"; // specify the path for the new folder
+                                string path = "";
+                                if (!string.IsNullOrEmpty(auth.DownloadPath))
+                                {
+                                    path = System.IO.Path.Combine(auth.DownloadPath, user.Key);
+                                }
+                                else
+                                {
+                                    path = $"__user_data__/sites/OnlyFans/{user.Key}"; // specify the path for the new folder
+                                }
 
                                 if (!Directory.Exists(path)) // check if the folder already exists
                                 {
@@ -690,23 +698,33 @@ namespace OF_DL
                     case "[red]Edit Auth.json[/]":
                         while (true)
                         {
+                            var choices = new List<(string choice, bool isSelected)>();
+                            choices.AddRange(new []
+                            {
+                                ( "[red]Go Back[/]", false ),
+                                ( "[red]DownloadAvatarHeaderPhoto[/]", auth.DownloadAvatarHeaderPhoto),
+                                ( "[red]DownloadPaidPosts[/]", auth.DownloadPaidPosts ),
+                                ( "[red]DownloadPosts[/]", auth.DownloadPosts ),
+                                ( "[red]DownloadArchived[/]", auth.DownloadArchived ),
+                                ( "[red]DownloadStories[/]", auth.DownloadStories ),
+                                ( "[red]DownloadHighlights[/]", auth.DownloadHighlights ),
+                                ( "[red]DownloadMessages[/]", auth.DownloadMessages ),
+                                ( "[red]DownloadPaidMessages[/]", auth.DownloadPaidMessages ),
+                                ( "[red]DownloadImages[/]", auth.DownloadImages ),
+                                ( "[red]DownloadVideos[/]", auth.DownloadVideos ),
+                                ( "[red]DownloadAudios[/]", auth.DownloadAudios ),
+                                ( "[red]IncludeExpiredSubscriptions[/]", auth.IncludeExpiredSubscriptions )
+                            });
+
                             MultiSelectionPrompt<string> multiSelectionPrompt = new MultiSelectionPrompt<string>()
-        .Title("[red]Edit Auth.json[/]")
-        .PageSize(13)
-        .AddChoices(new[] { "[red]Go Back[/]", "[red]DownloadAvatarHeaderPhoto[/]", "[red]DownloadPaidPosts[/]", "[red]DownloadPosts[/]", "[red]DownloadArchived[/]", "[red]DownloadStories[/]", "[red]DownloadHighlights[/]", "[red]DownloadMessages[/]", "[red]DownloadPaidMessages[/]", "[red]DownloadImages[/]", "[red]DownloadVideos[/]", "[red]DownloadAudios[/]", "[red]IncludeExpiredSubscriptions[/]" });
-                            var items = multiSelectionPrompt.GetItems();
-                            items[1].IsSelected = auth.DownloadAvatarHeaderPhoto;
-                            items[2].IsSelected = auth.DownloadPaidPosts;
-                            items[3].IsSelected = auth.DownloadPosts;
-                            items[4].IsSelected = auth.DownloadArchived;
-                            items[5].IsSelected = auth.DownloadStories;
-                            items[6].IsSelected = auth.DownloadHighlights;
-                            items[7].IsSelected = auth.DownloadMessages;
-                            items[8].IsSelected = auth.DownloadPaidMessages;
-                            items[9].IsSelected = auth.DownloadImages;
-                            items[10].IsSelected = auth.DownloadVideos;
-                            items[11].IsSelected = auth.DownloadAudios;
-                            items[12].IsSelected = auth.IncludeExpiredSubscriptions;
+                                .Title("[red]Edit Auth.json[/]")
+                                .PageSize(13);
+
+                            foreach(var choice in choices)
+                            {
+                                multiSelectionPrompt.AddChoices(choice.choice, (selectionItem) => { if (choice.isSelected) selectionItem.Select(); });
+                            }
+
                             var authOptions = AnsiConsole.Prompt(multiSelectionPrompt);
 
                             if(authOptions.Contains("[red]Go Back[/]"))
@@ -722,6 +740,7 @@ namespace OF_DL
                             newAuth.YTDLP_PATH = auth.YTDLP_PATH;
                             newAuth.FFMPEG_PATH = auth.FFMPEG_PATH;
                             newAuth.MP4DECRYPT_PATH = auth.MP4DECRYPT_PATH;
+                            newAuth.DownloadPath = auth.DownloadPath;
 
                             if (authOptions.Contains("[red]DownloadAvatarHeaderPhoto[/]"))
                             {
