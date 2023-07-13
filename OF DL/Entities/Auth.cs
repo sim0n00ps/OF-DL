@@ -26,5 +26,7 @@ namespace OF_DL.Entities
         public bool DownloadImages { get; set; }
         public bool DownloadVideos { get; set; }
         public bool DownloadAudios { get; set; }
-	}
+
+    public string? DownloadPath { get; set; }
+  }
 }

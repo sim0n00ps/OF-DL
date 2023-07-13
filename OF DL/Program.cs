@@ -193,9 +193,18 @@ namespace OF_DL
 						int paidMessagesCount = 0;
 						AnsiConsole.Markup($"[red]\nScraping Data for {user.Key}\n[/]");
 
-						string path = $"__user_data__/sites/OnlyFans/{user.Key}"; // specify the path for the new folder
+						// tring path = $"__user_data__/sites/OnlyFans/{user.Key}"; // specify the path for the new folder
+            string path = "";
+            if (!string.IsNullOrEmpty(program.auth.DownloadPath))
+            {
+              path = System.IO.Path.Combine(program.auth.DownloadPath, user.Key);
+            }
+            else
+            {
+              path = $"__user_data__/sites/OnlyFans/{user.Key}"; // specify the path for the new folder
+            }
 
-						if (!Directory.Exists(path)) // check if the folder already exists
+            if (!Directory.Exists(path)) // check if the folder already exists
 						{
 							Directory.CreateDirectory(path); // create the new folder
 							AnsiConsole.Markup($"[red]Created folder for {user.Key}\n[/]");
