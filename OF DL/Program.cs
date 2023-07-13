@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using OF_DL.Entities;
 using OF_DL.Entities.Archived;
 using OF_DL.Entities.Highlights;
@@ -7,6 +7,7 @@ using OF_DL.Entities.Post;
 using OF_DL.Entities.Stories;
 using OF_DL.Enumurations;
 using OF_DL.Helpers;
+using Org.BouncyCastle.Math.EC.Rfc7748;
 using Spectre.Console;
 using System.Text.RegularExpressions;
 using static OF_DL.Entities.Lists.UserList;
@@ -126,7 +127,15 @@ namespace OF_DL
                                 int paidMessagesCount = 0;
                                 AnsiConsole.Markup($"[red]\nScraping Data for {user.Key}\n[/]");
 
-                                string path = $"__user_data__/sites/OnlyFans/{user.Key}"; // specify the path for the new folder
+                                string path = "";
+                                if (!string.IsNullOrEmpty(auth.DownloadPath))
+                                {
+                                    path = System.IO.Path.Combine(auth.DownloadPath, user.Key);
+                                }
+                                else
+                                {
+                                    path = $"__user_data__/sites/OnlyFans/{user.Key}"; // specify the path for the new folder
+                                }
 
                                 if (!Directory.Exists(path)) // check if the folder already exists
                                 {
@@ -732,6 +741,7 @@ namespace OF_DL
                             newAuth.YTDLP_PATH = auth.YTDLP_PATH;
                             newAuth.FFMPEG_PATH = auth.FFMPEG_PATH;
                             newAuth.MP4DECRYPT_PATH = auth.MP4DECRYPT_PATH;
+                            newAuth.DownloadPath = auth.DownloadPath;
 
                             if (authOptions.Contains("[red]DownloadAvatarHeaderPhoto[/]"))
                             {
