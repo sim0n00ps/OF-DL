@@ -19,7 +19,12 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.9" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="protobuf-net" Version="3.2.26" />
-    <PackageReference Include="Spectre.Console" Version="0.47.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Spectre.Console">
+      <HintPath>bin\Debug\net7.0\Spectre.Console.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>
