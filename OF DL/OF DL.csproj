@@ -21,11 +21,4 @@
     <PackageReference Include="protobuf-net" Version="3.2.26" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="Spectre.Console">
-      <HintPath>bin\Debug\net7.0\Spectre.Console.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-  </ItemGroup>
-
 </Project>
