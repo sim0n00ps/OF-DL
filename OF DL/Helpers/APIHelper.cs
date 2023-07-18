@@ -1,4 +1,4 @@
-﻿using HtmlAgilityPack;
+using HtmlAgilityPack;
 using Newtonsoft.Json;
 using OF_DL.Entities;
 using OF_DL.Entities.Archived;
@@ -230,14 +230,20 @@ namespace OF_DL.Helpers
                     {
                         foreach (Subscriptions.List subscription in subscriptions.list)
                         {
-                            users.Add(subscription.username, subscription.id);
+                            if (!users.ContainsKey(subscription.username))
+                            {
+                                users.Add(subscription.username, subscription.id);
+                            }
                         }
                     }
                     else
                     {
                         foreach (Subscriptions.List subscription in subscriptions.list.Where(s => s.subscribedBy.HasValue))
                         {
-                            users.Add(subscription.username, subscription.id);
+                            if (!users.ContainsKey(subscription.username))
+                            {
+                                users.Add(subscription.username, subscription.id);
+                            }
                         }
                     }
                 }
@@ -303,7 +309,7 @@ namespace OF_DL.Helpers
                         {
                             foreach (UserList.List l in userList.list)
                             {
-                                if (IsStringOnlyDigits(l.id))
+                                if (IsStringOnlyDigits(l.id) && !lists.ContainsKey(l.name))
                                 {
                                     lists.Add(l.name, Convert.ToInt32(l.id));
                                 }

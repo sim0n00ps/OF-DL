@@ -23,7 +23,7 @@
 
   <ItemGroup>
     <Reference Include="Spectre.Console">
-      <HintPath>bin\Debug\net7.0\Spectre.Console.dll</HintPath>
+      <HintPath>References\Spectre.Console.dll</HintPath>
     </Reference>
   </ItemGroup>
 
