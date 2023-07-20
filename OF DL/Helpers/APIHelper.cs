@@ -427,7 +427,7 @@ namespace OF_DL.Helpers
             try
             {
                 Dictionary<long, string> return_urls = new Dictionary<long, string>();
-                int post_limit = 10;
+                int post_limit = 50;
                 int limit = 5;
                 int offset = 0;
                 Purchased paidposts = new Purchased();
@@ -592,7 +592,7 @@ namespace OF_DL.Helpers
                                 {
                                     break;
                                 }
-                                GetParams["offset"] = Convert.ToString(Convert.ToInt32(GetParams["offset"]) + post_limit);
+                                GetParams["offset"] = Convert.ToString(Convert.ToInt32(GetParams["offset"]) + Convert.ToInt32(GetParams["offset"]));
                             }
                         }
 
