@@ -31,6 +31,8 @@ namespace OF_DL
 		{
 			try
 			{
+                bool clientIdBlobMissing = false;
+                bool devicePrivateKey = false;
 				AnsiConsole.Write(new FigletText("Welcome to OF-DL").Color(Color.Red));
 
                 if (ValidateFilePath(auth.YTDLP_PATH))
@@ -91,6 +93,31 @@ namespace OF_DL
                     AnsiConsole.Markup(@$"[red]Specified path {auth.MP4DECRYPT_PATH} does not match the required format, please remove any \ from the path and replace them with / and make sure the path does not have a / at the end, press any key to exit[/]");
                     Console.ReadKey();
                     Environment.Exit(0);
+                }
+
+                if (!File.Exists("cdm/devices/chrome_1610/device_client_id_blob"))
+                {
+                    AnsiConsole.Markup("[yellow]WARNING No device_client_id_blob found, you will not be able to download DRM protected videos without this[/]\n");
+                    clientIdBlobMissing = true;
+                }
+                else
+                {
+                    AnsiConsole.Markup($"[green]device_client_id_blob located successfully![/]\n");
+                }
+
+                if (!File.Exists("cdm/devices/chrome_1610/device_private_key"))
+                {
+                    AnsiConsole.Markup("[yellow]WARNING No device_private_key found, you will not be able to download DRM protected videos without this[/]\n");
+                    devicePrivateKey = true;
+                }
+                else
+                {
+                    AnsiConsole.Markup($"[green]device_private_key located successfully![/]\n");
+                }
+
+                if (clientIdBlobMissing || devicePrivateKey)
+                {
+                    AnsiConsole.Markup("[yellow]A tutorial to get these 2 files can be found here: https://forum.videohelp.com/threads/408031-Dumping-Your-own-L3-CDM-with-Android-Studio\n[/]");
                 }
 
                 //Check if auth is valid
