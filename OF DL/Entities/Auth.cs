@@ -27,6 +27,7 @@ namespace OF_DL.Entities
         public bool DownloadVideos { get; set; }
         public bool DownloadAudios { get; set; }
         public bool IncludeExpiredSubscriptions { get; set; }
+        public bool SkipAds { get; set; } = false;
         public string? DownloadPath { get; set; } = string.Empty;
 
     }
