@@ -22,6 +22,7 @@ Next you need to download yt-dlp, ffmpeg and mp4decrypt in order to download DRM
 I would recommend copying all 3 of the .exe files somewhere safe where you can then add the path of each file to `auth.json` file. You can do this easily by holding `shift` when right clicking on the .exe file which should give you the option to `copy as path`, this will include `\` so you will need to replace them with `/`. In the auth.json file the lines should look something like this `"YTDLP_PATH": "C:/yt-dlp.exe"`, `"FFMPEG_PATH": "C:/ffmpeg.exe"` and `"MP4DECRYPT_PATH": "C:/mp4decrypt.exe"`
 
 Finally you will need to get 2 files, device_client_id_blob and device_private_key. These are used to get the decryption keys needed for downloading DRM videos. You can find a tutorial on how to do this here https://forum.videohelp.com/threads/408031-Dumping-Your-own-L3-CDM-with-Android-Studio, you need to place device_client_id_blob and device_private_key files in `cdm/devices/chrome_1610/`.
+I have also made some batch scripts to run the commands included in the guide linked above https://github.com/sim0n00ps/L3-Dumping that can save you some time and makes the process a little simpler.
 
 # Running the program
 Make sure you download the latest release from the [releases](https://github.com/sim0n00ps/OF-DL/releases) page and unzip the .zip file to a location where you want to download content to.
