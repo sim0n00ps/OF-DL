@@ -789,12 +789,13 @@ namespace OF_DL
                                 ( "[red]DownloadImages[/]", auth.DownloadImages ),
                                 ( "[red]DownloadVideos[/]", auth.DownloadVideos ),
                                 ( "[red]DownloadAudios[/]", auth.DownloadAudios ),
-                                ( "[red]IncludeExpiredSubscriptions[/]", auth.IncludeExpiredSubscriptions )
+                                ( "[red]IncludeExpiredSubscriptions[/]", auth.IncludeExpiredSubscriptions ),
+                                ( "[red]SkipAds[/]", auth.SkipAds )
                             });
 
                             MultiSelectionPrompt<string> multiSelectionPrompt = new MultiSelectionPrompt<string>()
                                 .Title("[red]Edit Auth.json[/]")
-                                .PageSize(13);
+                                .PageSize(14);
 
                             foreach(var choice in choices)
                             {
@@ -928,6 +929,15 @@ namespace OF_DL
                             else
                             {
                                 newAuth.IncludeExpiredSubscriptions = false;
+                            }
+
+                            if (authOptions.Contains("[red]SkipAds[/]"))
+                            {
+                                newAuth.SkipAds = true;
+                            }
+                            else
+                            {
+                                newAuth.SkipAds = false;
                             }
 
                             string newAuthString = JsonConvert.SerializeObject(newAuth, Formatting.Indented);
