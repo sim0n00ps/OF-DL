@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,7 +16,7 @@ namespace OF_DL.Entities.Archived
         public Counters counters { get; set; }
         public class Author
         {
-            public int? id { get; set; }
+            public int id { get; set; }
             public string _view { get; set; }
         }
 
