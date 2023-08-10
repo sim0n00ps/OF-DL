@@ -28,6 +28,9 @@ namespace OF_DL.Entities
         public bool DownloadAudios { get; set; }
         public bool IncludeExpiredSubscriptions { get; set; }
         public string? DownloadPath { get; set; } = string.Empty;
-
+        public string? PaidPostFileNameFormat { get; set; } = string.Empty;
+        public string? PostFileNameFormat { get; set; } = string.Empty;
+        public string? PaidMessageFileNameFormat { get; set; } = string.Empty;
+        public string? MessageFileNameFormat { get; set; } = string.Empty;
     }
 }

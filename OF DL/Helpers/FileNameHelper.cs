@@ -1,0 +1,134 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace OF_DL.Helpers
+{
+    public class FileNameHelper : IFileNameHelper
+    {
+        public async Task<Dictionary<string, string>> GetFilename(object obj1, object obj2, object obj3, List<string> selectedProperties, Dictionary<string, int> users = null)
+        {
+            Dictionary<string, string> values = new Dictionary<string, string>();
+            Type type1 = obj1.GetType();
+            Type type2 = obj2.GetType();
+            PropertyInfo[] properties1 = type1.GetProperties();
+            PropertyInfo[] properties2 = type2.GetProperties();
+
+            foreach (string propertyName in selectedProperties)
+            {
+                if (propertyName.Contains("media"))
+                {
+                    PropertyInfo property = Array.Find(properties2, p => p.Name.Equals(propertyName.Replace("media", ""), StringComparison.OrdinalIgnoreCase));
+                    if (property != null)
+                    {
+                        object propertyValue = property.GetValue(obj2);
+                        if (propertyValue != null)
+                        {
+                            if (propertyValue is DateTime dateTimeValue)
+                            {
+                                values.Add(propertyName, dateTimeValue.ToString("yyyy-MM-dd"));
+                            }
+                            else
+                            {
+                                values.Add(propertyName, propertyValue.ToString());
+                            }
+                        }
+                    }
+                }
+                else if (propertyName.Contains("filename"))
+                {
+                    PropertyInfo property = Array.Find(properties2, p => p.Name.Equals("source", StringComparison.OrdinalIgnoreCase));
+                    if (property != null)
+                    {
+                        object propertyValue = property.GetValue(obj2);
+                        if (propertyValue != null)
+                        {
+                            Type sourceType = propertyValue.GetType();
+                            PropertyInfo[] sourceProperties = sourceType.GetProperties();
+                            PropertyInfo sourceProperty = Array.Find(sourceProperties, p => p.Name.Equals("source", StringComparison.OrdinalIgnoreCase));
+                            if(sourceProperty != null)
+                            {
+                                object sourcePropertyValue = sourceProperty.GetValue(propertyValue);
+                                if(sourcePropertyValue != null)
+                                {
+                                    Uri uri = new Uri(sourcePropertyValue.ToString());
+                                    string filename = System.IO.Path.GetFileName(uri.LocalPath);
+                                    values.Add(propertyName, filename.Split(".")[0]);
+                                }
+                                else
+                                {
+                                    string propertyPath = "files.drm.manifest.dash";
+                                    object nestedPropertyValue = GetNestedPropertyValue(obj2, propertyPath);
+                                    if (nestedPropertyValue != null)
+                                    {
+                                        Uri uri = new Uri(nestedPropertyValue.ToString());
+                                        string filename = System.IO.Path.GetFileName(uri.LocalPath);
+                                        values.Add(propertyName, filename.Split(".")[0] + "_source.mp4");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                else if (propertyName.Contains("username"))
+                {
+                    string propertyPath = "id";
+                    object nestedPropertyValue = GetNestedPropertyValue(obj3, propertyPath);
+                    if (nestedPropertyValue != null)
+                    {
+                        values.Add(propertyName, users.FirstOrDefault(u => u.Value == Convert.ToInt32(nestedPropertyValue.ToString())).Key);
+                    }
+                }
+                else
+                {
+                    PropertyInfo property = Array.Find(properties1, p => p.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase));
+                    if (property != null)
+                    {
+                        object propertyValue = property.GetValue(obj1);
+                        if (propertyValue != null)
+                        {
+                            if (propertyValue is DateTime dateTimeValue)
+                            {
+                                values.Add(propertyName, dateTimeValue.ToString("yyyy-MM-dd"));
+                            }
+                            else
+                            {
+                                values.Add(propertyName, propertyValue.ToString());
+                            }
+                        }
+                    }
+                }
+            }
+            return values;
+        }
+
+        static object GetNestedPropertyValue(object source, string propertyPath)
+        {
+            object value = source;
+            foreach (var propertyName in propertyPath.Split('.'))
+            {
+                PropertyInfo property = value.GetType().GetProperty(propertyName);
+                if (property == null)
+                {
+                    throw new ArgumentException($"Property '{propertyName}' not found.");
+                }
+                value = property.GetValue(value);
+            }
+            return value;
+        }
+
+        public async Task<string> BuildFilename(string fileFormat, Dictionary<string, string> values)
+        {
+            foreach (var kvp in values)
+            {
+                string placeholder = "{" + kvp.Key + "}";
+                fileFormat = fileFormat.Replace(placeholder, kvp.Value);
+            }
+
+            return $"{fileFormat}";
+        }
+    }
+}
