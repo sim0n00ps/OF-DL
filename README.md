@@ -1,9 +1,6 @@
 # OF-DL
 Scrape all the media from an OnlyFans account
 
-Future Developments
-1. Custom File Formats
-
 # Prerequisites
 Video Tutorial - https://gofile.io/d/RKC2EW
 
