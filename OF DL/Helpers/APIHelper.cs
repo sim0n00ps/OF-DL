@@ -1659,7 +1659,7 @@ namespace OF_DL.Helpers
                     }
 
                     DBHelper dBHelper = new DBHelper();
-                    foreach (Post.List post in posts.list)
+                    foreach (Post.List post in posts.list.Where(p => !auth.SkipAds || (!p.rawText.Contains("#ad") && !p.rawText.Contains("/trial/"))))
                     {
                         List<long> postPreviewIds = new List<long>();
                         if (post.preview != null && post.preview.Count > 0)
@@ -1988,7 +1988,7 @@ namespace OF_DL.Helpers
                     }
 
                     DBHelper dBHelper = new DBHelper();
-                    foreach (Messages.List list in messages.list)
+                    foreach (Messages.List list in messages.list.Where(m => !auth.SkipAds || (!m.text.Contains("#ad") && !m.text.Contains("/trial/"))))
                     {
                         List<long> messagePreviewIds = new List<long>();
                         if (list.previews != null && list.previews.Count > 0)
