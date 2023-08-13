@@ -1490,7 +1490,11 @@ namespace OF_DL.Helpers
                         paidPostCollection.PaidPostObjects.Add(purchase);
                         foreach (Purchased.Medium medium in purchase.media)
                         {
-                            paid_post_ids.Add(medium.id);
+                            if (!previewids.Contains(medium.id))
+                            {
+                                paid_post_ids.Add(medium.id);
+                            }
+                            
                             if (medium.type == "photo" && !auth.DownloadImages)
                             {
                                 continue;
@@ -1536,7 +1540,6 @@ namespace OF_DL.Helpers
                             {
                                 if (medium.canView && medium.source != null && medium.source.source != null && !medium.source.source.Contains("upload"))
                                 {
-                                    
                                     if (!paidPostCollection.PaidPosts.ContainsKey(medium.id))
                                     {
                                         await dBHelper.AddMedia(folder, medium.id, purchase.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
@@ -1546,7 +1549,6 @@ namespace OF_DL.Helpers
                                 }
                                 else if (medium.canView && medium.files != null && medium.files.drm != null)
                                 {
-                                    
                                     if (!paidPostCollection.PaidPosts.ContainsKey(medium.id))
                                     {
                                         await dBHelper.AddMedia(folder, medium.id, purchase.id, medium.files.drm.manifest.dash, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
