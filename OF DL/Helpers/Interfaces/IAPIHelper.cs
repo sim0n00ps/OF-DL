@@ -15,12 +15,12 @@ namespace OF_DL.Helpers
         Task<string> GetDRMMPDPSSH(string mpdUrl, string policy, string signature, string kvp, Auth auth);
         Task<Dictionary<string, int>> GetLists(string endpoint, Auth auth);
         Task<List<string>> GetListUsers(string endpoint, Auth auth);
-        Task<Dictionary<long, string>> GetMedia(MediaType mediatype, string endpoint, string? username, string folder, Auth auth, List<long> paid_post_ids);
-        Task<PaidPostCollection> GetPaidPosts(string endpoint, string folder, string username, Auth auth, List<long> paid_post_ids);
-        Task<PostCollection> GetPosts(string endpoint, string folder, Auth auth, List<long> paid_post_ids);
-        Task<ArchivedCollection> GetArchived(string endpoint, string folder, Auth auth);
-        Task<MessageCollection> GetMessages(string endpoint, string folder, Auth auth);
-        Task<PaidMessageCollection> GetPaidMessages(string endpoint, string folder, string username, Auth auth);
+        Task<Dictionary<long, string>> GetMedia(MediaType mediatype, string endpoint, string? username, string folder, Auth auth, Config config, List<long> paid_post_ids);
+        Task<PaidPostCollection> GetPaidPosts(string endpoint, string folder, string username, Auth auth, Config config, List<long> paid_post_ids);
+        Task<PostCollection> GetPosts(string endpoint, string folder, Auth auth, Config config, List<long> paid_post_ids);
+        Task<ArchivedCollection> GetArchived(string endpoint, string folder, Auth auth, Config config);
+        Task<MessageCollection> GetMessages(string endpoint, string folder, Auth auth, Config config);
+        Task<PaidMessageCollection> GetPaidMessages(string endpoint, string folder, string username, Auth auth, Config config);
         Task<Dictionary<string, int>> GetSubscriptions(string endpoint, bool includeExpiredSubscriptions, Auth auth);
         Task<User> GetUserInfo(string endpoint, Auth auth);
         Task<Dictionary<string, string>> Headers(string path, string queryParam, Auth auth);

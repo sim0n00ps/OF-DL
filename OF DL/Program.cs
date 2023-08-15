@@ -17,7 +17,8 @@ namespace OF_DL
 {
 	public class Program
 	{
-        public static Auth auth { get; set; } = JsonConvert.DeserializeObject<Auth>(File.ReadAllText("auth.json"));
+        public static Auth auth { get; set; } = null;
+        public static Config config { get; set; } = null;
         public int MAX_AGE = 0;
         public static List<long> paid_post_ids = new List<long>();
         private static IAPIHelper apiHelper;
@@ -36,6 +37,30 @@ namespace OF_DL
                 bool clientIdBlobMissing = false;
                 bool devicePrivateKey = false;
 				AnsiConsole.Write(new FigletText("Welcome to OF-DL").Color(Color.Red));
+
+                if(File.Exists("auth.json"))
+                {
+                    AnsiConsole.Markup("[green]auth.json located successfully!\n[/]");
+                    auth = JsonConvert.DeserializeObject<Auth>(File.ReadAllText("auth.json"));
+                }
+                else
+                {
+                    AnsiConsole.Markup("[red]auth.json does not exist, please make sure it exists in the folder where you are running the program from[/]");
+                    Console.ReadKey();
+                    Environment.Exit(0);
+                }
+
+                if (File.Exists("config.json"))
+                {
+                    AnsiConsole.Markup("[green]config.json located successfully!\n[/]");
+                    config = JsonConvert.DeserializeObject<Config>(File.ReadAllText("config.json"));
+                }
+                else
+                {
+                    AnsiConsole.Markup("[red]config.json does not exist, please make sure it exists in the folder where you are running the program from[/]");
+                    Console.ReadKey();
+                    Environment.Exit(0);
+                }
 
                 if (ValidateFilePath(auth.YTDLP_PATH))
                 {
@@ -135,13 +160,13 @@ namespace OF_DL
                     do
                     {
                         DateTime startTime = DateTime.Now;
-                        Dictionary<string, int> users = await apiHelper.GetSubscriptions("/subscriptions/subscribes", auth.IncludeExpiredSubscriptions, auth);
+                        Dictionary<string, int> users = await apiHelper.GetSubscriptions("/subscriptions/subscribes", config.IncludeExpiredSubscriptions, auth);
                         Dictionary<string, int> lists = await apiHelper.GetLists("/lists", auth);
                         Dictionary<string, int> selectedUsers = new Dictionary<string, int>();
                         // Call the HandleUserSelection method to handle user selection and processing
                         KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP = await HandleUserSelection(selectedUsers, users, lists);
 
-                        if (hasSelectedUsersKVP.Key && !hasSelectedUsersKVP.Value.ContainsKey("AuthChanged"))
+                        if (hasSelectedUsersKVP.Key && !hasSelectedUsersKVP.Value.ContainsKey("ConfigChanged"))
                         {
                             //Iterate over each user in the list of users
                             foreach (KeyValuePair<string, int> user in hasSelectedUsersKVP.Value)
@@ -156,9 +181,9 @@ namespace OF_DL
                                 AnsiConsole.Markup($"[red]\nScraping Data for {user.Key}\n[/]");
 
                                 string path = "";
-                                if (!string.IsNullOrEmpty(auth.DownloadPath))
+                                if (!string.IsNullOrEmpty(config.DownloadPath))
                                 {
-                                    path = System.IO.Path.Combine(auth.DownloadPath, user.Key);
+                                    path = System.IO.Path.Combine(config.DownloadPath, user.Key);
                                 }
                                 else
                                 {
@@ -179,16 +204,16 @@ namespace OF_DL
 
                                 await dBHelper.CreateDB(path);
 
-                                if (auth.DownloadAvatarHeaderPhoto)
+                                if (config.DownloadAvatarHeaderPhoto)
                                 {
                                     await downloadHelper.DownloadAvatarHeader(user_info.avatar, user_info.header, path);
                                 }
 
-                                if (auth.DownloadPaidPosts)
+                                if (config.DownloadPaidPosts)
                                 {
                                     AnsiConsole.Markup($"[red]Getting Paid Posts\n[/]");
                                     //Dictionary<long, string> purchasedPosts = await apiHelper.GetMedia(MediaType.PaidPosts, "/posts/paid", user.Key, path, auth, paid_post_ids);
-                                    PaidPostCollection purchasedPosts = await apiHelper.GetPaidPosts("/posts/paid", path, user.Key, auth, paid_post_ids);
+                                    PaidPostCollection purchasedPosts = await apiHelper.GetPaidPosts("/posts/paid", path, user.Key, auth, config, paid_post_ids);
                                     int oldPaidPostCount = 0;
                                     int newPaidPostCount = 0;
                                     if (purchasedPosts != null && purchasedPosts.PaidPosts.Count > 0)
@@ -225,7 +250,7 @@ namespace OF_DL
                                                         string decryptionKey = await apiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, auth);
                                                         Purchased.Medium mediaInfo = purchasedPosts.PaidPostMedia.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
                                                         Purchased.List postInfo = purchasedPosts.PaidPostObjects.FirstOrDefault(p => p.media.Contains(mediaInfo));
-                                                        isNew = await downloadHelper.DownloadPurchasedPostDRMVideo(auth.YTDLP_PATH, auth.MP4DECRYPT_PATH, auth.FFMPEG_PATH, auth.USER_AGENT, policy, signature, kvp, auth.COOKIE, mpdURL, decryptionKey, path, lastModified, purchasedPostKVP.Key, task, !string.IsNullOrEmpty(auth.PaidPostFileNameFormat) ? auth.PaidPostFileNameFormat : string.Empty, !string.IsNullOrEmpty(auth.PaidPostFileNameFormat) ? postInfo : null, !string.IsNullOrEmpty(auth.PaidPostFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(auth.PaidPostFileNameFormat) ? postInfo.fromUser : null, hasSelectedUsersKVP.Value);
+                                                        isNew = await downloadHelper.DownloadPurchasedPostDRMVideo(auth.YTDLP_PATH, auth.MP4DECRYPT_PATH, auth.FFMPEG_PATH, auth.USER_AGENT, policy, signature, kvp, auth.COOKIE, mpdURL, decryptionKey, path, lastModified, purchasedPostKVP.Key, task, !string.IsNullOrEmpty(config.PaidPostFileNameFormat) ? config.PaidPostFileNameFormat : string.Empty, !string.IsNullOrEmpty(config.PaidPostFileNameFormat) ? postInfo : null, !string.IsNullOrEmpty(config.PaidPostFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(config.PaidPostFileNameFormat) ? postInfo.fromUser : null, hasSelectedUsersKVP.Value);
                                                         if (isNew)
                                                         {
                                                             newPaidPostCount++;
@@ -240,7 +265,7 @@ namespace OF_DL
                                                 {
                                                     Purchased.Medium mediaInfo = purchasedPosts.PaidPostMedia.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
                                                         Purchased.List postInfo = purchasedPosts.PaidPostObjects.FirstOrDefault(p => p.media.Contains(mediaInfo));
-                                                    isNew = await downloadHelper.DownloadPurchasedPostMedia(purchasedPostKVP.Value, path, purchasedPostKVP.Key, task, !string.IsNullOrEmpty(auth.PaidPostFileNameFormat) ? auth.PaidPostFileNameFormat : string.Empty, !string.IsNullOrEmpty(auth.PaidPostFileNameFormat) ? postInfo : null, !string.IsNullOrEmpty(auth.PaidPostFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(auth.PaidPostFileNameFormat) ? postInfo.fromUser : null, hasSelectedUsersKVP.Value);
+                                                    isNew = await downloadHelper.DownloadPurchasedPostMedia(purchasedPostKVP.Value, path, purchasedPostKVP.Key, task, !string.IsNullOrEmpty(config.PaidPostFileNameFormat) ? config.PaidPostFileNameFormat : string.Empty, !string.IsNullOrEmpty(config.PaidPostFileNameFormat) ? postInfo : null, !string.IsNullOrEmpty(config.PaidPostFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(config.PaidPostFileNameFormat) ? postInfo.fromUser : null, hasSelectedUsersKVP.Value);
                                                     if (isNew)
                                                     {
                                                         newPaidPostCount++;
@@ -261,11 +286,11 @@ namespace OF_DL
                                     }
                                 }
 
-                                if (auth.DownloadPosts)
+                                if (config.DownloadPosts)
                                 {
                                     AnsiConsole.Markup($"[red]Getting Posts\n[/]");
                                     //Dictionary<long, string> posts = await apiHelper.GetMedia(MediaType.Posts, $"/users/{user.Value}/posts", null, path, auth, paid_post_ids);
-                                    PostCollection posts = await apiHelper.GetPosts($"/users/{user.Value}/posts", path, auth, paid_post_ids);
+                                    PostCollection posts = await apiHelper.GetPosts($"/users/{user.Value}/posts", path, auth, config, paid_post_ids);
                                     int oldPostCount = 0;
                                     int newPostCount = 0;
                                     if (posts != null && posts.Posts.Count > 0)
@@ -301,7 +326,7 @@ namespace OF_DL
                                                         string decryptionKey = await apiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, auth);
                                                         Post.Medium mediaInfo = posts.PostMedia.FirstOrDefault(m => m.id == postKVP.Key);
                                                         Post.List postInfo = posts.PostObjects.FirstOrDefault(p => p.media.Contains(mediaInfo));
-                                                        isNew = await downloadHelper.DownloadPostDRMVideo(auth.YTDLP_PATH, auth.MP4DECRYPT_PATH, auth.FFMPEG_PATH, auth.USER_AGENT, policy, signature, kvp, auth.COOKIE, mpdURL, decryptionKey, path, lastModified, postKVP.Key, task, !string.IsNullOrEmpty(auth.PostFileNameFormat) ? auth.PostFileNameFormat : string.Empty, !string.IsNullOrEmpty(auth.PostFileNameFormat) ? postInfo : null, !string.IsNullOrEmpty(auth.PostFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(auth.PostFileNameFormat) ? postInfo?.author : null, hasSelectedUsersKVP.Value);
+                                                        isNew = await downloadHelper.DownloadPostDRMVideo(auth.YTDLP_PATH, auth.MP4DECRYPT_PATH, auth.FFMPEG_PATH, auth.USER_AGENT, policy, signature, kvp, auth.COOKIE, mpdURL, decryptionKey, path, lastModified, postKVP.Key, task, !string.IsNullOrEmpty(config.PostFileNameFormat) ? config.PostFileNameFormat : string.Empty, !string.IsNullOrEmpty(config.PostFileNameFormat) ? postInfo : null, !string.IsNullOrEmpty(config.PostFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(config.PostFileNameFormat) ? postInfo?.author : null, hasSelectedUsersKVP.Value);
                                                         if (isNew)
                                                         {
                                                             newPostCount++;
@@ -316,7 +341,7 @@ namespace OF_DL
                                                 {
                                                     Post.Medium mediaInfo = posts.PostMedia.FirstOrDefault(m => m.id == postKVP.Key);
                                                     Post.List postInfo = posts.PostObjects.FirstOrDefault(p => p.media.Contains(mediaInfo));
-                                                    isNew = await downloadHelper.DownloadPostMedia(postKVP.Value, path, postKVP.Key, task, !string.IsNullOrEmpty(auth.PostFileNameFormat) ? auth.PostFileNameFormat : string.Empty, !string.IsNullOrEmpty(auth.PostFileNameFormat) ? postInfo : null, !string.IsNullOrEmpty(auth.PostFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(auth.PostFileNameFormat) ? postInfo?.author : null, hasSelectedUsersKVP.Value);
+                                                    isNew = await downloadHelper.DownloadPostMedia(postKVP.Value, path, postKVP.Key, task, !string.IsNullOrEmpty(config.PostFileNameFormat) ? config.PostFileNameFormat : string.Empty, !string.IsNullOrEmpty(config.PostFileNameFormat) ? postInfo : null, !string.IsNullOrEmpty(config.PostFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(config.PostFileNameFormat) ? postInfo?.author : null, hasSelectedUsersKVP.Value);
                                                     if (isNew)
                                                     {
                                                         newPostCount++;
@@ -337,11 +362,11 @@ namespace OF_DL
                                     }
                                 }
 
-                                if (auth.DownloadArchived)
+                                if (config.DownloadArchived)
                                 {
                                     AnsiConsole.Markup($"[red]Getting Archived Posts\n[/]");
                                     //Dictionary<long, string> archived = await apiHelper.GetMedia(MediaType.Archived, $"/users/{user.Value}/posts", null, path, auth, paid_post_ids);
-                                    ArchivedCollection archived = await apiHelper.GetArchived($"/users/{user.Value}/posts", path, auth);
+                                    ArchivedCollection archived = await apiHelper.GetArchived($"/users/{user.Value}/posts", path, auth, config);
                                     int oldArchivedCount = 0;
                                     int newArchivedCount = 0;
                                     if (archived != null && archived.ArchivedPosts.Count > 0)
@@ -378,7 +403,7 @@ namespace OF_DL
                                                         string decryptionKey = await apiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, auth);
                                                         Archived.Medium mediaInfo = archived.ArchivedPostMedia.FirstOrDefault(m => m.id == archivedKVP.Key);
                                                         Archived.List postInfo = archived.ArchivedPostObjects.FirstOrDefault(p => p.media.Contains(mediaInfo));
-                                                        isNew = await downloadHelper.DownloadArchivedPostDRMVideo(auth.YTDLP_PATH, auth.MP4DECRYPT_PATH, auth.FFMPEG_PATH, auth.USER_AGENT, policy, signature, kvp, auth.COOKIE, mpdURL, decryptionKey, path, lastModified, archivedKVP.Key, task, !string.IsNullOrEmpty(auth.PostFileNameFormat) ? auth.PostFileNameFormat : string.Empty, !string.IsNullOrEmpty(auth.PostFileNameFormat) ? postInfo : null, !string.IsNullOrEmpty(auth.PostFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(auth.PostFileNameFormat) ? postInfo.author : null, hasSelectedUsersKVP.Value);
+                                                        isNew = await downloadHelper.DownloadArchivedPostDRMVideo(auth.YTDLP_PATH, auth.MP4DECRYPT_PATH, auth.FFMPEG_PATH, auth.USER_AGENT, policy, signature, kvp, auth.COOKIE, mpdURL, decryptionKey, path, lastModified, archivedKVP.Key, task, !string.IsNullOrEmpty(config.PostFileNameFormat) ? config.PostFileNameFormat : string.Empty, !string.IsNullOrEmpty(config.PostFileNameFormat) ? postInfo : null, !string.IsNullOrEmpty(config.PostFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(config.PostFileNameFormat) ? postInfo.author : null, hasSelectedUsersKVP.Value);
                                                         if (isNew)
                                                         {
                                                             newArchivedCount++;
@@ -393,7 +418,7 @@ namespace OF_DL
                                                 {
                                                     Archived.Medium mediaInfo = archived.ArchivedPostMedia.FirstOrDefault(m => m.id == archivedKVP.Key);
                                                     Archived.List postInfo = archived.ArchivedPostObjects.FirstOrDefault(p => p.media.Contains(mediaInfo));
-                                                    isNew = await downloadHelper.DownloadArchivedMedia(archivedKVP.Value, path, archivedKVP.Key, task, !string.IsNullOrEmpty(auth.PostFileNameFormat) ? auth.PostFileNameFormat : string.Empty, !string.IsNullOrEmpty(auth.PostFileNameFormat) ? postInfo : null, !string.IsNullOrEmpty(auth.PostFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(auth.PostFileNameFormat) ? postInfo.author : null, hasSelectedUsersKVP.Value);
+                                                    isNew = await downloadHelper.DownloadArchivedMedia(archivedKVP.Value, path, archivedKVP.Key, task, !string.IsNullOrEmpty(config.PostFileNameFormat) ? config.PostFileNameFormat : string.Empty, !string.IsNullOrEmpty(config.PostFileNameFormat) ? postInfo : null, !string.IsNullOrEmpty(config.PostFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(config.PostFileNameFormat) ? postInfo.author : null, hasSelectedUsersKVP.Value);
                                                     if (isNew)
                                                     {
                                                         newArchivedCount++;
@@ -414,10 +439,10 @@ namespace OF_DL
                                     }
                                 }
 
-                                if (auth.DownloadStories)
+                                if (config.DownloadStories)
                                 {
                                     AnsiConsole.Markup($"[red]Getting Stories\n[/]");
-                                    Dictionary<long, string> stories = await apiHelper.GetMedia(MediaType.Stories, $"/users/{user.Value}/stories", null, path, auth, paid_post_ids);
+                                    Dictionary<long, string> stories = await apiHelper.GetMedia(MediaType.Stories, $"/users/{user.Value}/stories", null, path, auth, config, paid_post_ids);
                                     int oldStoriesCount = 0;
                                     int newStoriesCount = 0;
                                     if (stories != null && stories.Count > 0)
@@ -455,10 +480,10 @@ namespace OF_DL
                                     }
                                 }
 
-                                if (auth.DownloadHighlights)
+                                if (config.DownloadHighlights)
                                 {
                                     AnsiConsole.Markup($"[red]Getting Highlights\n[/]");
-                                    Dictionary<long, string> highlights = await apiHelper.GetMedia(MediaType.Highlights, $"/users/{user.Value}/stories/highlights", null, path, auth, paid_post_ids);
+                                    Dictionary<long, string> highlights = await apiHelper.GetMedia(MediaType.Highlights, $"/users/{user.Value}/stories/highlights", null, path, auth, config,  paid_post_ids);
                                     int oldHighlightsCount = 0;
                                     int newHighlightsCount = 0;
                                     if (highlights != null && highlights.Count > 0)
@@ -496,11 +521,11 @@ namespace OF_DL
                                     }
                                 }
 
-                                if (auth.DownloadMessages)
+                                if (config.DownloadMessages)
                                 {
                                     AnsiConsole.Markup($"[red]Getting Messages\n[/]");
                                     //Dictionary<long, string> messages = await apiHelper.GetMedia(MediaType.Messages, $"/chats/{user.Value}/messages", null, path, auth, paid_post_ids);
-                                    MessageCollection messages = await apiHelper.GetMessages($"/chats/{user.Value}/messages", path, auth);
+                                    MessageCollection messages = await apiHelper.GetMessages($"/chats/{user.Value}/messages", path, auth, config);
                                     int oldMessagesCount = 0;
                                     int newMessagesCount = 0;
                                     if (messages != null && messages.Messages.Count > 0)
@@ -537,7 +562,7 @@ namespace OF_DL
                                                         string decryptionKey = await apiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh, auth);
                                                         Messages.Medium mediaInfo = messages.MessageMedia.FirstOrDefault(m => m.id == messageKVP.Key);
                                                         Messages.List messageInfo = messages.MessageObjects.FirstOrDefault(p => p.media.Contains(mediaInfo));
-                                                        isNew = await downloadHelper.DownloadMessageDRMVideo(auth.YTDLP_PATH, auth.MP4DECRYPT_PATH, auth.FFMPEG_PATH, auth.USER_AGENT, policy, signature, kvp, auth.COOKIE, mpdURL, decryptionKey, path, lastModified, messageKVP.Key, task, !string.IsNullOrEmpty(auth.MessageFileNameFormat) ? auth.MessageFileNameFormat : string.Empty, !string.IsNullOrEmpty(auth.MessageFileNameFormat) ? messageInfo : null, !string.IsNullOrEmpty(auth.MessageFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(auth.MessageFileNameFormat) ? messageInfo.fromUser : null, hasSelectedUsersKVP.Value);
+                                                        isNew = await downloadHelper.DownloadMessageDRMVideo(auth.YTDLP_PATH, auth.MP4DECRYPT_PATH, auth.FFMPEG_PATH, auth.USER_AGENT, policy, signature, kvp, auth.COOKIE, mpdURL, decryptionKey, path, lastModified, messageKVP.Key, task, !string.IsNullOrEmpty(config.MessageFileNameFormat) ? config.MessageFileNameFormat : string.Empty, !string.IsNullOrEmpty(config.MessageFileNameFormat) ? messageInfo : null, !string.IsNullOrEmpty(config.MessageFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(config.MessageFileNameFormat) ? messageInfo.fromUser : null, hasSelectedUsersKVP.Value);
                                                         if (isNew)
                                                         {
                                                             newMessagesCount++;
@@ -552,7 +577,7 @@ namespace OF_DL
                                                 {
                                                     Messages.Medium mediaInfo = messages.MessageMedia.FirstOrDefault(m => m.id == messageKVP.Key);
                                                     Messages.List messageInfo = messages.MessageObjects.FirstOrDefault(p => p.media.Contains(mediaInfo));
-                                                    isNew = await downloadHelper.DownloadMessageMedia(messageKVP.Value, path, messageKVP.Key, task, !string.IsNullOrEmpty(auth.MessageFileNameFormat) ? auth.MessageFileNameFormat : string.Empty, !string.IsNullOrEmpty(auth.MessageFileNameFormat) ? messageInfo : null, !string.IsNullOrEmpty(auth.MessageFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(auth.MessageFileNameFormat) ? messageInfo.fromUser : null, hasSelectedUsersKVP.Value);
+                                                    isNew = await downloadHelper.DownloadMessageMedia(messageKVP.Value, path, messageKVP.Key, task, !string.IsNullOrEmpty(config.MessageFileNameFormat) ? config.MessageFileNameFormat : string.Empty, !string.IsNullOrEmpty(config.MessageFileNameFormat) ? messageInfo : null, !string.IsNullOrEmpty(config.MessageFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(config.MessageFileNameFormat) ? messageInfo.fromUser : null, hasSelectedUsersKVP.Value);
                                                     if (isNew)
                                                     {
                                                         newMessagesCount++;
@@ -573,11 +598,11 @@ namespace OF_DL
                                     }
                                 }
 
-                                if (auth.DownloadPaidMessages)
+                                if (config.DownloadPaidMessages)
                                 {
                                     AnsiConsole.Markup($"[red]Getting Paid Messages\n[/]");
                                     //Dictionary<long, string> purchased = await apiHelper.GetMedia(MediaType.PaidMessages, "/posts/paid", user.Key, path, auth, paid_post_ids);
-                                    PaidMessageCollection paidMessageCollection = await apiHelper.GetPaidMessages("/posts/paid", path, user.Key, auth);
+                                    PaidMessageCollection paidMessageCollection = await apiHelper.GetPaidMessages("/posts/paid", path, user.Key, auth, config);
                                     int oldPaidMessagesCount = 0;
                                     int newPaidMessagesCount = 0;
                                     if (paidMessageCollection != null && paidMessageCollection.PaidMessages.Count > 0)
@@ -614,7 +639,7 @@ namespace OF_DL
                                                         string decryptionKey = await apiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh, auth);
                                                         Purchased.Medium mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
                                                         Purchased.List messageInfo = paidMessageCollection.PaidMessageObjects.FirstOrDefault(p => p.media.Contains(mediaInfo));
-                                                        isNew = await downloadHelper.DownloadPurchasedMessageDRMVideo(auth.YTDLP_PATH, auth.MP4DECRYPT_PATH, auth.FFMPEG_PATH, auth.USER_AGENT, policy, signature, kvp, auth.COOKIE, mpdURL, decryptionKey, path, lastModified, paidMessageKVP.Key, task, !string.IsNullOrEmpty(auth.PaidMessageFileNameFormat) ? auth.PaidMessageFileNameFormat : string.Empty, !string.IsNullOrEmpty(auth.PaidMessageFileNameFormat) ? messageInfo : null, !string.IsNullOrEmpty(auth.PaidMessageFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(auth.PaidMessageFileNameFormat) ? messageInfo.fromUser : null, hasSelectedUsersKVP.Value);
+                                                        isNew = await downloadHelper.DownloadPurchasedMessageDRMVideo(auth.YTDLP_PATH, auth.MP4DECRYPT_PATH, auth.FFMPEG_PATH, auth.USER_AGENT, policy, signature, kvp, auth.COOKIE, mpdURL, decryptionKey, path, lastModified, paidMessageKVP.Key, task, !string.IsNullOrEmpty(config.PaidMessageFileNameFormat) ? config.PaidMessageFileNameFormat : string.Empty, !string.IsNullOrEmpty(config.PaidMessageFileNameFormat) ? messageInfo : null, !string.IsNullOrEmpty(config.PaidMessageFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(config.PaidMessageFileNameFormat) ? messageInfo.fromUser : null, hasSelectedUsersKVP.Value);
                                                         if (isNew)
                                                         {
                                                             newPaidMessagesCount++;
@@ -629,7 +654,7 @@ namespace OF_DL
                                                 {
                                                     Purchased.Medium mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
                                                     Purchased.List messageInfo = paidMessageCollection.PaidMessageObjects.FirstOrDefault(p => p.media.Contains(mediaInfo));
-                                                    isNew = await downloadHelper.DownloadPurchasedMedia(paidMessageKVP.Value, path, paidMessageKVP.Key, task,!string.IsNullOrEmpty(auth.PaidMessageFileNameFormat) ? auth.PaidMessageFileNameFormat : string.Empty, !string.IsNullOrEmpty(auth.PaidMessageFileNameFormat) ? messageInfo : null, !string.IsNullOrEmpty(auth.PaidMessageFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(auth.PaidMessageFileNameFormat) ? messageInfo.fromUser : null, hasSelectedUsersKVP.Value);
+                                                    isNew = await downloadHelper.DownloadPurchasedMedia(paidMessageKVP.Value, path, paidMessageKVP.Key, task,!string.IsNullOrEmpty(config.PaidMessageFileNameFormat) ? config.PaidMessageFileNameFormat : string.Empty, !string.IsNullOrEmpty(config.PaidMessageFileNameFormat) ? messageInfo : null, !string.IsNullOrEmpty(config.PaidMessageFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(config.PaidMessageFileNameFormat) ? messageInfo.fromUser : null, hasSelectedUsersKVP.Value);
                                                     if (isNew)
                                                     {
                                                         newPaidMessagesCount++;
@@ -666,7 +691,7 @@ namespace OF_DL
                             TimeSpan totalTime = endTime - startTime;
                             AnsiConsole.Markup($"[green]Scrape Completed in {totalTime.TotalMinutes.ToString("0.00")} minutes\n[/]");
                         }
-                        else if (hasSelectedUsersKVP.Key && hasSelectedUsersKVP.Value != null ? hasSelectedUsersKVP.Value.ContainsKey("AuthChanged") : false)
+                        else if (hasSelectedUsersKVP.Key && hasSelectedUsersKVP.Value != null ? hasSelectedUsersKVP.Value.ContainsKey("ConfigChanged") : false)
                         {
                             continue;
                         }
@@ -771,26 +796,26 @@ namespace OF_DL
                             }
                         }
                         break;
-                    case "[red]Edit Auth.json[/]":
+                    case "[red]Edit config.json[/]":
                         while (true)
                         {
                             var choices = new List<(string choice, bool isSelected)>();
                             choices.AddRange(new []
                             {
                                 ( "[red]Go Back[/]", false ),
-                                ( "[red]DownloadAvatarHeaderPhoto[/]", auth.DownloadAvatarHeaderPhoto),
-                                ( "[red]DownloadPaidPosts[/]", auth.DownloadPaidPosts ),
-                                ( "[red]DownloadPosts[/]", auth.DownloadPosts ),
-                                ( "[red]DownloadArchived[/]", auth.DownloadArchived ),
-                                ( "[red]DownloadStories[/]", auth.DownloadStories ),
-                                ( "[red]DownloadHighlights[/]", auth.DownloadHighlights ),
-                                ( "[red]DownloadMessages[/]", auth.DownloadMessages ),
-                                ( "[red]DownloadPaidMessages[/]", auth.DownloadPaidMessages ),
-                                ( "[red]DownloadImages[/]", auth.DownloadImages ),
-                                ( "[red]DownloadVideos[/]", auth.DownloadVideos ),
-                                ( "[red]DownloadAudios[/]", auth.DownloadAudios ),
-                                ( "[red]IncludeExpiredSubscriptions[/]", auth.IncludeExpiredSubscriptions ),
-                                ( "[red]SkipAds[/]", auth.SkipAds )
+                                ( "[red]DownloadAvatarHeaderPhoto[/]", config.DownloadAvatarHeaderPhoto),
+                                ( "[red]DownloadPaidPosts[/]", config.DownloadPaidPosts ),
+                                ( "[red]DownloadPosts[/]",  config.DownloadPosts ),
+                                ( "[red]DownloadArchived[/]", config.DownloadArchived ),
+                                ( "[red]DownloadStories[/]", config.DownloadStories ),
+                                ( "[red]DownloadHighlights[/]", config.DownloadHighlights ),
+                                ( "[red]DownloadMessages[/]", config.DownloadMessages ),
+                                ( "[red]DownloadPaidMessages[/]", config.DownloadPaidMessages ),
+                                ( "[red]DownloadImages[/]", config.DownloadImages ),
+                                ( "[red]DownloadVideos[/]", config.DownloadVideos ),
+                                ( "[red]DownloadAudios[/]", config.DownloadAudios ),
+                                ( "[red]IncludeExpiredSubscriptions[/]", config.IncludeExpiredSubscriptions ),
+                                ( "[red]SkipAds[/]", config.SkipAds )
                             });
 
                             MultiSelectionPrompt<string> multiSelectionPrompt = new MultiSelectionPrompt<string>()
@@ -802,152 +827,145 @@ namespace OF_DL
                                 multiSelectionPrompt.AddChoices(choice.choice, (selectionItem) => { if (choice.isSelected) selectionItem.Select(); });
                             }
 
-                            var authOptions = AnsiConsole.Prompt(multiSelectionPrompt);
+                            var configOptions = AnsiConsole.Prompt(multiSelectionPrompt);
 
-                            if(authOptions.Contains("[red]Go Back[/]"))
+                            if(configOptions.Contains("[red]Go Back[/]"))
                             {
                                 break;
                             }
 
-                            Auth newAuth = new Auth();
-                            newAuth.USER_ID = auth.USER_ID;
-                            newAuth.USER_AGENT = auth.USER_AGENT;
-                            newAuth.X_BC = auth.X_BC;
-                            newAuth.COOKIE = auth.COOKIE;
-                            newAuth.YTDLP_PATH = auth.YTDLP_PATH;
-                            newAuth.FFMPEG_PATH = auth.FFMPEG_PATH;
-                            newAuth.MP4DECRYPT_PATH = auth.MP4DECRYPT_PATH;
-                            newAuth.DownloadPath = auth.DownloadPath;
-                            newAuth.PostFileNameFormat = auth.PostFileNameFormat;
-                            newAuth.MessageFileNameFormat = auth.MessageFileNameFormat;
-                            newAuth.PaidPostFileNameFormat = auth.PaidPostFileNameFormat;
-                            newAuth.PaidMessageFileNameFormat = auth.PaidMessageFileNameFormat;
+                            Config newConfig = new Config();
+                            newConfig.DownloadPath = config.DownloadPath;
+                            newConfig.PostFileNameFormat = config.PostFileNameFormat;
+                            newConfig.MessageFileNameFormat = config.MessageFileNameFormat;
+                            newConfig.PaidPostFileNameFormat = config.PaidPostFileNameFormat;
+                            newConfig.PaidMessageFileNameFormat = config.PaidMessageFileNameFormat;
 
-                            if (authOptions.Contains("[red]DownloadAvatarHeaderPhoto[/]"))
+                            if (configOptions.Contains("[red]DownloadAvatarHeaderPhoto[/]"))
                             {
-                                newAuth.DownloadAvatarHeaderPhoto = true;
+                                newConfig.DownloadAvatarHeaderPhoto = true;
                             }
                             else
                             {
-                                newAuth.DownloadAvatarHeaderPhoto = false;
+                                newConfig.DownloadAvatarHeaderPhoto = false;
                             }
 
-                            if (authOptions.Contains("[red]DownloadPaidPosts[/]"))
+                            if (configOptions.Contains("[red]DownloadPaidPosts[/]"))
                             {
-                                newAuth.DownloadPaidPosts = true;
+                                newConfig.DownloadPaidPosts = true;
                             }
                             else
                             {
-                                newAuth.DownloadPaidPosts = false;
+                                newConfig.DownloadPaidPosts = false;
                             }
 
-                            if (authOptions.Contains("[red]DownloadPosts[/]"))
+                            if (configOptions.Contains("[red]DownloadPosts[/]"))
                             {
-                                newAuth.DownloadPosts = true;
+                                newConfig.DownloadPosts = true;
                             }
                             else
                             {
-                                newAuth.DownloadPosts = false;
+                                newConfig.DownloadPosts = false;
                             }
 
-                            if (authOptions.Contains("[red]DownloadArchived[/]"))
+                            if (configOptions.Contains("[red]DownloadArchived[/]"))
                             {
-                                newAuth.DownloadArchived = true;
+                                newConfig.DownloadArchived = true;
                             }
                             else
                             {
-                                newAuth.DownloadArchived = false;
+                                newConfig.DownloadArchived = false;
                             }
 
-                            if (authOptions.Contains("[red]DownloadStories[/]"))
+                            if (configOptions.Contains("[red]DownloadStories[/]"))
                             {
-                                newAuth.DownloadStories = true;
+                                newConfig.DownloadStories = true;
                             }
                             else
                             {
-                                newAuth.DownloadStories = false;
+                                newConfig.DownloadStories = false;
                             }
 
-                            if (authOptions.Contains("[red]DownloadHighlights[/]"))
+                            if (configOptions.Contains("[red]DownloadHighlights[/]"))
                             {
-                                newAuth.DownloadHighlights = true;
+                                newConfig.DownloadHighlights = true;
                             }
                             else
                             {
-                                newAuth.DownloadHighlights = false;
+                                newConfig.DownloadHighlights = false;
                             }
 
-                            if (authOptions.Contains("[red]DownloadMessages[/]"))
+                            if (configOptions.Contains("[red]DownloadMessages[/]"))
                             {
-                                newAuth.DownloadMessages = true;
+                                newConfig.DownloadMessages = true;
                             }
                             else
                             {
-                                newAuth.DownloadMessages = false;
+                                newConfig.DownloadMessages = false;
                             }
 
-                            if (authOptions.Contains("[red]DownloadPaidMessages[/]"))
+                            if (configOptions.Contains("[red]DownloadPaidMessages[/]"))
                             {
-                                newAuth.DownloadPaidMessages = true;
+                                newConfig.DownloadPaidMessages = true;
                             }
                             else
                             {
-                                newAuth.DownloadPaidMessages = false;
+                                newConfig.DownloadPaidMessages = false;
                             }
 
-                            if (authOptions.Contains("[red]DownloadImages[/]"))
+                            if (configOptions.Contains("[red]DownloadImages[/]"))
                             {
-                                newAuth.DownloadImages = true;
+                                newConfig.DownloadImages = true;
                             }
                             else
                             {
-                                newAuth.DownloadImages = false;
+                                newConfig.DownloadImages = false;
                             }
 
-                            if (authOptions.Contains("[red]DownloadVideos[/]"))
+                            if (configOptions.Contains("[red]DownloadVideos[/]"))
                             {
-                                newAuth.DownloadVideos = true;
+                                newConfig.DownloadVideos = true;
                             }
                             else
                             {
-                                newAuth.DownloadVideos = false;
+                                newConfig.DownloadVideos = false;
                             }
 
-                            if (authOptions.Contains("[red]DownloadAudios[/]"))
+                            if (configOptions.Contains("[red]DownloadAudios[/]"))
                             {
-                                newAuth.DownloadAudios = true;
+                                newConfig.DownloadAudios = true;
                             }
                             else
                             {
-                                newAuth.DownloadAudios = false;
+                                newConfig.DownloadAudios = false;
                             }
 
-                            if (authOptions.Contains("[red]IncludeExpiredSubscriptions[/]"))
+                            if (configOptions.Contains("[red]IncludeExpiredSubscriptions[/]"))
                             {
-                                newAuth.IncludeExpiredSubscriptions = true;
+                                newConfig.IncludeExpiredSubscriptions = true;
                             }
                             else
                             {
-                                newAuth.IncludeExpiredSubscriptions = false;
+                                newConfig.IncludeExpiredSubscriptions = false;
                             }
 
-                            if (authOptions.Contains("[red]SkipAds[/]"))
+                            if (configOptions.Contains("[red]SkipAds[/]"))
                             {
-                                newAuth.SkipAds = true;
+                                newConfig.SkipAds = true;
                             }
                             else
                             {
-                                newAuth.SkipAds = false;
+                                newConfig.SkipAds = false;
                             }
 
-                            string newAuthString = JsonConvert.SerializeObject(newAuth, Formatting.Indented);
-                            File.WriteAllText("auth.json", newAuthString);
-                            if (newAuth.IncludeExpiredSubscriptions != auth.IncludeExpiredSubscriptions)
+                            string newConfigString = JsonConvert.SerializeObject(newConfig, Formatting.Indented);
+                            File.WriteAllText("config.json", newConfigString);
+                            if (config.IncludeExpiredSubscriptions != config.IncludeExpiredSubscriptions)
                             {
-                                auth = JsonConvert.DeserializeObject<Auth>(File.ReadAllText("auth.json"));
-                                return new KeyValuePair<bool, Dictionary<string, int>>(true, new Dictionary<string, int> { { "AuthChanged", 0 } });
+                                config = JsonConvert.DeserializeObject<Config>(File.ReadAllText("config.json"));
+                                return new KeyValuePair<bool, Dictionary<string, int>>(true, new Dictionary<string, int> { { "ConfigChanged", 0 } });
                             }
-                            auth = JsonConvert.DeserializeObject<Auth>(File.ReadAllText("auth.json"));
+                            config = JsonConvert.DeserializeObject<Config>(File.ReadAllText("config.json"));
                             break;
                         }
                         break;

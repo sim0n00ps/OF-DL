@@ -422,7 +422,7 @@ namespace OF_DL.Helpers
             }
             return null;
         }
-        public async Task<Dictionary<long, string>> GetMedia(MediaType mediatype, string endpoint, string? username, string folder, Auth auth, List<long> paid_post_ids)
+        public async Task<Dictionary<long, string>> GetMedia(MediaType mediatype, string endpoint, string? username, string folder, Auth auth, Config config, List<long> paid_post_ids)
         {
             try
             {
@@ -617,19 +617,19 @@ namespace OF_DL.Helpers
                                 foreach (Purchased.Medium medium in purchase.media)
                                 {
                                     paid_post_ids.Add(medium.id);
-                                    if (medium.type == "photo" && !auth.DownloadImages)
+                                    if (medium.type == "photo" && !config.DownloadImages)
                                     {
                                         continue;
                                     }
-                                    if (medium.type == "video" && !auth.DownloadVideos)
+                                    if (medium.type == "video" && !config.DownloadVideos)
                                     {
                                         continue;
                                     }
-                                    if (medium.type == "gif" && !auth.DownloadVideos)
+                                    if (medium.type == "gif" && !config.DownloadVideos)
                                     {
                                         continue;
                                     }
-                                    if (medium.type == "audio" && !auth.DownloadAudios)
+                                    if (medium.type == "audio" && !config.DownloadAudios)
                                     {
                                         continue;
                                     }
@@ -724,7 +724,7 @@ namespace OF_DL.Helpers
                         }
 
                         DBHelper dBHelper = new DBHelper();
-                        foreach (Post.List post in posts.list.Where(p => auth.SkipAds == false || (!p.rawText.Contains("#ad") && !p.rawText.Contains("/trial/"))))
+                        foreach (Post.List post in posts.list.Where(p => config.SkipAds == false || (!p.rawText.Contains("#ad") && !p.rawText.Contains("/trial/"))))
                         {
                             List<long> postPreviewIds = new List<long>();
                             if (post.preview != null && post.preview.Count > 0)
@@ -745,19 +745,19 @@ namespace OF_DL.Helpers
                             {
                                 foreach (Post.Medium medium in post.media)
                                 {
-                                    if (medium.type == "photo" && !auth.DownloadImages)
+                                    if (medium.type == "photo" && !config.DownloadImages)
                                     {
                                         continue;
                                     }
-                                    if (medium.type == "video" && !auth.DownloadVideos)
+                                    if (medium.type == "video" && !config.DownloadVideos)
                                     {
                                         continue;
                                     }
-                                    if (medium.type == "gif" && !auth.DownloadVideos)
+                                    if (medium.type == "gif" && !config.DownloadVideos)
                                     {
                                         continue;
                                     }
-                                    if (medium.type == "audio" && !auth.DownloadAudios)
+                                    if (medium.type == "audio" && !config.DownloadAudios)
                                     {
                                         continue;
                                     }
@@ -857,19 +857,19 @@ namespace OF_DL.Helpers
                             {
                                 foreach (Archived.Medium medium in archive.media)
                                 {
-                                    if (medium.type == "photo" && !auth.DownloadImages)
+                                    if (medium.type == "photo" && !config.DownloadImages)
                                     {
                                         continue;
                                     }
-                                    if (medium.type == "video" && !auth.DownloadVideos)
+                                    if (medium.type == "video" && !config.DownloadVideos)
                                     {
                                         continue;
                                     }
-                                    if (medium.type == "gif" && !auth.DownloadVideos)
+                                    if (medium.type == "gif" && !config.DownloadVideos)
                                     {
                                         continue;
                                     }
-                                    if (medium.type == "audio" && !auth.DownloadAudios)
+                                    if (medium.type == "audio" && !config.DownloadAudios)
                                     {
                                         continue;
                                     }
@@ -906,19 +906,19 @@ namespace OF_DL.Helpers
                                 foreach (Stories.Medium medium in story.media)
                                 {
                                     await dBHelper.AddMedia(folder, medium.id, story.id, medium.files.source.url, null, null, null, "Stories", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), false, false, null);
-                                    if (medium.type == "photo" && !auth.DownloadImages)
+                                    if (medium.type == "photo" && !config.DownloadImages)
                                     {
                                         continue;
                                     }
-                                    if (medium.type == "video" && !auth.DownloadVideos)
+                                    if (medium.type == "video" && !config.DownloadVideos)
                                     {
                                         continue;
                                     }
-                                    if (medium.type == "gif" && !auth.DownloadVideos)
+                                    if (medium.type == "gif" && !config.DownloadVideos)
                                     {
                                         continue;
                                     }
-                                    if (medium.type == "audio" && !auth.DownloadAudios)
+                                    if (medium.type == "audio" && !config.DownloadAudios)
                                     {
                                         continue;
                                     }
@@ -1020,19 +1020,19 @@ namespace OF_DL.Helpers
                                             foreach (HighlightMedia.Medium medium in item.media)
                                             {
                                                 await dBHelper.AddMedia(folder, medium.id, item.id, item.media[0].files.source.url, null, null, null, "Stories", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), false, false, null);
-                                                if (medium.type == "photo" && !auth.DownloadImages)
+                                                if (medium.type == "photo" && !config.DownloadImages)
                                                 {
                                                     continue;
                                                 }
-                                                if (medium.type == "video" && !auth.DownloadVideos)
+                                                if (medium.type == "video" && !config.DownloadVideos)
                                                 {
                                                     continue;
                                                 }
-                                                if (medium.type == "gif" && !auth.DownloadVideos)
+                                                if (medium.type == "gif" && !config.DownloadVideos)
                                                 {
                                                     continue;
                                                 }
-                                                if (medium.type == "audio" && !auth.DownloadAudios)
+                                                if (medium.type == "audio" && !config.DownloadAudios)
                                                 {
                                                     continue;
                                                 }
@@ -1094,7 +1094,7 @@ namespace OF_DL.Helpers
                         }
 
                         DBHelper dBHelper = new DBHelper();
-                        foreach (Messages.List list in messages.list.Where(p => auth.SkipAds == false || (!p.text.Contains("#ad") && !p.text.Contains("/trial/"))))
+                        foreach (Messages.List list in messages.list.Where(p => config.SkipAds == false || (!p.text.Contains("#ad") && !p.text.Contains("/trial/"))))
                         {
                             List<long> messagePreviewIds = new List<long>();
                             if (list.previews != null && list.previews.Count > 0)
@@ -1116,19 +1116,19 @@ namespace OF_DL.Helpers
                                     {
                                         await dBHelper.AddMedia(folder, medium.id, list.id, medium.source.source, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), messagePreviewIds.Contains(medium.id) ? true : false, false, null);
 
-                                        if (medium.type == "photo" && !auth.DownloadImages)
+                                        if (medium.type == "photo" && !config.DownloadImages)
                                         {
                                             continue;
                                         }
-                                        if (medium.type == "video" && !auth.DownloadVideos)
+                                        if (medium.type == "video" && !config.DownloadVideos)
                                         {
                                             continue;
                                         }
-                                        if (medium.type == "gif" && !auth.DownloadVideos)
+                                        if (medium.type == "gif" && !config.DownloadVideos)
                                         {
                                             continue;
                                         }
-                                        if (medium.type == "audio" && !auth.DownloadAudios)
+                                        if (medium.type == "audio" && !config.DownloadAudios)
                                         {
                                             continue;
                                         }
@@ -1140,19 +1140,19 @@ namespace OF_DL.Helpers
                                     else if (medium.canView && medium.files != null && medium.files.drm != null)
                                     {
                                         await dBHelper.AddMedia(folder, medium.id, list.id, medium.files.drm.manifest.dash, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), messagePreviewIds.Contains(medium.id) ? true : false, false, null);
-                                        if (medium.type == "photo" && !auth.DownloadImages)
+                                        if (medium.type == "photo" && !config.DownloadImages)
                                         {
                                             continue;
                                         }
-                                        if (medium.type == "video" && !auth.DownloadVideos)
+                                        if (medium.type == "video" && !config.DownloadVideos)
                                         {
                                             continue;
                                         }
-                                        if (medium.type == "gif" && !auth.DownloadVideos)
+                                        if (medium.type == "gif" && !config.DownloadVideos)
                                         {
                                             continue;
                                         }
-                                        if (medium.type == "audio" && !auth.DownloadAudios)
+                                        if (medium.type == "audio" && !config.DownloadAudios)
                                         {
                                             continue;
                                         }
@@ -1255,19 +1255,19 @@ namespace OF_DL.Helpers
                                         if (!has && medium.canView && medium.source != null && medium.source.source != null && !medium.source.source.Contains("upload"))
                                         {
                                             await dBHelper.AddMedia(folder, medium.id, purchase.id, medium.source.source, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
-                                            if (medium.type == "photo" && !auth.DownloadImages)
+                                            if (medium.type == "photo" && !config.DownloadImages)
                                             {
                                                 continue;
                                             }
-                                            if (medium.type == "video" && !auth.DownloadVideos)
+                                            if (medium.type == "video" && !config.DownloadVideos)
                                             {
                                                 continue;
                                             }
-                                            if (medium.type == "gif" && !auth.DownloadVideos)
+                                            if (medium.type == "gif" && !config.DownloadVideos)
                                             {
                                                 continue;
                                             }
-                                            if (medium.type == "audio" && !auth.DownloadAudios)
+                                            if (medium.type == "audio" && !config.DownloadAudios)
                                             {
                                                 continue;
                                             }
@@ -1279,19 +1279,19 @@ namespace OF_DL.Helpers
                                         else if (!has && medium.canView && medium.files != null && medium.files.drm != null)
                                         {
                                             await dBHelper.AddMedia(folder, medium.id, purchase.id, medium.files.drm.manifest.dash, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
-                                            if (medium.type == "photo" && !auth.DownloadImages)
+                                            if (medium.type == "photo" && !config.DownloadImages)
                                             {
                                                 continue;
                                             }
-                                            if (medium.type == "video" && !auth.DownloadVideos)
+                                            if (medium.type == "video" && !config.DownloadVideos)
                                             {
                                                 continue;
                                             }
-                                            if (medium.type == "gif" && !auth.DownloadVideos)
+                                            if (medium.type == "gif" && !config.DownloadVideos)
                                             {
                                                 continue;
                                             }
-                                            if (medium.type == "audio" && !auth.DownloadAudios)
+                                            if (medium.type == "audio" && !config.DownloadAudios)
                                             {
                                                 continue;
                                             }
@@ -1306,19 +1306,19 @@ namespace OF_DL.Helpers
                                         if (medium.canView && medium.source != null && medium.source.source != null && !medium.source.source.Contains("upload"))
                                         {
                                             await dBHelper.AddMedia(folder, medium.id, purchase.id, medium.source.source, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
-                                            if (medium.type == "photo" && !auth.DownloadImages)
+                                            if (medium.type == "photo" && !config.DownloadImages)
                                             {
                                                 continue;
                                             }
-                                            if (medium.type == "video" && !auth.DownloadVideos)
+                                            if (medium.type == "video" && !config.DownloadVideos)
                                             {
                                                 continue;
                                             }
-                                            if (medium.type == "gif" && !auth.DownloadVideos)
+                                            if (medium.type == "gif" && !config.DownloadVideos)
                                             {
                                                 continue;
                                             }
-                                            if (medium.type == "audio" && !auth.DownloadAudios)
+                                            if (medium.type == "audio" && !config.DownloadAudios)
                                             {
                                                 continue;
                                             }
@@ -1330,19 +1330,19 @@ namespace OF_DL.Helpers
                                         else if (medium.canView && medium.files != null && medium.files.drm != null)
                                         {
                                             await dBHelper.AddMedia(folder, medium.id, purchase.id, medium.files.drm.manifest.dash, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
-                                            if (medium.type == "photo" && !auth.DownloadImages)
+                                            if (medium.type == "photo" && !config.DownloadImages)
                                             {
                                                 continue;
                                             }
-                                            if (medium.type == "video" && !auth.DownloadVideos)
+                                            if (medium.type == "video" && !config.DownloadVideos)
                                             {
                                                 continue;
                                             }
-                                            if (medium.type == "gif" && !auth.DownloadVideos)
+                                            if (medium.type == "gif" && !config.DownloadVideos)
                                             {
                                                 continue;
                                             }
-                                            if (medium.type == "audio" && !auth.DownloadAudios)
+                                            if (medium.type == "audio" && !config.DownloadAudios)
                                             {
                                                 continue;
                                             }
@@ -1372,7 +1372,7 @@ namespace OF_DL.Helpers
             return null;
         }
 
-        public async Task<PaidPostCollection> GetPaidPosts(string endpoint, string folder, string username, Auth auth, List<long> paid_post_ids)
+        public async Task<PaidPostCollection> GetPaidPosts(string endpoint, string folder, string username, Auth auth, Config config, List<long> paid_post_ids)
         {
             try
             {
@@ -1495,19 +1495,19 @@ namespace OF_DL.Helpers
                                 paid_post_ids.Add(medium.id);
                             }
                             
-                            if (medium.type == "photo" && !auth.DownloadImages)
+                            if (medium.type == "photo" && !config.DownloadImages)
                             {
                                 continue;
                             }
-                            if (medium.type == "video" && !auth.DownloadVideos)
+                            if (medium.type == "video" && !config.DownloadVideos)
                             {
                                 continue;
                             }
-                            if (medium.type == "gif" && !auth.DownloadVideos)
+                            if (medium.type == "gif" && !config.DownloadVideos)
                             {
                                 continue;
                             }
-                            if (medium.type == "audio" && !auth.DownloadAudios)
+                            if (medium.type == "audio" && !config.DownloadAudios)
                             {
                                 continue;
                             }
@@ -1574,7 +1574,7 @@ namespace OF_DL.Helpers
             }
             return null;
         }
-        public async Task<PostCollection> GetPosts(string endpoint, string folder, Auth auth, List<long> paid_post_ids)
+        public async Task<PostCollection> GetPosts(string endpoint, string folder, Auth auth, Config config, List<long> paid_post_ids)
         {
             try
             {
@@ -1661,7 +1661,7 @@ namespace OF_DL.Helpers
                     }
 
                     DBHelper dBHelper = new DBHelper();
-                    foreach (Post.List post in posts.list.Where(p => !auth.SkipAds || (!p.rawText.Contains("#ad") && !p.rawText.Contains("/trial/"))))
+                    foreach (Post.List post in posts.list.Where(p => !config.SkipAds || (!p.rawText.Contains("#ad") && !p.rawText.Contains("/trial/"))))
                     {
                         List<long> postPreviewIds = new List<long>();
                         if (post.preview != null && post.preview.Count > 0)
@@ -1683,19 +1683,19 @@ namespace OF_DL.Helpers
                         {
                             foreach (Post.Medium medium in post.media)
                             {
-                                if (medium.type == "photo" && !auth.DownloadImages)
+                                if (medium.type == "photo" && !config.DownloadImages)
                                 {
                                     continue;
                                 }
-                                if (medium.type == "video" && !auth.DownloadVideos)
+                                if (medium.type == "video" && !config.DownloadVideos)
                                 {
                                     continue;
                                 }
-                                if (medium.type == "gif" && !auth.DownloadVideos)
+                                if (medium.type == "gif" && !config.DownloadVideos)
                                 {
                                     continue;
                                 }
-                                if (medium.type == "audio" && !auth.DownloadAudios)
+                                if (medium.type == "audio" && !config.DownloadAudios)
                                 {
                                     continue;
                                 }
@@ -1743,7 +1743,7 @@ namespace OF_DL.Helpers
             }
             return null;
         }
-        public async Task<ArchivedCollection> GetArchived(string endpoint, string folder, Auth auth)
+        public async Task<ArchivedCollection> GetArchived(string endpoint, string folder, Auth auth, Config config)
         {
             try
             {
@@ -1853,19 +1853,19 @@ namespace OF_DL.Helpers
                         {
                             foreach (Archived.Medium medium in archive.media)
                             {
-                                if (medium.type == "photo" && !auth.DownloadImages)
+                                if (medium.type == "photo" && !config.DownloadImages)
                                 {
                                     continue;
                                 }
-                                if (medium.type == "video" && !auth.DownloadVideos)
+                                if (medium.type == "video" && !config.DownloadVideos)
                                 {
                                     continue;
                                 }
-                                if (medium.type == "gif" && !auth.DownloadVideos)
+                                if (medium.type == "gif" && !config.DownloadVideos)
                                 {
                                     continue;
                                 }
-                                if (medium.type == "audio" && !auth.DownloadAudios)
+                                if (medium.type == "audio" && !config.DownloadAudios)
                                 {
                                     continue;
                                 }
@@ -1904,7 +1904,7 @@ namespace OF_DL.Helpers
             }
             return null;
         }
-        public async Task<MessageCollection> GetMessages(string endpoint, string folder, Auth auth)
+        public async Task<MessageCollection> GetMessages(string endpoint, string folder, Auth auth, Config config)
         {
             try
             {
@@ -1990,7 +1990,7 @@ namespace OF_DL.Helpers
                     }
 
                     DBHelper dBHelper = new DBHelper();
-                    foreach (Messages.List list in messages.list.Where(m => !auth.SkipAds || (!m.text.Contains("#ad") && !m.text.Contains("/trial/"))))
+                    foreach (Messages.List list in messages.list.Where(m => !config.SkipAds || (!m.text.Contains("#ad") && !m.text.Contains("/trial/"))))
                     {
                         List<long> messagePreviewIds = new List<long>();
                         if (list.previews != null && list.previews.Count > 0)
@@ -2011,19 +2011,19 @@ namespace OF_DL.Helpers
                             {
                                 if (medium.canView && medium.source.source != null && !medium.source.source.Contains("upload"))
                                 {
-                                    if (medium.type == "photo" && !auth.DownloadImages)
+                                    if (medium.type == "photo" && !config.DownloadImages)
                                     {
                                         continue;
                                     }
-                                    if (medium.type == "video" && !auth.DownloadVideos)
+                                    if (medium.type == "video" && !config.DownloadVideos)
                                     {
                                         continue;
                                     }
-                                    if (medium.type == "gif" && !auth.DownloadVideos)
+                                    if (medium.type == "gif" && !config.DownloadVideos)
                                     {
                                         continue;
                                     }
-                                    if (medium.type == "audio" && !auth.DownloadAudios)
+                                    if (medium.type == "audio" && !config.DownloadAudios)
                                     {
                                         continue;
                                     }
@@ -2036,19 +2036,19 @@ namespace OF_DL.Helpers
                                 }
                                 else if (medium.canView && medium.files != null && medium.files.drm != null)
                                 {
-                                    if (medium.type == "photo" && !auth.DownloadImages)
+                                    if (medium.type == "photo" && !config.DownloadImages)
                                     {
                                         continue;
                                     }
-                                    if (medium.type == "video" && !auth.DownloadVideos)
+                                    if (medium.type == "video" && !config.DownloadVideos)
                                     {
                                         continue;
                                     }
-                                    if (medium.type == "gif" && !auth.DownloadVideos)
+                                    if (medium.type == "gif" && !config.DownloadVideos)
                                     {
                                         continue;
                                     }
-                                    if (medium.type == "audio" && !auth.DownloadAudios)
+                                    if (medium.type == "audio" && !config.DownloadAudios)
                                     {
                                         continue;
                                     }
@@ -2067,19 +2067,19 @@ namespace OF_DL.Helpers
                             {
                                 if (medium.canView && medium.source.source != null && !medium.source.source.Contains("upload") && messagePreviewIds.Contains(medium.id))
                                 {
-                                    if (medium.type == "photo" && !auth.DownloadImages)
+                                    if (medium.type == "photo" && !config.DownloadImages)
                                     {
                                         continue;
                                     }
-                                    if (medium.type == "video" && !auth.DownloadVideos)
+                                    if (medium.type == "video" && !config.DownloadVideos)
                                     {
                                         continue;
                                     }
-                                    if (medium.type == "gif" && !auth.DownloadVideos)
+                                    if (medium.type == "gif" && !config.DownloadVideos)
                                     {
                                         continue;
                                     }
-                                    if (medium.type == "audio" && !auth.DownloadAudios)
+                                    if (medium.type == "audio" && !config.DownloadAudios)
                                     {
                                         continue;
                                     }
@@ -2092,19 +2092,19 @@ namespace OF_DL.Helpers
                                 }
                                 else if (medium.canView && medium.files != null && medium.files.drm != null && messagePreviewIds.Contains(medium.id))
                                 {
-                                    if (medium.type == "photo" && !auth.DownloadImages)
+                                    if (medium.type == "photo" && !config.DownloadImages)
                                     {
                                         continue;
                                     }
-                                    if (medium.type == "video" && !auth.DownloadVideos)
+                                    if (medium.type == "video" && !config.DownloadVideos)
                                     {
                                         continue;
                                     }
-                                    if (medium.type == "gif" && !auth.DownloadVideos)
+                                    if (medium.type == "gif" && !config.DownloadVideos)
                                     {
                                         continue;
                                     }
-                                    if (medium.type == "audio" && !auth.DownloadAudios)
+                                    if (medium.type == "audio" && !config.DownloadAudios)
                                     {
                                         continue;
                                     }
@@ -2133,7 +2133,7 @@ namespace OF_DL.Helpers
             }
             return null;
         }
-        public async Task<PaidMessageCollection> GetPaidMessages(string endpoint, string folder, string username, Auth auth)
+        public async Task<PaidMessageCollection> GetPaidMessages(string endpoint, string folder, string username, Auth auth, Config config)
         {
             try
             {
@@ -2265,19 +2265,19 @@ namespace OF_DL.Helpers
                                         bool has = previewids.Any(cus => cus.Equals(medium.id));
                                         if (!has && medium.canView && medium.source != null && medium.source.source != null && !medium.source.source.Contains("upload"))
                                         {
-                                            if (medium.type == "photo" && !auth.DownloadImages)
+                                            if (medium.type == "photo" && !config.DownloadImages)
                                             {
                                                 continue;
                                             }
-                                            if (medium.type == "video" && !auth.DownloadVideos)
+                                            if (medium.type == "video" && !config.DownloadVideos)
                                             {
                                                 continue;
                                             }
-                                            if (medium.type == "gif" && !auth.DownloadVideos)
+                                            if (medium.type == "gif" && !config.DownloadVideos)
                                             {
                                                 continue;
                                             }
-                                            if (medium.type == "audio" && !auth.DownloadAudios)
+                                            if (medium.type == "audio" && !config.DownloadAudios)
                                             {
                                                 continue;
                                             }
@@ -2290,19 +2290,19 @@ namespace OF_DL.Helpers
                                         }
                                         else if (!has && medium.canView && medium.files != null && medium.files.drm != null)
                                         {
-                                            if (medium.type == "photo" && !auth.DownloadImages)
+                                            if (medium.type == "photo" && !config.DownloadImages)
                                             {
                                                 continue;
                                             }
-                                            if (medium.type == "video" && !auth.DownloadVideos)
+                                            if (medium.type == "video" && !config.DownloadVideos)
                                             {
                                                 continue;
                                             }
-                                            if (medium.type == "gif" && !auth.DownloadVideos)
+                                            if (medium.type == "gif" && !config.DownloadVideos)
                                             {
                                                 continue;
                                             }
-                                            if (medium.type == "audio" && !auth.DownloadAudios)
+                                            if (medium.type == "audio" && !config.DownloadAudios)
                                             {
                                                 continue;
                                             }
@@ -2318,19 +2318,19 @@ namespace OF_DL.Helpers
                                     {
                                         if (medium.canView && medium.source != null && medium.source.source != null && !medium.source.source.Contains("upload"))
                                         {
-                                            if (medium.type == "photo" && !auth.DownloadImages)
+                                            if (medium.type == "photo" && !config.DownloadImages)
                                             {
                                                 continue;
                                             }
-                                            if (medium.type == "video" && !auth.DownloadVideos)
+                                            if (medium.type == "video" && !config.DownloadVideos)
                                             {
                                                 continue;
                                             }
-                                            if (medium.type == "gif" && !auth.DownloadVideos)
+                                            if (medium.type == "gif" && !config.DownloadVideos)
                                             {
                                                 continue;
                                             }
-                                            if (medium.type == "audio" && !auth.DownloadAudios)
+                                            if (medium.type == "audio" && !config.DownloadAudios)
                                             {
                                                 continue;
                                             }
@@ -2343,19 +2343,19 @@ namespace OF_DL.Helpers
                                         }
                                         else if (medium.canView && medium.files != null && medium.files.drm != null)
                                         {
-                                            if (medium.type == "photo" && !auth.DownloadImages)
+                                            if (medium.type == "photo" && !config.DownloadImages)
                                             {
                                                 continue;
                                             }
-                                            if (medium.type == "video" && !auth.DownloadVideos)
+                                            if (medium.type == "video" && !config.DownloadVideos)
                                             {
                                                 continue;
                                             }
-                                            if (medium.type == "gif" && !auth.DownloadVideos)
+                                            if (medium.type == "gif" && !config.DownloadVideos)
                                             {
                                                 continue;
                                             }
-                                            if (medium.type == "audio" && !auth.DownloadAudios)
+                                            if (medium.type == "audio" && !config.DownloadAudios)
                                             {
                                                 continue;
                                             }
