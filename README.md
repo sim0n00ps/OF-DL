@@ -23,7 +23,7 @@ I have also made some batch scripts to run the commands included in the guide li
 
 # Running the program
 Make sure you download the latest release from the [releases](https://github.com/sim0n00ps/OF-DL/releases) page and unzip the .zip file to a location where you want to download content to.
-You should have 3 files in the folder you just created by unzipping the zip file, OF DL.exe, auth.json and e_sqlite3.dll. 
+You should have 4 files in the folder you just created by unzipping the zip file, OF DL.exe, auth.json, config.json and e_sqlite3.dll. 
 
 First you need to fill out the auth.json file.
 1. Go to www.onlyfans.com and login.
@@ -73,7 +73,7 @@ The List option will show you all of the lists you have created on OF and you ca
 
 The Custom option allows you to select 1 or more accounts you want to scrape media from so if you only want to get media from a select number of accounts then you can do that. To navigate the menu the can use the &#8593; & &#8595; arrows. You can also press keys A-Z on the keyboard whilst in the menu to easily navigate the menu and for example pressing the letter 'c' on the keyboard will highlight the first user in the list who's username starts with the letter 'c'. To select/deselect an account, press the `space` key and after you are happy with your selection(s) press `enter` to start downloading.
 
-The edit Auth.json option allows you to change what you do and don't want to download without having to leave the program.
+The edit config.json option allows you to change what you do and don't want to download without having to leave the program.
 
 After you have made your selection the content should start downloading.
 Content is downloaded in this order:
