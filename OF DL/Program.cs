@@ -819,7 +819,7 @@ namespace OF_DL
                             });
 
                             MultiSelectionPrompt<string> multiSelectionPrompt = new MultiSelectionPrompt<string>()
-                                .Title("[red]Edit Auth.json[/]")
+                                .Title("[red]Edit config.json[/]")
                                 .PageSize(14);
 
                             foreach(var choice in choices)
@@ -986,7 +986,7 @@ namespace OF_DL
 					"[red]Select All[/]",
 					"[red]List[/]",
 					"[red]Custom[/]",
-                    "[red]Edit Auth.json[/]",
+                    "[red]Edit config.json[/]",
 					"[red]Exit[/]"
 				};
             }
@@ -996,7 +996,7 @@ namespace OF_DL
 				{
 					"[red]Select All[/]",
 					"[red]Custom[/]",
-                    "[red]Edit Auth.json[/]",
+                    "[red]Edit config.json[/]",
                     "[red]Exit[/]"
 				};
             }
