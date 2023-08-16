@@ -26,5 +26,6 @@ namespace OF_DL.Entities
         public string? PostFileNameFormat { get; set; } = string.Empty;
         public string? PaidMessageFileNameFormat { get; set; } = string.Empty;
         public string? MessageFileNameFormat { get; set; } = string.Empty;
+        public int? Timeout { get; set; } = -1;
     }
 }

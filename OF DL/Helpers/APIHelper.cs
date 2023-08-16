@@ -536,7 +536,7 @@ namespace OF_DL.Helpers
 
                 Dictionary<string, string> headers = await Headers("/api2/v2" + endpoint, queryParams, auth);
 
-                HttpClient client = new HttpClient();
+                HttpClient client = GetHttpClient(config);
 
                 HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
 
@@ -574,7 +574,7 @@ namespace OF_DL.Helpers
                                 }
                                 Purchased newPaidPosts = new Purchased();
                                 Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams, auth);
-                                HttpClient loopclient = new HttpClient();
+                                HttpClient loopclient = GetHttpClient(config);
 
                                 HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
 
@@ -700,7 +700,7 @@ namespace OF_DL.Helpers
                                 }
                                 Post newposts = new Post();
                                 Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams, auth);
-                                HttpClient loopclient = new HttpClient();
+                                HttpClient loopclient = GetHttpClient(config);
 
                                 HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
 
@@ -812,7 +812,7 @@ namespace OF_DL.Helpers
                                 }
                                 Archived newarchived = new Archived();
                                 Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams, auth);
-                                HttpClient loopclient = new HttpClient();
+                                HttpClient loopclient = GetHttpClient(config);
 
                                 HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
 
@@ -958,7 +958,7 @@ namespace OF_DL.Helpers
                                 }
                                 Highlights newhighlights = new Highlights();
                                 Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams, auth);
-                                HttpClient loopclient = new HttpClient();
+                                HttpClient loopclient = GetHttpClient(config);
 
                                 HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
 
@@ -994,7 +994,7 @@ namespace OF_DL.Helpers
                             HighlightMedia highlightMedia = new HighlightMedia();
                             Dictionary<string, string> highlight_headers = await Headers("/api2/v2/stories/highlights/" + highlight_id, string.Empty, auth);
 
-                            HttpClient highlight_client = new HttpClient();
+                            HttpClient highlight_client = GetHttpClient(config);
 
                             HttpRequestMessage highlight_request = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2/stories/highlights/" + highlight_id);
 
@@ -1070,7 +1070,7 @@ namespace OF_DL.Helpers
                                 }
                                 Messages newmessages = new Messages();
                                 Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams, auth);
-                                HttpClient loopclient = new HttpClient();
+                                HttpClient loopclient = GetHttpClient(config);
 
                                 HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
 
@@ -1188,7 +1188,7 @@ namespace OF_DL.Helpers
                                 }
                                 Purchased newpaidMessages = new Purchased();
                                 Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams, auth);
-                                HttpClient loopclient = new HttpClient();
+                                HttpClient loopclient = GetHttpClient(config);
 
                                 HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
 
@@ -1401,7 +1401,7 @@ namespace OF_DL.Helpers
 
                 Dictionary<string, string> headers = await Headers("/api2/v2" + endpoint, queryParams, auth);
 
-                HttpClient client = new HttpClient();
+                HttpClient client = GetHttpClient(config);
 
                 HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
 
@@ -1436,7 +1436,7 @@ namespace OF_DL.Helpers
                             }
                             Purchased newPaidPosts = new Purchased();
                             Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams, auth);
-                            HttpClient loopclient = new HttpClient();
+                            HttpClient loopclient = GetHttpClient(config);
 
                             HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
 
@@ -1602,7 +1602,7 @@ namespace OF_DL.Helpers
 
                 Dictionary<string, string> headers = await Headers("/api2/v2" + endpoint, queryParams, auth);
 
-                HttpClient client = new HttpClient();
+                HttpClient client = GetHttpClient(config);
 
                 HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
 
@@ -1637,7 +1637,7 @@ namespace OF_DL.Helpers
                             }
                             Post newposts = new Post();
                             Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams, auth);
-                            HttpClient loopclient = new HttpClient();
+                            HttpClient loopclient = GetHttpClient(config);
 
                             HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
 
@@ -1772,7 +1772,7 @@ namespace OF_DL.Helpers
 
                 Dictionary<string, string> headers = await Headers("/api2/v2" + endpoint, queryParams, auth);
 
-                HttpClient client = new HttpClient();
+                HttpClient client = GetHttpClient(config);
 
                 HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
 
@@ -1807,7 +1807,7 @@ namespace OF_DL.Helpers
                             }
                             Archived newarchived = new Archived();
                             Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams, auth);
-                            HttpClient loopclient = new HttpClient();
+                            HttpClient loopclient = GetHttpClient(config);
 
                             HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
 
@@ -1931,7 +1931,7 @@ namespace OF_DL.Helpers
 
                 Dictionary<string, string> headers = await Headers("/api2/v2" + endpoint, queryParams, auth);
 
-                HttpClient client = new HttpClient();
+                HttpClient client = GetHttpClient(config);
 
                 HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
 
@@ -1966,7 +1966,7 @@ namespace OF_DL.Helpers
                             }
                             Messages newmessages = new Messages();
                             Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams, auth);
-                            HttpClient loopclient = new HttpClient();
+                            HttpClient loopclient = GetHttpClient(config);
 
                             HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
 
@@ -2162,7 +2162,7 @@ namespace OF_DL.Helpers
 
                 Dictionary<string, string> headers = await Headers("/api2/v2" + endpoint, queryParams, auth);
 
-                HttpClient client = new HttpClient();
+                HttpClient client = GetHttpClient(config);
 
                 HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
 
@@ -2197,7 +2197,7 @@ namespace OF_DL.Helpers
                             }
                             Purchased newpaidMessages = new Purchased();
                             Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams, auth);
-                            HttpClient loopclient = new HttpClient();
+                            HttpClient loopclient = GetHttpClient(config);
 
                             HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
 
@@ -2554,6 +2554,16 @@ namespace OF_DL.Helpers
                 }
             }
             return true;
+        }
+
+        private static HttpClient GetHttpClient(Config? config = null)
+        {
+            var client = new HttpClient();
+            if (config?.Timeout != null && config.Timeout > 0)
+            {
+                client.Timeout = TimeSpan.FromSeconds(config.Timeout.Value);
+            }
+            return client;
         }
     }
 }
