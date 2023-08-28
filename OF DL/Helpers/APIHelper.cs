@@ -13,6 +13,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Linq;
 using WidevineClient.Widevine;
+using static OF_DL.Entities.Lists.UserList;
 using static WidevineClient.HttpUtil;
 
 namespace OF_DL.Helpers
@@ -137,19 +138,18 @@ namespace OF_DL.Helpers
             }
             return null;
         }
-        public async Task<Dictionary<string, int>> GetSubscriptions(string endpoint, bool includeExpiredSubscriptions, Auth auth)
+        public async Task<Dictionary<string, int>> GetActiveSubscriptions(string endpoint, Auth auth)
         {
             try
             {
-                int post_limit = 50;
                 Dictionary<string, string> GetParams = new Dictionary<string, string>();
                 Subscriptions subscriptions = new Subscriptions();
 
                 GetParams = new Dictionary<string, string>
                 {
-                    { "limit", post_limit.ToString() },
-                    { "order", "publish_date_asc" },
-                    { "type", "all" },
+                    { "offset", "0" },
+                    { "limit", "50" },
+                    { "type", "active" },
                     { "format", "infinite"}
                 };
 
@@ -214,40 +214,151 @@ namespace OF_DL.Helpers
                             using (var loopresponse = await loopclient.SendAsync(looprequest))
                             {
                                 loopresponse.EnsureSuccessStatusCode();
-                                var loopbody = await loopresponse.Content.ReadAsStringAsync();
-                                newSubscriptions = JsonConvert.DeserializeObject<Subscriptions>(loopbody, jsonSerializerSettings);
+                                string loopbody = await loopresponse.Content.ReadAsStringAsync();
+                                if (!string.IsNullOrEmpty(loopbody) && loopbody.Trim() != "[]")
+                                {
+                                    newSubscriptions = JsonConvert.DeserializeObject<Subscriptions>(loopbody, jsonSerializerSettings);
+                                }
+                                else
+                                {
+                                    break;
+                                }
                             }
                             subscriptions.list.AddRange(newSubscriptions.list);
                             if (!newSubscriptions.hasMore)
                             {
                                 break;
                             }
-                            GetParams["offset"] = Convert.ToString(Convert.ToInt32(GetParams["offset"]) + post_limit);
+                            GetParams["offset"] = subscriptions.list.Count.ToString();
                         }
                     }
 
-                    if (includeExpiredSubscriptions)
+                    foreach (Subscriptions.List subscription in subscriptions.list)
                     {
-                        foreach (Subscriptions.List subscription in subscriptions.list)
+                        if (!users.ContainsKey(subscription.username))
                         {
-                            if (!users.ContainsKey(subscription.username))
-                            {
-                                users.Add(subscription.username, subscription.id);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        foreach (Subscriptions.List subscription in subscriptions.list.Where(s => s.subscribedBy.HasValue))
-                        {
-                            if (!users.ContainsKey(subscription.username))
-                            {
-                                users.Add(subscription.username, subscription.id);
-                            }
+                            users.Add(subscription.username, subscription.id);
                         }
                     }
                 }
-                return users.OrderBy(x => x.Key).ToDictionary(x => x.Key, x => x.Value);
+                return users;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine("\nInner Exception:");
+                    Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                }
+            }
+            return null;
+        }
+        public async Task<Dictionary<string, int>> GetExpiredSubscriptions(string endpoint, Auth auth)
+        {
+            try
+            {
+                Dictionary<string, string> GetParams = new Dictionary<string, string>();
+                Subscriptions subscriptions = new Subscriptions();
+
+                GetParams = new Dictionary<string, string>
+                {
+                    { "offset", "0" },
+                    { "limit", "50" },
+                    { "type", "expired" },
+                    { "format", "infinite"}
+                };
+
+                Dictionary<string, int> users = new Dictionary<string, int>();
+                string queryParams = "?";
+                foreach (KeyValuePair<string, string> kvp in GetParams)
+                {
+                    if (kvp.Key == GetParams.Keys.Last())
+                    {
+                        queryParams += $"{kvp.Key}={kvp.Value}";
+                    }
+                    else
+                    {
+                        queryParams += $"{kvp.Key}={kvp.Value}&";
+                    }
+                }
+
+                Dictionary<string, string> headers = await Headers("/api2/v2" + endpoint, queryParams, auth);
+
+                HttpClient client = new HttpClient();
+
+                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
+
+                foreach (KeyValuePair<string, string> keyValuePair in headers)
+                {
+                    request.Headers.Add(keyValuePair.Key, keyValuePair.Value);
+                }
+                var jsonSerializerSettings = new JsonSerializerSettings();
+                jsonSerializerSettings.MissingMemberHandling = MissingMemberHandling.Ignore;
+                using (var response = await client.SendAsync(request))
+                {
+                    response.EnsureSuccessStatusCode();
+                    var body = await response.Content.ReadAsStringAsync();
+                    subscriptions = JsonConvert.DeserializeObject<Subscriptions>(body);
+                    if (subscriptions != null && subscriptions.hasMore)
+                    {
+                        GetParams["offset"] = subscriptions.list.Count.ToString();
+                        while (true)
+                        {
+                            string loopqueryParams = "?";
+                            foreach (KeyValuePair<string, string> kvp in GetParams)
+                            {
+                                if (kvp.Key == GetParams.Keys.Last())
+                                {
+                                    loopqueryParams += $"{kvp.Key}={kvp.Value}";
+                                }
+                                else
+                                {
+                                    loopqueryParams += $"{kvp.Key}={kvp.Value}&";
+                                }
+                            }
+                            Subscriptions newSubscriptions = new Subscriptions();
+                            Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams, auth);
+                            HttpClient loopclient = new HttpClient();
+
+                            HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
+
+                            foreach (KeyValuePair<string, string> keyValuePair in loopheaders)
+                            {
+                                looprequest.Headers.Add(keyValuePair.Key, keyValuePair.Value);
+                            }
+                            using (var loopresponse = await loopclient.SendAsync(looprequest))
+                            {
+                                loopresponse.EnsureSuccessStatusCode();
+                                string loopbody = await loopresponse.Content.ReadAsStringAsync();
+                                if (!string.IsNullOrEmpty(loopbody) && loopbody.Trim() != "[]")
+                                {
+                                    newSubscriptions = JsonConvert.DeserializeObject<Subscriptions>(loopbody, jsonSerializerSettings);
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
+                            subscriptions.list.AddRange(newSubscriptions.list);
+                            if (!newSubscriptions.hasMore)
+                            {
+                                break;
+                            }
+                            GetParams["offset"] = subscriptions.list.Count.ToString();
+                        }
+                    }
+
+                    foreach (Subscriptions.List subscription in subscriptions.list)
+                    {
+                        if (!users.ContainsKey(subscription.username))
+                        {
+                            users.Add(subscription.username, subscription.id);
+                        }
+                    }
+                }
+                return users;
             }
             catch (Exception ex)
             {
@@ -2555,7 +2666,6 @@ namespace OF_DL.Helpers
             }
             return true;
         }
-
         private static HttpClient GetHttpClient(Config? config = null)
         {
             var client = new HttpClient();

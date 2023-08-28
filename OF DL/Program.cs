@@ -160,11 +160,30 @@ namespace OF_DL
                     do
                     {
                         DateTime startTime = DateTime.Now;
-                        Dictionary<string, int> users = await apiHelper.GetSubscriptions("/subscriptions/subscribes", config.IncludeExpiredSubscriptions, auth);
+                        Dictionary<string, int> users = new Dictionary<string, int>();
+                        Dictionary<string, int> activeSubs = await apiHelper.GetActiveSubscriptions("/subscriptions/subscribes", auth);
+                        foreach(KeyValuePair<string, int> activeSub in activeSubs)
+                        {
+                            if (!users.ContainsKey(activeSub.Key))
+                            {
+                                users.Add(activeSub.Key, activeSub.Value);
+                            }
+                        }
+                        if (config.IncludeExpiredSubscriptions)
+                        {
+                            Dictionary<string, int> expiredSubs = await apiHelper.GetExpiredSubscriptions("/subscriptions/subscribes", auth);
+                            foreach (KeyValuePair<string, int> expiredSub in expiredSubs)
+                            {
+                                if (!users.ContainsKey(expiredSub.Key))
+                                {
+                                    users.Add(expiredSub.Key, expiredSub.Value);
+                                }
+                            }
+                        }
                         Dictionary<string, int> lists = await apiHelper.GetLists("/lists", auth);
                         Dictionary<string, int> selectedUsers = new Dictionary<string, int>();
                         // Call the HandleUserSelection method to handle user selection and processing
-                        KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP = await HandleUserSelection(selectedUsers, users, lists);
+                        KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP = await HandleUserSelection(selectedUsers, users.OrderBy(x => x.Key).ToDictionary(x => x.Key, x => x.Value), lists);
 
                         if (hasSelectedUsersKVP.Key && !hasSelectedUsersKVP.Value.ContainsKey("ConfigChanged"))
                         {
