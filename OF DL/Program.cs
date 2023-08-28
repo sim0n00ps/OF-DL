@@ -36,12 +36,12 @@ public class Program
 	public async static Task Main()
 	{
 		try
-		{
+        {
             bool clientIdBlobMissing = false;
             bool devicePrivateKey = false;
-		    AnsiConsole.Write(new FigletText("Welcome to OF-DL").Color(Color.Red));
+            AnsiConsole.Write(new FigletText("Welcome to OF-DL").Color(Color.Red));
 
-            if(File.Exists("auth.json"))
+            if (File.Exists("auth.json"))
             {
                 AnsiConsole.Markup("[green]auth.json located successfully!\n[/]");
                 Auth = JsonConvert.DeserializeObject<Auth>(File.ReadAllText("auth.json"));
@@ -156,125 +156,14 @@ public class Program
             {
                 AnsiConsole.Markup($"[red]Auth failed, please check the values in auth.json are correct, press any key to exit[/]");
                 Console.ReadKey();
+                return;
             }
-            else
-            {
-                AnsiConsole.Markup($"[green]Logged In successfully as {validate.name} {validate.username}\n[/]");
-                do
-                {
-                    DateTime startTime = DateTime.Now;
-                    Dictionary<string, int> users = await m_ApiHelper.GetSubscriptions("/subscriptions/subscribes", Config.IncludeExpiredSubscriptions, Auth);
-                    Dictionary<string, int> lists = await m_ApiHelper.GetLists("/lists", Auth);
-                    Dictionary<string, int> selectedUsers = new();
-                    // Call the HandleUserSelection method to handle user selection and processing
-                    KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP = await HandleUserSelection(selectedUsers, users, lists);
 
-                    if (hasSelectedUsersKVP.Key && !hasSelectedUsersKVP.Value.ContainsKey("ConfigChanged"))
-                    {
-                        //Iterate over each user in the list of users
-                        foreach (KeyValuePair<string, int> user in hasSelectedUsersKVP.Value)
-                        {
-                            int paidPostCount = 0;
-                            int postCount = 0;
-                            int archivedCount = 0;
-                            int storiesCount = 0;
-                            int highlightsCount = 0;
-                            int messagesCount = 0;
-                            int paidMessagesCount = 0;
-                            AnsiConsole.Markup($"[red]\nScraping Data for {user.Key}\n[/]");
 
-                            string path = "";
-                            if (!string.IsNullOrEmpty(Config.DownloadPath))
-                            {
-                                path = System.IO.Path.Combine(Config.DownloadPath, user.Key);
-                            }
-                            else
-                            {
-                                path = $"__user_data__/sites/OnlyFans/{user.Key}"; // specify the path for the new folder
-                            }
-
-                            if (!Directory.Exists(path)) // check if the folder already exists
-                            {
-                                Directory.CreateDirectory(path); // create the new folder
-                                AnsiConsole.Markup($"[red]Created folder for {user.Key}\n[/]");
-                            }
-                            else
-                            {
-                                AnsiConsole.Markup($"[red]Folder for {user.Key} already created\n[/]");
-                            }
-
-                            Entities.User user_info = await m_ApiHelper.GetUserInfo($"/users/{user.Key}", Auth);
-
-                            await m_DBHelper.CreateDB(path);
-
-                            if (Config.DownloadAvatarHeaderPhoto)
-                            {
-                                await m_DownloadHelper.DownloadAvatarHeader(user_info.avatar, user_info.header, path);
-                            }
-
-                            if (Config.DownloadPaidPosts)
-                            {
-                                paidPostCount = await DownloadPaidPosts(hasSelectedUsersKVP, user, paidPostCount, path);
-                            }
-
-                            if (Config.DownloadPosts)
-                            {
-                                postCount = await DownloadFreePosts(hasSelectedUsersKVP, user, postCount, path);
-                            }
-
-                            if (Config.DownloadArchived)
-                            {
-                                archivedCount = await DownloadArchived(hasSelectedUsersKVP, user, archivedCount, path);
-                            }
-
-                            if (Config.DownloadStories)
-                            {
-                                storiesCount = await DownloadStories(user, storiesCount, path);
-                            }
-
-                            if (Config.DownloadHighlights)
-                            {
-                                highlightsCount = await DownloadHighlights(user, highlightsCount, path);
-                            }
-
-                            if (Config.DownloadMessages)
-                            {
-                                messagesCount = await DownloadMessages(hasSelectedUsersKVP, user, messagesCount, path);
-                            }
-
-                            if (Config.DownloadPaidMessages)
-                            {
-                                paidMessagesCount = await DownloadPaidMessages(hasSelectedUsersKVP, user, paidMessagesCount, path);
-                            }
-
-                            AnsiConsole.Markup("\n");
-                            AnsiConsole.Write(new BreakdownChart()
-                            .FullSize()
-                            .AddItem("Paid Posts", paidPostCount, Color.Red)
-                            .AddItem("Posts", postCount, Color.Blue)
-                            .AddItem("Archived", archivedCount, Color.Green)
-                            .AddItem("Stories", storiesCount, Color.Yellow)
-                            .AddItem("Highlights", highlightsCount, Color.Orange1)
-                            .AddItem("Messages", messagesCount, Color.LightGreen)
-                            .AddItem("Paid Messages", paidMessagesCount, Color.Aqua));
-                            AnsiConsole.Markup("\n");
-                        }
-                        DateTime endTime = DateTime.Now;
-                        TimeSpan totalTime = endTime - startTime;
-                        AnsiConsole.Markup($"[green]Scrape Completed in {totalTime.TotalMinutes:0.00} minutes\n[/]");
-                    }
-                    else if (hasSelectedUsersKVP.Key && hasSelectedUsersKVP.Value != null ? hasSelectedUsersKVP.Value.ContainsKey("ConfigChanged") : false)
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                } while (true);
-            }
-		}
-		catch (Exception ex)
+            AnsiConsole.Markup($"[green]Logged In successfully as {validate.name} {validate.username}\n[/]");
+            await DownloadAllData();
+        }
+        catch (Exception ex)
 		{
 			Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
 
@@ -286,11 +175,128 @@ public class Program
 		}
 	}
 
+
+    private static async Task DownloadAllData()
+    {
+        do
+        {
+            DateTime startTime = DateTime.Now;
+            Dictionary<string, int> users = await m_ApiHelper.GetSubscriptions("/subscriptions/subscribes", Config!.IncludeExpiredSubscriptions, Auth!);
+            Dictionary<string, int> lists = await m_ApiHelper.GetLists("/lists", Auth);
+            Dictionary<string, int> selectedUsers = new();
+            // Call the HandleUserSelection method to handle user selection and processing
+            KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP = await HandleUserSelection(selectedUsers, users, lists);
+
+            if (hasSelectedUsersKVP.Key && !hasSelectedUsersKVP.Value.ContainsKey("ConfigChanged"))
+            {
+                //Iterate over each user in the list of users
+                foreach (KeyValuePair<string, int> user in hasSelectedUsersKVP.Value)
+                {
+                    int paidPostCount = 0;
+                    int postCount = 0;
+                    int archivedCount = 0;
+                    int storiesCount = 0;
+                    int highlightsCount = 0;
+                    int messagesCount = 0;
+                    int paidMessagesCount = 0;
+                    AnsiConsole.Markup($"[red]\nScraping Data for {user.Key}\n[/]");
+
+                    string path = "";
+                    if (!string.IsNullOrEmpty(Config.DownloadPath))
+                    {
+                        path = System.IO.Path.Combine(Config.DownloadPath, user.Key);
+                    }
+                    else
+                    {
+                        path = $"__user_data__/sites/OnlyFans/{user.Key}"; // specify the path for the new folder
+                    }
+
+                    if (!Directory.Exists(path)) // check if the folder already exists
+                    {
+                        Directory.CreateDirectory(path); // create the new folder
+                        AnsiConsole.Markup($"[red]Created folder for {user.Key}\n[/]");
+                    }
+                    else
+                    {
+                        AnsiConsole.Markup($"[red]Folder for {user.Key} already created\n[/]");
+                    }
+
+                    Entities.User user_info = await m_ApiHelper.GetUserInfo($"/users/{user.Key}", Auth);
+
+                    await m_DBHelper.CreateDB(path);
+
+                    if (Config.DownloadAvatarHeaderPhoto)
+                    {
+                        await m_DownloadHelper.DownloadAvatarHeader(user_info.avatar, user_info.header, path);
+                    }
+
+                    if (Config.DownloadPaidPosts)
+                    {
+                        paidPostCount = await DownloadPaidPosts(hasSelectedUsersKVP, user, paidPostCount, path);
+                    }
+
+                    if (Config.DownloadPosts)
+                    {
+                        postCount = await DownloadFreePosts(hasSelectedUsersKVP, user, postCount, path);
+                    }
+
+                    if (Config.DownloadArchived)
+                    {
+                        archivedCount = await DownloadArchived(hasSelectedUsersKVP, user, archivedCount, path);
+                    }
+
+                    if (Config.DownloadStories)
+                    {
+                        storiesCount = await DownloadStories(user, storiesCount, path);
+                    }
+
+                    if (Config.DownloadHighlights)
+                    {
+                        highlightsCount = await DownloadHighlights(user, highlightsCount, path);
+                    }
+
+                    if (Config.DownloadMessages)
+                    {
+                        messagesCount = await DownloadMessages(hasSelectedUsersKVP, user, messagesCount, path);
+                    }
+
+                    if (Config.DownloadPaidMessages)
+                    {
+                        paidMessagesCount = await DownloadPaidMessages(hasSelectedUsersKVP, user, paidMessagesCount, path);
+                    }
+
+                    AnsiConsole.Markup("\n");
+                    AnsiConsole.Write(new BreakdownChart()
+                    .FullSize()
+                    .AddItem("Paid Posts", paidPostCount, Color.Red)
+                    .AddItem("Posts", postCount, Color.Blue)
+                    .AddItem("Archived", archivedCount, Color.Green)
+                    .AddItem("Stories", storiesCount, Color.Yellow)
+                    .AddItem("Highlights", highlightsCount, Color.Orange1)
+                    .AddItem("Messages", messagesCount, Color.LightGreen)
+                    .AddItem("Paid Messages", paidMessagesCount, Color.Aqua));
+                    AnsiConsole.Markup("\n");
+                }
+                DateTime endTime = DateTime.Now;
+                TimeSpan totalTime = endTime - startTime;
+                AnsiConsole.Markup($"[green]Scrape Completed in {totalTime.TotalMinutes:0.00} minutes\n[/]");
+            }
+            else if (hasSelectedUsersKVP.Key && hasSelectedUsersKVP.Value != null ? hasSelectedUsersKVP.Value.ContainsKey("ConfigChanged") : false)
+            {
+                continue;
+            }
+            else
+            {
+                break;
+            }
+        } while (true);
+    }
+
     private static async Task<int> DownloadPaidMessages(KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int paidMessagesCount, string path)
     {
         AnsiConsole.Markup($"[red]Getting Paid Messages\n[/]");
         //Dictionary<long, string> purchased = await apiHelper.GetMedia(MediaType.PaidMessages, "/posts/paid", user.Key, path, auth, paid_post_ids);
-        PaidMessageCollection paidMessageCollection = await m_ApiHelper.GetPaidMessages("/posts/paid", path, user.Key, Auth, Config);
+        PaidMessageCollection paidMessageCollection = await m_ApiHelper.GetPaidMessages("/posts/paid", path, user.Key, Auth!, Config!);
         int oldPaidMessagesCount = 0;
         int newPaidMessagesCount = 0;
         if (paidMessageCollection != null && paidMessageCollection.PaidMessages.Count > 0)
@@ -369,7 +375,7 @@ public class Program
     {
         AnsiConsole.Markup($"[red]Getting Messages\n[/]");
         //Dictionary<long, string> messages = await apiHelper.GetMedia(MediaType.Messages, $"/chats/{user.Value}/messages", null, path, auth, paid_post_ids);
-        MessageCollection messages = await m_ApiHelper.GetMessages($"/chats/{user.Value}/messages", path, Auth, Config);
+        MessageCollection messages = await m_ApiHelper.GetMessages($"/chats/{user.Value}/messages", path, Auth!, Config!);
         int oldMessagesCount = 0;
         int newMessagesCount = 0;
         if (messages != null && messages.Messages.Count > 0)
@@ -447,7 +453,7 @@ public class Program
     private static async Task<int> DownloadHighlights(KeyValuePair<string, int> user, int highlightsCount, string path)
     {
         AnsiConsole.Markup($"[red]Getting Highlights\n[/]");
-        Dictionary<long, string> highlights = await m_ApiHelper.GetMedia(MediaType.Highlights, $"/users/{user.Value}/stories/highlights", null, path, Auth, Config, paid_post_ids);
+        Dictionary<long, string> highlights = await m_ApiHelper.GetMedia(MediaType.Highlights, $"/users/{user.Value}/stories/highlights", null, path, Auth!, Config!, paid_post_ids);
         int oldHighlightsCount = 0;
         int newHighlightsCount = 0;
         if (highlights != null && highlights.Count > 0)
@@ -490,7 +496,7 @@ public class Program
     private static async Task<int> DownloadStories(KeyValuePair<string, int> user, int storiesCount, string path)
     {
         AnsiConsole.Markup($"[red]Getting Stories\n[/]");
-        Dictionary<long, string> stories = await m_ApiHelper.GetMedia(MediaType.Stories, $"/users/{user.Value}/stories", null, path, Auth, Config, paid_post_ids);
+        Dictionary<long, string> stories = await m_ApiHelper.GetMedia(MediaType.Stories, $"/users/{user.Value}/stories", null, path, Auth!, Config!, paid_post_ids);
         int oldStoriesCount = 0;
         int newStoriesCount = 0;
         if (stories != null && stories.Count > 0)
@@ -698,7 +704,7 @@ public class Program
     {
         AnsiConsole.Markup($"[red]Getting Paid Posts\n[/]");
         //Dictionary<long, string> purchasedPosts = await apiHelper.GetMedia(MediaType.PaidPosts, "/posts/paid", user.Key, path, auth, paid_post_ids);
-        PaidPostCollection purchasedPosts = await m_ApiHelper.GetPaidPosts("/posts/paid", path, user.Key, Auth, Config, paid_post_ids);
+        PaidPostCollection purchasedPosts = await m_ApiHelper.GetPaidPosts("/posts/paid", path, user.Key, Auth!, Config!, paid_post_ids);
         int oldPaidPostCount = 0;
         int newPaidPostCount = 0;
         if (purchasedPosts != null && purchasedPosts.PaidPosts.Count > 0)
