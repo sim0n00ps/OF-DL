@@ -75,9 +75,9 @@ namespace OF_DL.Helpers
         }
 
         private static async Task<string> GenerateCustomFileName(string filenameFormat,
-                                                                 Post.List postInfo,
-                                                                 Post.Medium postMedia,
-                                                                 Post.Author author,
+                                                                 object postInfo,
+                                                                 object postMedia,
+                                                                 object author,
                                                                  Dictionary<string, int> users,
                                                                  IFileNameHelper fileNameHelper)
         {
@@ -158,16 +158,16 @@ namespace OF_DL.Helpers
             return path;
         }
 
-        public async Task<bool> DownloadMedia(string path,
-                                              string url,
-                                              string folder,
-                                              long media_id,
-                                              ProgressTask task,
-                                              string filenameFormat,
-                                              Post.List? postInfo,
-                                              Post.Medium? postMedia,
-                                              Post.Author? author,
-                                              Dictionary<string, int> users)
+        public async Task<bool> CreateDirectoriesAndDownloadMedia(string path,
+                                                                  string url,
+                                                                  string folder,
+                                                                  long media_id,
+                                                                  ProgressTask task,
+                                                                  string filenameFormat,
+                                                                  object? generalInfo,
+                                                                  object? generalMedia,
+                                                                  object? generalAuthor,
+                                                                  Dictionary<string, int> users)
         {
             try
             {
@@ -186,16 +186,16 @@ namespace OF_DL.Helpers
 
                 // 1. Simplify filename generation and checks
                 string resolvedFilename = filename;
-                if (!string.IsNullOrEmpty(filenameFormat) && postInfo != null && postMedia != null && author != null)
+                if (!string.IsNullOrEmpty(filenameFormat) && generalInfo != null && generalMedia != null && generalAuthor != null)
                 {
-                    resolvedFilename = await GenerateCustomFileName(filenameFormat, postInfo, postMedia, author, users, _FileNameHelper);
+                    resolvedFilename = await GenerateCustomFileName(filenameFormat, generalInfo, generalMedia, generalAuthor, users, _FileNameHelper);
                 }
 
+                string fullPath = $"{folder}{path}/{resolvedFilename}{extension}";
                 // Check if media is downloaded
                 if (!await dBHelper.CheckDownloaded(folder, media_id))
                 {
-                    string fullPath = $"{folder}{path}/{resolvedFilename}{extension}";
-
+                    
                     if (!File.Exists(fullPath))
                     {
                         var lastModified = await DownloadFile(url, fullPath, task);
@@ -242,7 +242,7 @@ namespace OF_DL.Helpers
                                                   Dictionary<string, int> users)
         {
             string path = "/Posts/Free";
-            return await DownloadMedia(path, url,folder, media_id, task, filenameFormat, postInfo, postMedia, author, users);
+            return await CreateDirectoriesAndDownloadMedia(path, url,folder, media_id, task, filenameFormat, postInfo, postMedia, author, users);
         }
 
         public async Task<bool> DownloadMessageMedia(string url,
@@ -256,97 +256,7 @@ namespace OF_DL.Helpers
                                                      Dictionary<string, int> users)
         {
             string path = "/Messages/Free";
-            try
-            {
-                string customFileName = string.Empty;
-                
-                if (!Directory.Exists(folder + path)) // check if the folder already exists
-                {
-                    Directory.CreateDirectory(folder + path); // create the new folder
-                }
-                string extension = Path.GetExtension(url.Split("?")[0]);
-                path = UpdatePathBasedOnExtension(folder, path, extension);
-                Uri uri = new(url);
-                string filename = System.IO.Path.GetFileName(uri.LocalPath);
-                DBHelper dBHelper = new();
-
-                if (!string.IsNullOrEmpty(filenameFormat) && messageInfo != null && messageMedia != null)
-                {
-                    List<string> properties = new();
-                    string pattern = @"\{(.*?)\}";
-                    MatchCollection matches = Regex.Matches(filenameFormat, pattern);
-                    foreach (Match match in matches)
-                    {
-                        properties.Add(match.Groups[1].Value);
-                    }
-                    Dictionary<string, string> values = await _FileNameHelper.GetFilename(messageInfo, messageMedia, fromUser, properties, users);
-                    customFileName = await _FileNameHelper.BuildFilename(filenameFormat, values);
-                }
-
-                if (!await dBHelper.CheckDownloaded(folder, media_id))
-                {
-                    if (!string.IsNullOrEmpty(customFileName) ? !File.Exists(folder + path + "/" + customFileName + extension) : !File.Exists(folder + path + "/" + filename))
-                    {
-                        var client = new HttpClient();
-
-                        var request = new HttpRequestMessage
-                        {
-                            Method = HttpMethod.Get,
-                            RequestUri = new Uri(url),
-
-                        };
-                        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-                        response.EnsureSuccessStatusCode();
-                        var body = await response.Content.ReadAsStreamAsync();
-                        using (FileStream fileStream = new(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 16384, true))
-                        {
-                            var buffer = new byte[16384];
-                            while (true)
-                            {
-                                var read = await body.ReadAsync(buffer, 0, buffer.Length);
-                                if (read == 0)
-                                {
-                                    break;
-                                }
-                                task.Increment(read);
-                                await fileStream.WriteAsync(buffer, 0, read);
-                            }
-                        }
-                        File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
-                        if (!string.IsNullOrEmpty(customFileName))
-                        {
-                            File.Move($"{folder + path + "/" + filename}", $"{folder + path + "/" + customFileName + extension}");
-                        }
-                        long fileSizeInBytes = new FileInfo(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + extension : folder + path + "/" + filename).Length;
-                        await dBHelper.UpdateMedia(folder, media_id, folder + path, !string.IsNullOrEmpty(customFileName) ? customFileName + extension : filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
-                        return true;
-                    }
-                    else
-                    {
-                        DateTime lastModified = File.GetLastWriteTime(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + extension : folder + path + "/" + filename);
-                        long fileSizeInBytes = new FileInfo(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + extension : folder + path + "/" + filename).Length;
-                        task.Increment(fileSizeInBytes);
-                        await dBHelper.UpdateMedia(folder, media_id, folder + path, !string.IsNullOrEmpty(customFileName) ? customFileName + extension : filename, fileSizeInBytes, true, lastModified);
-                    }
-                }
-                else
-                {
-                    long size = await dBHelper.GetFileSize(folder, media_id);
-                    task.Increment(size);
-                }
-                return false;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
-                if (ex.InnerException != null)
-                {
-                    Console.WriteLine("\nInner Exception:");
-                    Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
-                }
-            }
-            return false;
+            return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filenameFormat, messageInfo, messageMedia, fromUser, users);
         }
 
         public async Task<bool> DownloadArchivedMedia(string url,
@@ -359,97 +269,8 @@ namespace OF_DL.Helpers
                                                       Archived.Author author,
                                                       Dictionary<string, int> users)
         {
-            try
-            {
-                string customFileName = string.Empty;
-                string path = "/Archived/Posts/Free";
-                if (!Directory.Exists(folder + path)) // check if the folder already exists
-                {
-                    Directory.CreateDirectory(folder + path); // create the new folder
-                }
-                string extension = Path.GetExtension(url.Split("?")[0]);
-                path = UpdatePathBasedOnExtension(folder, path, extension);
-
-                Uri uri = new(url);
-                string filename = System.IO.Path.GetFileName(uri.LocalPath);
-                DBHelper dBHelper = new();
-                if (!string.IsNullOrEmpty(filenameFormat) && messageInfo != null && messageMedia != null)
-                {
-                    List<string> properties = new();
-                    string pattern = @"\{(.*?)\}";
-                    MatchCollection matches = Regex.Matches(filenameFormat, pattern);
-                    foreach (Match match in matches)
-                    {
-                        properties.Add(match.Groups[1].Value);
-                    }
-                    Dictionary<string, string> values = await _FileNameHelper.GetFilename(messageInfo, messageMedia, author, properties, users);
-                    customFileName = await _FileNameHelper.BuildFilename(filenameFormat, values);
-                }
-
-                if (!await dBHelper.CheckDownloaded(folder, media_id))
-                {
-                    if (!string.IsNullOrEmpty(customFileName) ? !File.Exists(folder + path + "/" + customFileName + extension) : !File.Exists(folder + path + "/" + filename))
-                    {
-                        var client = new HttpClient();
-
-                        var request = new HttpRequestMessage
-                        {
-                            Method = HttpMethod.Get,
-                            RequestUri = new Uri(url),
-
-                        };
-                        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-                        response.EnsureSuccessStatusCode();
-                        var body = await response.Content.ReadAsStreamAsync();
-                        using (FileStream fileStream = new(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 16384, true))
-                        {
-                            var buffer = new byte[16384];
-                            while (true)
-                            {
-                                var read = await body.ReadAsync(buffer, 0, buffer.Length);
-                                if (read == 0)
-                                {
-                                    break;
-                                }
-                                task.Increment(read);
-                                await fileStream.WriteAsync(buffer, 0, read);
-                            }
-                        }
-                        File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
-                        if (!string.IsNullOrEmpty(customFileName))
-                        {
-                            File.Move($"{folder + path + "/" + filename}", $"{folder + path + "/" + customFileName + extension}");
-                        }
-                        long fileSizeInBytes = new FileInfo(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + extension : folder + path + "/" + filename).Length;
-                        await dBHelper.UpdateMedia(folder, media_id, folder + path, !string.IsNullOrEmpty(customFileName) ? customFileName + extension : filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
-                        return true;
-                    }
-                    else
-                    {
-                        DateTime lastModified = File.GetLastWriteTime(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + extension : folder + path + "/" + filename);
-                        long fileSizeInBytes = new FileInfo(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + extension : folder + path + "/" + filename).Length;
-                        task.Increment(fileSizeInBytes);
-                        await dBHelper.UpdateMedia(folder, media_id, folder + path, !string.IsNullOrEmpty(customFileName) ? customFileName + extension : filename, fileSizeInBytes, true, lastModified);
-                    }
-                }
-                else
-                {
-                    long size = await dBHelper.GetFileSize(folder, media_id);
-                    task.Increment(size);
-                }
-                return false;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
-                if (ex.InnerException != null)
-                {
-                    Console.WriteLine("\nInner Exception:");
-                    Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
-                }
-            }
-            return false;
+            string path = "/Archived/Posts/Free";
+            return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filenameFormat, messageInfo, messageMedia, author, users);
         }
 
         public async Task<bool> DownloadStoryMedia(string url,
@@ -457,9 +278,9 @@ namespace OF_DL.Helpers
                                                    long media_id,
                                                    ProgressTask task)
         {
+            string path = "/Stories/Free";
             try
-            {
-                string path = "/Stories/Free";
+            { 
                 if (!Directory.Exists(folder + path)) // check if the folder already exists
                 {
                     Directory.CreateDirectory(folder + path); // create the new folder
@@ -471,9 +292,11 @@ namespace OF_DL.Helpers
                 Uri uri = new(url);
                 string filename = System.IO.Path.GetFileName(uri.LocalPath);
                 DBHelper dBHelper = new();
+
+                string fullPath = $"{folder}{path}/{filename}";
                 if (!await dBHelper.CheckDownloaded(folder, media_id))
                 {
-                    if (!File.Exists(folder + path + "/" + filename))
+                    if (!File.Exists(fullPath))
                     {
                         var client = new HttpClient();
 
@@ -543,193 +366,22 @@ namespace OF_DL.Helpers
                                                        Purchased.FromUser fromUser,
                                                        Dictionary<string, int> users)
         {
-            try
-            {
-                string customFileName = string.Empty;
-                string path = "/Messages/Paid";
-                if (!Directory.Exists(folder + path)) // check if the folder already exists
-                {
-                    Directory.CreateDirectory(folder + path); // create the new folder
-                }
-                string extension = Path.GetExtension(url.Split("?")[0]);
-
-                path = UpdatePathBasedOnExtension(folder, path, extension);
-
-                Uri uri = new(url);
-                string filename = System.IO.Path.GetFileName(uri.LocalPath);
-                DBHelper dBHelper = new();
-                if (!string.IsNullOrEmpty(filenameFormat) && messageInfo != null && messageMedia != null)
-                {
-                    List<string> properties = new();
-                    string pattern = @"\{(.*?)\}";
-                    MatchCollection matches = Regex.Matches(filenameFormat, pattern);
-                    foreach (Match match in matches)
-                    {
-                        properties.Add(match.Groups[1].Value);
-                    }
-                    Dictionary<string, string> values = await _FileNameHelper.GetFilename(messageInfo, messageMedia, fromUser, properties, users);
-                    customFileName = await _FileNameHelper.BuildFilename(filenameFormat, values);
-                }
-
-                if (!await dBHelper.CheckDownloaded(folder, media_id))
-                {
-                    if (!string.IsNullOrEmpty(customFileName) ? !File.Exists(folder + path + "/" + customFileName + extension) : !File.Exists(folder + path + "/" + filename))
-                    {
-                        var client = new HttpClient();
-
-                        var request = new HttpRequestMessage
-                        {
-                            Method = HttpMethod.Get,
-                            RequestUri = new Uri(url),
-
-                        };
-                        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-                        response.EnsureSuccessStatusCode();
-                        var body = await response.Content.ReadAsStreamAsync();
-                        using (FileStream fileStream = new(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 16384, true))
-                        {
-                            var buffer = new byte[16384];
-                            while (true)
-                            {
-                                var read = await body.ReadAsync(buffer, 0, buffer.Length);
-                                if (read == 0)
-                                {
-                                    break;
-                                }
-                                task.Increment(read);
-                                await fileStream.WriteAsync(buffer, 0, read);
-                            }
-                        }
-                        File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
-                        if (!string.IsNullOrEmpty(customFileName))
-                        {
-                            File.Move($"{folder + path + "/" + filename}", $"{folder + path + "/" + customFileName + extension}");
-                        }
-                        long fileSizeInBytes = new FileInfo(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + extension : folder + path + "/" + filename).Length;
-                        await dBHelper.UpdateMedia(folder, media_id, folder + path, !string.IsNullOrEmpty(customFileName) ? customFileName + extension : filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
-                        return true;
-                    }
-                    else
-                    {
-                        DateTime lastModified = File.GetLastWriteTime(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + extension : folder + path + "/" + filename);
-                        long fileSizeInBytes = new FileInfo(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + extension : folder + path + "/" + filename).Length;
-                        task.Increment(fileSizeInBytes);
-                        await dBHelper.UpdateMedia(folder, media_id, folder + path, !string.IsNullOrEmpty(customFileName) ? customFileName + extension : filename, fileSizeInBytes, true, lastModified);
-                    }
-                }
-                else
-                {
-                    long size = await dBHelper.GetFileSize(folder, media_id);
-                    task.Increment(size);
-                }
-                return false;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
-                if (ex.InnerException != null)
-                {
-                    Console.WriteLine("\nInner Exception:");
-                    Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
-                }
-            }
-            return false;
+            string path = "/Messages/Paid";
+            return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filenameFormat, messageInfo, messageMedia, fromUser, users);
         }
 
-        public async Task<bool> DownloadPurchasedPostMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Purchased.List messageInfo, Purchased.Medium messageMedia, Purchased.FromUser fromUser, Dictionary<string, int> users)
+        public async Task<bool> DownloadPurchasedPostMedia(string url,
+                                                           string folder,
+                                                           long media_id,
+                                                           ProgressTask task,
+                                                           string filenameFormat,
+                                                           Purchased.List messageInfo,
+                                                           Purchased.Medium messageMedia,
+                                                           Purchased.FromUser fromUser,
+                                                           Dictionary<string, int> users)
         {
-            try
-            {
-                string customFileName = string.Empty;
-                string path = "/Posts/Paid";
-                if (!Directory.Exists(folder + path)) // check if the folder already exists
-                {
-                    Directory.CreateDirectory(folder + path); // create the new folder
-                }
-                string extension = Path.GetExtension(url.Split("?")[0]);
-
-                path = UpdatePathBasedOnExtension(folder, path, extension);
-
-                Uri uri = new(url);
-                string filename = System.IO.Path.GetFileName(uri.LocalPath);
-                DBHelper dBHelper = new();
-                if (!string.IsNullOrEmpty(filenameFormat) && messageInfo != null && messageMedia != null)
-                {
-                    List<string> properties = new();
-                    string pattern = @"\{(.*?)\}";
-                    MatchCollection matches = Regex.Matches(filenameFormat, pattern);
-                    foreach (Match match in matches)
-                    {
-                        properties.Add(match.Groups[1].Value);
-                    }
-                    Dictionary<string, string> values = await _FileNameHelper.GetFilename(messageInfo, messageMedia, fromUser, properties, users);
-                    customFileName = await _FileNameHelper.BuildFilename(filenameFormat, values);
-                }
-                if (!await dBHelper.CheckDownloaded(folder, media_id))
-                {
-                    if (!string.IsNullOrEmpty(customFileName) ? !File.Exists(folder + path + "/" + customFileName + extension) : !File.Exists(folder + path + "/" + filename))
-                    {
-                        var client = new HttpClient();
-
-                        var request = new HttpRequestMessage
-                        {
-                            Method = HttpMethod.Get,
-                            RequestUri = new Uri(url),
-
-                        };
-                        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-                        response.EnsureSuccessStatusCode();
-                        var body = await response.Content.ReadAsStreamAsync();
-                        using (FileStream fileStream = new(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 16384, true))
-                        {
-                            var buffer = new byte[16384];
-                            while (true)
-                            {
-                                var read = await body.ReadAsync(buffer, 0, buffer.Length);
-                                if (read == 0)
-                                {
-                                    break;
-                                }
-                                task.Increment(read);
-                                await fileStream.WriteAsync(buffer, 0, read);
-                            }
-                        }
-                        File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
-                        if (!string.IsNullOrEmpty(customFileName))
-                        {
-                            File.Move($"{folder + path + "/" + filename}", $"{folder + path + "/" + customFileName + extension}");
-                        }
-                        long fileSizeInBytes = new FileInfo(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + extension : folder + path + "/" + filename).Length;
-                        await dBHelper.UpdateMedia(folder, media_id, folder + path, !string.IsNullOrEmpty(customFileName) ? customFileName + extension : filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
-                        return true;
-                    }
-                    else
-                    {
-                        DateTime lastModified = File.GetLastWriteTime(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + extension : folder + path + "/" + filename);
-                        long fileSizeInBytes = new FileInfo(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + extension : folder + path + "/" + filename).Length;
-                        task.Increment(fileSizeInBytes);
-                        await dBHelper.UpdateMedia(folder, media_id, folder + path, !string.IsNullOrEmpty(customFileName) ? customFileName + extension : filename, fileSizeInBytes, true, lastModified);
-                    }
-                }
-                else
-                {
-                    long size = await dBHelper.GetFileSize(folder, media_id);
-                    task.Increment(size);
-                }
-                return false;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
-                if (ex.InnerException != null)
-                {
-                    Console.WriteLine("\nInner Exception:");
-                    Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
-                }
-            }
-            return false;
+            string path = "/Posts/Paid";
+            return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filenameFormat, messageInfo, messageMedia, fromUser, users);
         }
 
         public async Task DownloadAvatarHeader(string? avatarUrl, string? headerUrl, string folder)
