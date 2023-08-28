@@ -25,7 +25,16 @@ namespace OF_DL.Helpers
         {
             fileNameHelper = new FileNameHelper();
         }
-        public async Task<bool> DownloadPostMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Post.List postInfo, Post.Medium postMedia, Post.Author author, Dictionary<string, int> users)
+        public async Task<bool> DownloadPostMedia(
+            string url,
+            string folder,
+            long media_id,
+            ProgressTask task,
+            string filenameFormat,
+            Post.List? postInfo,
+            Post.Medium? postMedia,
+            Post.Author? author,
+            Dictionary<string, int> users)
         {
             try
             {
@@ -78,10 +87,7 @@ namespace OF_DL.Helpers
                     List<string> properties = new();
                     string pattern = @"\{(.*?)\}";
                     MatchCollection matches = Regex.Matches(filenameFormat, pattern);
-                    foreach (Match match in matches)
-                    {
-                        properties.Add(match.Groups[1].Value);
-                    }
+                    properties.AddRange(matches.Select(match => match.Groups[1].Value));
                     Dictionary<string, string> values = await fileNameHelper.GetFilename(postInfo, postMedia, author, properties, users);
                     customFileName = await fileNameHelper.BuildFilename(filenameFormat, values);
                 }
@@ -106,13 +112,13 @@ namespace OF_DL.Helpers
                             var buffer = new byte[16384];
                             while (true)
                             {
-                                var read = await body.ReadAsync(buffer, 0, buffer.Length);
+                                var read = await body.ReadAsync(buffer);
                                 if (read == 0)
                                 {
                                     break;
                                 }
                                 task.Increment(read);
-                                await fileStream.WriteAsync(buffer, 0, read);
+                                await fileStream.WriteAsync(buffer.AsMemory(0, read));
                             }
                         }
                         File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
