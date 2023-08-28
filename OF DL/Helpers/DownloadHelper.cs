@@ -14,27 +14,113 @@ using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using static OF_DL.Entities.Lists.UserList;
 
 namespace OF_DL.Helpers
 {
     public class DownloadHelper : IDownloadHelper
     {
-        private static IFileNameHelper fileNameHelper;
+        private readonly IFileNameHelper _FileNameHelper;
 
         public DownloadHelper()
         {
-            fileNameHelper = new FileNameHelper();
+            _FileNameHelper = new FileNameHelper();
         }
-        public async Task<bool> DownloadPostMedia(
-            string url,
-            string folder,
-            long media_id,
-            ProgressTask task,
-            string filenameFormat,
-            Post.List? postInfo,
-            Post.Medium? postMedia,
-            Post.Author? author,
-            Dictionary<string, int> users)
+
+        private static async Task<string> GenerateCustomFileName(string filenameFormat,
+                                                                 Post.List postInfo,
+                                                                 Post.Medium postMedia,
+                                                                 Post.Author author,
+                                                                 Dictionary<string, int> users,
+                                                                 IFileNameHelper fileNameHelper)
+        {
+            List<string> properties = new();
+            string pattern = @"\{(.*?)\}";
+            MatchCollection matches = Regex.Matches(filenameFormat, pattern);
+            properties.AddRange(matches.Select(match => match.Groups[1].Value));
+
+            Dictionary<string, string> values = await fileNameHelper.GetFilename(postInfo, postMedia, author, properties, users);
+            return await fileNameHelper.BuildFilename(filenameFormat, values);
+        }
+
+
+        private static async Task<DateTime> DownloadFile(string url, string destinationPath, ProgressTask task)
+        {
+            using var client = new HttpClient();
+            var request = new HttpRequestMessage
+            {
+                Method = HttpMethod.Get,
+                RequestUri = new Uri(url)
+            };
+
+            using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+            response.EnsureSuccessStatusCode();
+            var body = await response.Content.ReadAsStreamAsync();
+
+            using (FileStream fileStream = new(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None, 16384, true))
+            {
+                var buffer = new byte[16384];
+                int read;
+                while ((read = await body.ReadAsync(buffer)) > 0)
+                {
+                    task.Increment(read);
+                    await fileStream.WriteAsync(buffer.AsMemory(0, read));
+                }
+            }
+            File.SetLastWriteTime(destinationPath, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
+            return response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now;
+        }
+
+
+        private static string UpdatePathBasedOnExtension(string folder, string path, string extension)
+        {
+            string subdirectory = string.Empty;
+
+            switch (extension.ToLower())
+            {
+                case ".jpg":
+                case ".jpeg":
+                case ".png":
+                    subdirectory = "/Images";
+                    break;
+                case ".mp4":
+                case ".avi":
+                case ".wmv":
+                case ".gif":
+                case ".mov":
+                    subdirectory = "/Videos";
+                    break;
+                case ".mp3":
+                case ".wav":
+                case ".ogg":
+                    subdirectory = "/Audios";
+                    break;
+            }
+
+            if (!string.IsNullOrEmpty(subdirectory))
+            {
+                path += subdirectory;
+                string fullPath = folder + path;
+
+                if (!Directory.Exists(fullPath))
+                {
+                    Directory.CreateDirectory(fullPath);
+                }
+            }
+
+            return path;
+        }
+
+
+        public async Task<bool> DownloadPostMedia(string url,
+                                                  string folder,
+                                                  long media_id,
+                                                  ProgressTask task,
+                                                  string filenameFormat,
+                                                  Post.List? postInfo,
+                                                  Post.Medium? postMedia,
+                                                  Post.Author? author,
+                                                  Dictionary<string, int> users)
         {
             try
             {
@@ -45,97 +131,38 @@ namespace OF_DL.Helpers
                     Directory.CreateDirectory(folder + path); // create the new folder
                 }
                 string extension = Path.GetExtension(url.Split("?")[0]);
-                switch (extension.ToLower())
-                {
-                    case ".jpg":
-                    case ".jpeg":
-                    case ".png":
-                        path += "/Images";
-                        if (!Directory.Exists(folder + path)) // check if the folder already exists
-                        {
-                            Directory.CreateDirectory(folder + path); // create the new folder
-                        }
-                        break;
-                    case ".mp4":
-                    case ".avi":
-                    case ".wmv":
-                    case ".gif":
-                    case ".mov":
-                        path += "/Videos";
-                        if (!Directory.Exists(folder + path)) // check if the folder already exists
-                        {
-                            Directory.CreateDirectory(folder + path); // create the new folder
-                        }
-                        break;
-                    case ".mp3":
-                    case ".wav":
-                    case ".ogg":
-                        path += "/Audios";
-                        if (!Directory.Exists(folder + path)) // check if the folder already exists
-                        {
-                            Directory.CreateDirectory(folder + path); // create the new folder
-                        }
-                        break;
-                }
+
+                path = UpdatePathBasedOnExtension(folder, path, extension);
 
                 Uri uri = new(url);
-                string filename = System.IO.Path.GetFileName(uri.LocalPath);
+                string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
                 DBHelper dBHelper = new();
 
+                // 1. Simplify filename generation and checks
+                string resolvedFilename = filename;
                 if (!string.IsNullOrEmpty(filenameFormat) && postInfo != null && postMedia != null && author != null)
                 {
-                    List<string> properties = new();
-                    string pattern = @"\{(.*?)\}";
-                    MatchCollection matches = Regex.Matches(filenameFormat, pattern);
-                    properties.AddRange(matches.Select(match => match.Groups[1].Value));
-                    Dictionary<string, string> values = await fileNameHelper.GetFilename(postInfo, postMedia, author, properties, users);
-                    customFileName = await fileNameHelper.BuildFilename(filenameFormat, values);
+                    resolvedFilename = await GenerateCustomFileName(filenameFormat, postInfo, postMedia, author, users, _FileNameHelper);
                 }
 
+                // Check if media is downloaded
                 if (!await dBHelper.CheckDownloaded(folder, media_id))
                 {
-                    if (!string.IsNullOrEmpty(customFileName) ? !File.Exists(folder + path + "/" + customFileName + extension) : !File.Exists(folder + path + "/" + filename))
+                    string fullPath = $"{folder}{path}/{resolvedFilename}{extension}";
+
+                    if (!File.Exists(fullPath))
                     {
-                        var client = new HttpClient();
-
-                        var request = new HttpRequestMessage
-                        {
-                            Method = HttpMethod.Get,
-                            RequestUri = new Uri(url),
-
-                        };
-                        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-                        response.EnsureSuccessStatusCode();
-                        var body = await response.Content.ReadAsStreamAsync();
-                        using (FileStream fileStream = new(folder + path + "/" + filename, FileMode.Create, FileAccess.Write, FileShare.None, 16384, true))
-                        {
-                            var buffer = new byte[16384];
-                            while (true)
-                            {
-                                var read = await body.ReadAsync(buffer);
-                                if (read == 0)
-                                {
-                                    break;
-                                }
-                                task.Increment(read);
-                                await fileStream.WriteAsync(buffer.AsMemory(0, read));
-                            }
-                        }
-                        File.SetLastWriteTime(folder + path + "/" + filename, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
-                        if (!string.IsNullOrEmpty(customFileName))
-                        {
-                            File.Move($"{folder + path + "/" + filename}", $"{folder + path + "/" + customFileName + extension}");
-                        }
-                        long fileSizeInBytes = new FileInfo(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + extension : folder + path + "/" + filename).Length;
-                        await dBHelper.UpdateMedia(folder, media_id, folder + path, !string.IsNullOrEmpty(customFileName) ? customFileName + extension : filename, fileSizeInBytes, true, (DateTime)response.Content.Headers.LastModified?.LocalDateTime);
+                        var lastModified = await DownloadFile(url, fullPath, task);
+                        long fileSizeInBytes = new FileInfo(fullPath).Length;
+                        await dBHelper.UpdateMedia(folder, media_id, folder + path, resolvedFilename + extension, fileSizeInBytes, true, lastModified);
                         return true;
                     }
                     else
                     {
-                        DateTime lastModified = File.GetLastWriteTime(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + extension : folder + path + "/" + filename);
-                        long fileSizeInBytes = new FileInfo(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + extension : folder + path + "/" + filename).Length;
+                        DateTime lastModified = File.GetLastWriteTime(fullPath);
+                        long fileSizeInBytes = new FileInfo(fullPath).Length;
                         task.Increment(fileSizeInBytes);
-                        await dBHelper.UpdateMedia(folder, media_id, folder + path, !string.IsNullOrEmpty(customFileName) ? customFileName + extension : filename, fileSizeInBytes, true, lastModified);
+                        await dBHelper.UpdateMedia(folder, media_id, folder + path, resolvedFilename + extension, fileSizeInBytes, true, lastModified);
                     }
                 }
                 else
@@ -169,39 +196,7 @@ namespace OF_DL.Helpers
                     Directory.CreateDirectory(folder + path); // create the new folder
                 }
                 string extension = Path.GetExtension(url.Split("?")[0]);
-                switch (extension.ToLower())
-                {
-                    case ".jpg":
-                    case ".jpeg":
-                    case ".png":
-                        path += "/Images";
-                        if (!Directory.Exists(folder + path)) // check if the folder already exists
-                        {
-                            Directory.CreateDirectory(folder + path); // create the new folder
-                        }
-                        break;
-                    case ".mp4":
-                    case ".avi":
-                    case ".wmv":
-                    case ".gif":
-                    case ".mov":
-                        path += "/Videos";
-                        if (!Directory.Exists(folder + path)) // check if the folder already exists
-                        {
-                            Directory.CreateDirectory(folder + path); // create the new folder
-                        }
-                        break;
-                    case ".mp3":
-                    case ".wav":
-                    case ".ogg":
-                        path += "/Audios";
-                        if (!Directory.Exists(folder + path)) // check if the folder already exists
-                        {
-                            Directory.CreateDirectory(folder + path); // create the new folder
-                        }
-                        break;
-                }
-
+                path = UpdatePathBasedOnExtension(folder, path, extension);
                 Uri uri = new(url);
                 string filename = System.IO.Path.GetFileName(uri.LocalPath);
                 DBHelper dBHelper = new();
@@ -215,8 +210,8 @@ namespace OF_DL.Helpers
                     {
                         properties.Add(match.Groups[1].Value);
                     }
-                    Dictionary<string, string> values = await fileNameHelper.GetFilename(messageInfo, messageMedia, fromUser, properties, users);
-                    customFileName = await fileNameHelper.BuildFilename(filenameFormat, values);
+                    Dictionary<string, string> values = await _FileNameHelper.GetFilename(messageInfo, messageMedia, fromUser, properties, users);
+                    customFileName = await _FileNameHelper.BuildFilename(filenameFormat, values);
                 }
 
                 if (!await dBHelper.CheckDownloaded(folder, media_id))
@@ -296,38 +291,7 @@ namespace OF_DL.Helpers
                     Directory.CreateDirectory(folder + path); // create the new folder
                 }
                 string extension = Path.GetExtension(url.Split("?")[0]);
-                switch (extension.ToLower())
-                {
-                    case ".jpg":
-                    case ".jpeg":
-                    case ".png":
-                        path += "/Images";
-                        if (!Directory.Exists(folder + path)) // check if the folder already exists
-                        {
-                            Directory.CreateDirectory(folder + path); // create the new folder
-                        }
-                        break;
-                    case ".mp4":
-                    case ".avi":
-                    case ".wmv":
-                    case ".gif":
-                    case ".mov":
-                        path += "/Videos";
-                        if (!Directory.Exists(folder + path)) // check if the folder already exists
-                        {
-                            Directory.CreateDirectory(folder + path); // create the new folder
-                        }
-                        break;
-                    case ".mp3":
-                    case ".wav":
-                    case ".ogg":
-                        path += "/Audios";
-                        if (!Directory.Exists(folder + path)) // check if the folder already exists
-                        {
-                            Directory.CreateDirectory(folder + path); // create the new folder
-                        }
-                        break;
-                }
+                path = UpdatePathBasedOnExtension(folder, path, extension);
 
                 Uri uri = new(url);
                 string filename = System.IO.Path.GetFileName(uri.LocalPath);
@@ -341,8 +305,8 @@ namespace OF_DL.Helpers
                     {
                         properties.Add(match.Groups[1].Value);
                     }
-                    Dictionary<string, string> values = await fileNameHelper.GetFilename(messageInfo, messageMedia, author, properties, users);
-                    customFileName = await fileNameHelper.BuildFilename(filenameFormat, values);
+                    Dictionary<string, string> values = await _FileNameHelper.GetFilename(messageInfo, messageMedia, author, properties, users);
+                    customFileName = await _FileNameHelper.BuildFilename(filenameFormat, values);
                 }
 
                 if (!await dBHelper.CheckDownloaded(folder, media_id))
@@ -421,38 +385,8 @@ namespace OF_DL.Helpers
                     Directory.CreateDirectory(folder + path); // create the new folder
                 }
                 string extension = Path.GetExtension(url.Split("?")[0]);
-                switch (extension.ToLower())
-                {
-                    case ".jpg":
-                    case ".jpeg":
-                    case ".png":
-                        path += "/Images";
-                        if (!Directory.Exists(folder + path)) // check if the folder already exists
-                        {
-                            Directory.CreateDirectory(folder + path); // create the new folder
-                        }
-                        break;
-                    case ".mp4":
-                    case ".avi":
-                    case ".wmv":
-                    case ".gif":
-                    case ".mov":
-                        path += "/Videos";
-                        if (!Directory.Exists(folder + path)) // check if the folder already exists
-                        {
-                            Directory.CreateDirectory(folder + path); // create the new folder
-                        }
-                        break;
-                    case ".mp3":
-                    case ".wav":
-                    case ".ogg":
-                        path += "/Audios";
-                        if (!Directory.Exists(folder + path)) // check if the folder already exists
-                        {
-                            Directory.CreateDirectory(folder + path); // create the new folder
-                        }
-                        break;
-                }
+
+                path = UpdatePathBasedOnExtension(folder, path, extension);
 
                 Uri uri = new(url);
                 string filename = System.IO.Path.GetFileName(uri.LocalPath);
@@ -530,38 +464,8 @@ namespace OF_DL.Helpers
                     Directory.CreateDirectory(folder + path); // create the new folder
                 }
                 string extension = Path.GetExtension(url.Split("?")[0]);
-                switch (extension.ToLower())
-                {
-                    case ".jpg":
-                    case ".jpeg":
-                    case ".png":
-                        path += "/Images";
-                        if (!Directory.Exists(folder + path)) // check if the folder already exists
-                        {
-                            Directory.CreateDirectory(folder + path); // create the new folder
-                        }
-                        break;
-                    case ".mp4":
-                    case ".avi":
-                    case ".wmv":
-                    case ".gif":
-                    case ".mov":
-                        path += "/Videos";
-                        if (!Directory.Exists(folder + path)) // check if the folder already exists
-                        {
-                            Directory.CreateDirectory(folder + path); // create the new folder
-                        }
-                        break;
-                    case ".mp3":
-                    case ".wav":
-                    case ".ogg":
-                        path += "/Audios";
-                        if (!Directory.Exists(folder + path)) // check if the folder already exists
-                        {
-                            Directory.CreateDirectory(folder + path); // create the new folder
-                        }
-                        break;
-                }
+
+                path = UpdatePathBasedOnExtension(folder, path, extension);
 
                 Uri uri = new(url);
                 string filename = System.IO.Path.GetFileName(uri.LocalPath);
@@ -575,8 +479,8 @@ namespace OF_DL.Helpers
                     {
                         properties.Add(match.Groups[1].Value);
                     }
-                    Dictionary<string, string> values = await fileNameHelper.GetFilename(messageInfo, messageMedia, fromUser, properties, users);
-                    customFileName = await fileNameHelper.BuildFilename(filenameFormat, values);
+                    Dictionary<string, string> values = await _FileNameHelper.GetFilename(messageInfo, messageMedia, fromUser, properties, users);
+                    customFileName = await _FileNameHelper.BuildFilename(filenameFormat, values);
                 }
 
                 if (!await dBHelper.CheckDownloaded(folder, media_id))
@@ -656,38 +560,8 @@ namespace OF_DL.Helpers
                     Directory.CreateDirectory(folder + path); // create the new folder
                 }
                 string extension = Path.GetExtension(url.Split("?")[0]);
-                switch (extension.ToLower())
-                {
-                    case ".jpg":
-                    case ".jpeg":
-                    case ".png":
-                        path += "/Images";
-                        if (!Directory.Exists(folder + path)) // check if the folder already exists
-                        {
-                            Directory.CreateDirectory(folder + path); // create the new folder
-                        }
-                        break;
-                    case ".mp4":
-                    case ".avi":
-                    case ".wmv":
-                    case ".gif":
-                    case ".mov":
-                        path += "/Videos";
-                        if (!Directory.Exists(folder + path)) // check if the folder already exists
-                        {
-                            Directory.CreateDirectory(folder + path); // create the new folder
-                        }
-                        break;
-                    case ".mp3":
-                    case ".wav":
-                    case ".ogg":
-                        path += "/Audios";
-                        if (!Directory.Exists(folder + path)) // check if the folder already exists
-                        {
-                            Directory.CreateDirectory(folder + path); // create the new folder
-                        }
-                        break;
-                }
+
+                path = UpdatePathBasedOnExtension(folder, path, extension);
 
                 Uri uri = new(url);
                 string filename = System.IO.Path.GetFileName(uri.LocalPath);
@@ -701,8 +575,8 @@ namespace OF_DL.Helpers
                     {
                         properties.Add(match.Groups[1].Value);
                     }
-                    Dictionary<string, string> values = await fileNameHelper.GetFilename(messageInfo, messageMedia, fromUser, properties, users);
-                    customFileName = await fileNameHelper.BuildFilename(filenameFormat, values);
+                    Dictionary<string, string> values = await _FileNameHelper.GetFilename(messageInfo, messageMedia, fromUser, properties, users);
+                    customFileName = await _FileNameHelper.BuildFilename(filenameFormat, values);
                 }
                 if (!await dBHelper.CheckDownloaded(folder, media_id))
                 {
@@ -873,8 +747,8 @@ namespace OF_DL.Helpers
                     {
                         properties.Add(match.Groups[1].Value);
                     }
-                    Dictionary<string, string> values = await fileNameHelper.GetFilename(messageInfo, messageMedia, fromUser, properties, users);
-                    customFileName = await fileNameHelper.BuildFilename(filenameFormat, values);
+                    Dictionary<string, string> values = await _FileNameHelper.GetFilename(messageInfo, messageMedia, fromUser, properties, users);
+                    customFileName = await _FileNameHelper.BuildFilename(filenameFormat, values);
                 }
 
                 if (!await dBHelper.CheckDownloaded(folder, media_id))
@@ -1027,8 +901,8 @@ namespace OF_DL.Helpers
                     {
                         properties.Add(match.Groups[1].Value);
                     }
-                    Dictionary<string, string> values = await fileNameHelper.GetFilename(messageInfo, messageMedia, fromUser, properties, users);
-                    customFileName = await fileNameHelper.BuildFilename(filenameFormat, values);
+                    Dictionary<string, string> values = await _FileNameHelper.GetFilename(messageInfo, messageMedia, fromUser, properties, users);
+                    customFileName = await _FileNameHelper.BuildFilename(filenameFormat, values);
                 }
 
                 if (!await dBHelper.CheckDownloaded(folder, media_id))
@@ -1180,8 +1054,8 @@ namespace OF_DL.Helpers
                     {
                         properties.Add(match.Groups[1].Value);
                     }
-                    Dictionary<string, string> values = await fileNameHelper.GetFilename(postInfo, postMedia, author, properties, users);
-                    customFileName = await fileNameHelper.BuildFilename(filenameFormat, values);
+                    Dictionary<string, string> values = await _FileNameHelper.GetFilename(postInfo, postMedia, author, properties, users);
+                    customFileName = await _FileNameHelper.BuildFilename(filenameFormat, values);
                 }
 
                 if (!await dBHelper.CheckDownloaded(folder, media_id))
@@ -1334,8 +1208,8 @@ namespace OF_DL.Helpers
                     {
                         properties.Add(match.Groups[1].Value);
                     }
-                    Dictionary<string, string> values = await fileNameHelper.GetFilename(postInfo, postMedia, fromUser, properties, users);
-                    customFileName = await fileNameHelper.BuildFilename(filenameFormat, values);
+                    Dictionary<string, string> values = await _FileNameHelper.GetFilename(postInfo, postMedia, fromUser, properties, users);
+                    customFileName = await _FileNameHelper.BuildFilename(filenameFormat, values);
                 }
 
                 if (!await dBHelper.CheckDownloaded(folder, media_id))
@@ -1487,8 +1361,8 @@ namespace OF_DL.Helpers
                     {
                         properties.Add(match.Groups[1].Value);
                     }
-                    Dictionary<string, string> values = await fileNameHelper.GetFilename(postInfo, postMedia, author, properties, users);
-                    customFileName = await fileNameHelper.BuildFilename(filenameFormat, values);
+                    Dictionary<string, string> values = await _FileNameHelper.GetFilename(postInfo, postMedia, author, properties, users);
+                    customFileName = await _FileNameHelper.BuildFilename(filenameFormat, values);
                 }
 
                 if (!await dBHelper.CheckDownloaded(folder, media_id))
