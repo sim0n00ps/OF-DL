@@ -885,9 +885,32 @@ public class Program
                     DateTime lastModified = await m_ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp, Auth);
                     Dictionary<string, string> drmHeaders = await m_ApiHelper.Headers($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine", Auth);
                     string decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
-                    Purchased.Medium mediaInfo = purchasedPosts.PaidPostMedia.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
-                    Purchased.List postInfo = purchasedPosts.PaidPostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
-                    isNew = await m_DownloadHelper.DownloadPurchasedPostDRMVideo(Auth.YTDLP_PATH, Auth.MP4DECRYPT_PATH, Auth.FFMPEG_PATH, Auth.USER_AGENT, policy, signature, kvp, Auth.COOKIE, mpdURL, decryptionKey, path, lastModified, purchasedPostKVP.Key, task, !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? Config.PaidPostFileNameFormat : string.Empty, !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo : null, !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo.fromUser : null, hasSelectedUsersKVP.Value);
+                    Purchased.Medium? mediaInfo = purchasedPosts.PaidPostMedia.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
+                    if (mediaInfo == null)
+                    {
+                        continue;
+                    }
+                    Purchased.List? postInfo = purchasedPosts.PaidPostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
+                    isNew = await m_DownloadHelper.DownloadPurchasedPostDRMVideo(
+                        ytdlppath: Auth.YTDLP_PATH,
+                        mp4decryptpath: Auth.MP4DECRYPT_PATH,
+                        ffmpegpath: Auth.FFMPEG_PATH,
+                        user_agent: Auth.USER_AGENT,
+                        policy: policy,
+                        signature: signature,
+                        kvp: kvp,
+                        sess: Auth.COOKIE,
+                        url: mpdURL,
+                        decryptionKey: decryptionKey,
+                        folder: path,
+                        lastModified: lastModified,
+                        media_id: purchasedPostKVP.Key,
+                        task: task,
+                        filenameFormat: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? Config.PaidPostFileNameFormat : string.Empty,
+                        postInfo: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo : null,
+                        postMedia: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? mediaInfo : null,
+                        fromUser: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo.fromUser : null,
+                        users: hasSelectedUsersKVP.Value);
                     if (isNew)
                     {
                         newPaidPostCount++;
@@ -901,7 +924,16 @@ public class Program
                 {
                     Purchased.Medium mediaInfo = purchasedPosts.PaidPostMedia.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
                     Purchased.List postInfo = purchasedPosts.PaidPostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
-                    isNew = await m_DownloadHelper.DownloadPurchasedPostMedia(purchasedPostKVP.Value, path, purchasedPostKVP.Key, task, !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? Config.PaidPostFileNameFormat : string.Empty, !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo : null, !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo.fromUser : null, hasSelectedUsersKVP.Value);
+                    isNew = await m_DownloadHelper.DownloadPurchasedPostMedia(
+                        url: purchasedPostKVP.Value,
+                        folder: path,
+                        media_id: purchasedPostKVP.Key,
+                        task: task,
+                        filenameFormat: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? Config.PaidPostFileNameFormat : string.Empty,
+                        messageInfo: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo : null,
+                        messageMedia: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? mediaInfo : null,
+                        fromUser: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo.fromUser : null,
+                        users: hasSelectedUsersKVP.Value);
                     if (isNew)
                     {
                         newPaidPostCount++;
