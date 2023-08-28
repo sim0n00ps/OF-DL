@@ -707,75 +707,75 @@ public class Program
         PaidPostCollection purchasedPosts = await m_ApiHelper.GetPaidPosts("/posts/paid", path, user.Key, Auth!, Config!, paid_post_ids);
         int oldPaidPostCount = 0;
         int newPaidPostCount = 0;
-        if (purchasedPosts != null && purchasedPosts.PaidPosts.Count > 0)
+        if (purchasedPosts == null || purchasedPosts.PaidPosts.Count <= 0)
         {
-            AnsiConsole.Markup($"[red]Found {purchasedPosts.PaidPosts.Count} Paid Posts\n[/]");
-            paidPostCount = purchasedPosts.PaidPosts.Count;
-            long totalSize = await m_DownloadHelper.CalculateTotalFileSize(purchasedPosts.PaidPosts.Values.ToList(), Auth);
-            await AnsiConsole.Progress()
-            .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
-            .StartAsync(async ctx =>
-            {
-                // Define tasks
-                var task = ctx.AddTask($"[red]Downloading {purchasedPosts.PaidPosts.Count} Paid Posts[/]", autoStart: false);
-                task.MaxValue = totalSize;
-                task.StartTask();
-                foreach (KeyValuePair<long, string> purchasedPostKVP in purchasedPosts.PaidPosts)
-                {
-                    bool isNew;
-                    if (purchasedPostKVP.Value.Contains("cdn3.onlyfans.com/dash/files"))
-                    {
-                        string[] messageUrlParsed = purchasedPostKVP.Value.Split(',');
-                        string mpdURL = messageUrlParsed[0];
-                        string policy = messageUrlParsed[1];
-                        string signature = messageUrlParsed[2];
-                        string kvp = messageUrlParsed[3];
-                        string mediaId = messageUrlParsed[4];
-                        string postId = messageUrlParsed[5];
-                        string? licenseURL = null;
-                        string? pssh = await m_ApiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp, Auth);
-                        if (pssh != null)
-                        {
-                            DateTime lastModified = await m_ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp, Auth);
-                            Dictionary<string, string> drmHeaders = await m_ApiHelper.Headers($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine", Auth);
-                            string decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
-                            Purchased.Medium mediaInfo = purchasedPosts.PaidPostMedia.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
-                            Purchased.List postInfo = purchasedPosts.PaidPostObjects.FirstOrDefault(p => p.media.Contains(mediaInfo));
-                            isNew = await m_DownloadHelper.DownloadPurchasedPostDRMVideo(Auth.YTDLP_PATH, Auth.MP4DECRYPT_PATH, Auth.FFMPEG_PATH, Auth.USER_AGENT, policy, signature, kvp, Auth.COOKIE, mpdURL, decryptionKey, path, lastModified, purchasedPostKVP.Key, task, !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? Config.PaidPostFileNameFormat : string.Empty, !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo : null, !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo.fromUser : null, hasSelectedUsersKVP.Value);
-                            if (isNew)
-                            {
-                                newPaidPostCount++;
+            AnsiConsole.Markup($"[red]Found 0 Paid Posts\n[/]");
+            return 0;
+        }
 
-                            }
-                            else
-                            {
-                                oldPaidPostCount++;
-                            }
-                        }
+        AnsiConsole.Markup($"[red]Found {purchasedPosts.PaidPosts.Count} Paid Posts\n[/]");
+        paidPostCount = purchasedPosts.PaidPosts.Count;
+        long totalSize = await m_DownloadHelper.CalculateTotalFileSize(purchasedPosts.PaidPosts.Values.ToList(), Auth);
+        await AnsiConsole.Progress()
+        .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
+        .StartAsync(async ctx =>
+        {
+            // Define tasks
+            var task = ctx.AddTask($"[red]Downloading {purchasedPosts.PaidPosts.Count} Paid Posts[/]", autoStart: false);
+            task.MaxValue = totalSize;
+            task.StartTask();
+            foreach (KeyValuePair<long, string> purchasedPostKVP in purchasedPosts.PaidPosts)
+            {
+                bool isNew;
+                if (purchasedPostKVP.Value.Contains("cdn3.onlyfans.com/dash/files"))
+                {
+                    string[] messageUrlParsed = purchasedPostKVP.Value.Split(',');
+                    string mpdURL = messageUrlParsed[0];
+                    string policy = messageUrlParsed[1];
+                    string signature = messageUrlParsed[2];
+                    string kvp = messageUrlParsed[3];
+                    string mediaId = messageUrlParsed[4];
+                    string postId = messageUrlParsed[5];
+                    string? licenseURL = null;
+                    string? pssh = await m_ApiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp, Auth);
+                    if (pssh == null)
+                    {
+                        continue;
+                    }
+
+                    DateTime lastModified = await m_ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp, Auth);
+                    Dictionary<string, string> drmHeaders = await m_ApiHelper.Headers($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine", Auth);
+                    string decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                    Purchased.Medium mediaInfo = purchasedPosts.PaidPostMedia.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
+                    Purchased.List postInfo = purchasedPosts.PaidPostObjects.FirstOrDefault(p => p.media.Contains(mediaInfo));
+                    isNew = await m_DownloadHelper.DownloadPurchasedPostDRMVideo(Auth.YTDLP_PATH, Auth.MP4DECRYPT_PATH, Auth.FFMPEG_PATH, Auth.USER_AGENT, policy, signature, kvp, Auth.COOKIE, mpdURL, decryptionKey, path, lastModified, purchasedPostKVP.Key, task, !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? Config.PaidPostFileNameFormat : string.Empty, !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo : null, !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo.fromUser : null, hasSelectedUsersKVP.Value);
+                    if (isNew)
+                    {
+                        newPaidPostCount++;
                     }
                     else
                     {
-                        Purchased.Medium mediaInfo = purchasedPosts.PaidPostMedia.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
-                        Purchased.List postInfo = purchasedPosts.PaidPostObjects.FirstOrDefault(p => p.media.Contains(mediaInfo));
-                        isNew = await m_DownloadHelper.DownloadPurchasedPostMedia(purchasedPostKVP.Value, path, purchasedPostKVP.Key, task, !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? Config.PaidPostFileNameFormat : string.Empty, !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo : null, !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo.fromUser : null, hasSelectedUsersKVP.Value);
-                        if (isNew)
-                        {
-                            newPaidPostCount++;
-                        }
-                        else
-                        {
-                            oldPaidPostCount++;
-                        }
+                        oldPaidPostCount++;
                     }
                 }
-                task.StopTask();
-            });
-            AnsiConsole.Markup($"[red]Paid Posts Already Downloaded: {oldPaidPostCount} New Paid Posts Downloaded: {newPaidPostCount}[/]\n");
-        }
-        else
-        {
-            AnsiConsole.Markup($"[red]Found 0 Paid Posts\n[/]");
-        }
+                else
+                {
+                    Purchased.Medium mediaInfo = purchasedPosts.PaidPostMedia.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
+                    Purchased.List postInfo = purchasedPosts.PaidPostObjects.FirstOrDefault(p => p.media.Contains(mediaInfo));
+                    isNew = await m_DownloadHelper.DownloadPurchasedPostMedia(purchasedPostKVP.Value, path, purchasedPostKVP.Key, task, !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? Config.PaidPostFileNameFormat : string.Empty, !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo : null, !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo.fromUser : null, hasSelectedUsersKVP.Value);
+                    if (isNew)
+                    {
+                        newPaidPostCount++;
+                    }
+                    else
+                    {
+                        oldPaidPostCount++;
+                    }
+                }
+            }
+            task.StopTask();
+        });
+        AnsiConsole.Markup($"[red]Paid Posts Already Downloaded: {oldPaidPostCount} New Paid Posts Downloaded: {newPaidPostCount}[/]\n");
 
         return paidPostCount;
     }
@@ -906,22 +906,21 @@ public class Program
                             PostFileNameFormat = Config.PostFileNameFormat,
                             MessageFileNameFormat = Config.MessageFileNameFormat,
                             PaidPostFileNameFormat = Config.PaidPostFileNameFormat,
-                            PaidMessageFileNameFormat = Config.PaidMessageFileNameFormat
+                            PaidMessageFileNameFormat = Config.PaidMessageFileNameFormat,
+                            DownloadAvatarHeaderPhoto = configOptions.Contains("[red]DownloadAvatarHeaderPhoto[/]"),
+                            DownloadPaidPosts = configOptions.Contains("[red]DownloadPaidPosts[/]"),
+                            DownloadPosts = configOptions.Contains("[red]DownloadPosts[/]"),
+                            DownloadArchived = configOptions.Contains("[red]DownloadArchived[/]"),
+                            DownloadStories = configOptions.Contains("[red]DownloadStories[/]"),
+                            DownloadHighlights = configOptions.Contains("[red]DownloadHighlights[/]"),
+                            DownloadMessages = configOptions.Contains("[red]DownloadMessages[/]"),
+                            DownloadPaidMessages = configOptions.Contains("[red]DownloadPaidMessages[/]"),
+                            DownloadImages = configOptions.Contains("[red]DownloadImages[/]"),
+                            DownloadVideos = configOptions.Contains("[red]DownloadVideos[/]"),
+                            DownloadAudios = configOptions.Contains("[red]DownloadAudios[/]"),
+                            IncludeExpiredSubscriptions = configOptions.Contains("[red]IncludeExpiredSubscriptions[/]"),
+                            SkipAds = configOptions.Contains("[red]SkipAds[/]")
                         };
-
-                        newConfig.DownloadAvatarHeaderPhoto = configOptions.Contains("[red]DownloadAvatarHeaderPhoto[/]");
-                        newConfig.DownloadPaidPosts = configOptions.Contains("[red]DownloadPaidPosts[/]");
-                        newConfig.DownloadPosts = configOptions.Contains("[red]DownloadPosts[/]");
-                        newConfig.DownloadArchived = configOptions.Contains("[red]DownloadArchived[/]");
-                        newConfig.DownloadStories = configOptions.Contains("[red]DownloadStories[/]");
-                        newConfig.DownloadHighlights = configOptions.Contains("[red]DownloadHighlights[/]");
-                        newConfig.DownloadMessages = configOptions.Contains("[red]DownloadMessages[/]");
-                        newConfig.DownloadPaidMessages = configOptions.Contains("[red]DownloadPaidMessages[/]");
-                        newConfig.DownloadImages = configOptions.Contains("[red]DownloadImages[/]");
-                        newConfig.DownloadVideos = configOptions.Contains("[red]DownloadVideos[/]");
-                        newConfig.DownloadAudios = configOptions.Contains("[red]DownloadAudios[/]");
-                        newConfig.IncludeExpiredSubscriptions = configOptions.Contains("[red]IncludeExpiredSubscriptions[/]");
-                        newConfig.SkipAds = configOptions.Contains("[red]SkipAds[/]");
 
 
                         string newConfigString = JsonConvert.SerializeObject(newConfig, Formatting.Indented);
