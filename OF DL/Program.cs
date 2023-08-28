@@ -333,11 +333,6 @@ public class Program
                             string decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh, Auth);
 
                             Purchased.Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
-                            if (mediaInfo == null)
-                            {
-                                continue;
-                            }
-
                             Purchased.List? messageInfo = paidMessageCollection.PaidMessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
                             isNew = await m_DownloadHelper.DownloadPurchasedMessageDRMVideo(
                                 ytdlppath: Auth.YTDLP_PATH,
@@ -373,10 +368,7 @@ public class Program
                     else
                     {
                         Purchased.Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
-                        if (mediaInfo == null)
-                        {
-                            continue;
-                        }
+
 
                         Purchased.List messageInfo = paidMessageCollection.PaidMessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
                         isNew = await m_DownloadHelper.DownloadPurchasedMedia(paidMessageKVP.Value, path, paidMessageKVP.Key, task, !string.IsNullOrEmpty(Config.PaidMessageFileNameFormat) ? Config.PaidMessageFileNameFormat : string.Empty, !string.IsNullOrEmpty(Config.PaidMessageFileNameFormat) ? messageInfo : null, !string.IsNullOrEmpty(Config.PaidMessageFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(Config.PaidMessageFileNameFormat) ? messageInfo.fromUser : null, hasSelectedUsersKVP.Value);
@@ -442,10 +434,6 @@ public class Program
                             Dictionary<string, string> drmHeaders = await m_ApiHelper.Headers($"/api2/v2/users/media/{mediaId}/drm/message/{messageId}", "?type=widevine", Auth);
                             string decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh, Auth);
                             Messages.Medium? mediaInfo = messages.MessageMedia.FirstOrDefault(m => m.id == messageKVP.Key);
-                            if (mediaInfo == null)
-                            {
-                                continue;
-                            }
                             Messages.List? messageInfo = messages.MessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
                             isNew = await m_DownloadHelper.DownloadMessageDRMVideo(
@@ -483,10 +471,7 @@ public class Program
                     else
                     {
                         Messages.Medium? mediaInfo = messages.MessageMedia.FirstOrDefault(m => m.id == messageKVP.Key);
-                        if (mediaInfo == null)
-                        {
-                            continue;
-                        }
+
 
                         Messages.List? messageInfo = messages.MessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
                         isNew = await m_DownloadHelper.DownloadMessageMedia(
@@ -648,10 +633,6 @@ public class Program
                             Dictionary<string, string> drmHeaders = await m_ApiHelper.Headers($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine", Auth);
                             string decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
                             Archived.Medium? mediaInfo = archived.ArchivedPostMedia.FirstOrDefault(m => m.id == archivedKVP.Key);
-                            if (mediaInfo == null)
-                            {
-                                continue;
-                            }
                             Archived.List? postInfo = archived.ArchivedPostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
                             isNew = await m_DownloadHelper.DownloadArchivedPostDRMVideo(
                                 ytdlppath: Auth.YTDLP_PATH,
@@ -687,10 +668,7 @@ public class Program
                     else
                     {
                         Archived.Medium? mediaInfo = archived.ArchivedPostMedia.FirstOrDefault(m => m.id == archivedKVP.Key);
-                        if (mediaInfo == null)
-                        {
-                            continue;
-                        }
+
                         Archived.List? postInfo = archived.ArchivedPostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
                         isNew = await m_DownloadHelper.DownloadArchivedMedia(
                             url: archivedKVP.Value,
@@ -805,8 +783,10 @@ public class Program
                 {
                     try
                     {
-                        Post.Medium mediaInfo = posts.PostMedia.FirstOrDefault(m => m.id == postKVP.Key);
-                        Post.List postInfo = posts.PostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
+                        Post.Medium? mediaInfo = posts.PostMedia.FirstOrDefault(m => (m?.id == postKVP.Key) == true);
+
+
+                        Post.List? postInfo = posts.PostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
                         isNew = await m_DownloadHelper.DownloadPostMedia(
                             url: postKVP.Value,
                             folder: path,
@@ -886,10 +866,6 @@ public class Program
                     Dictionary<string, string> drmHeaders = await m_ApiHelper.Headers($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine", Auth);
                     string decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
                     Purchased.Medium? mediaInfo = purchasedPosts.PaidPostMedia.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
-                    if (mediaInfo == null)
-                    {
-                        continue;
-                    }
                     Purchased.List? postInfo = purchasedPosts.PaidPostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
                     isNew = await m_DownloadHelper.DownloadPurchasedPostDRMVideo(
                         ytdlppath: Auth.YTDLP_PATH,
