@@ -900,129 +900,29 @@ public class Program
                             break;
                         }
 
-                        Config newConfig = new();
-                        newConfig.DownloadPath = Config.DownloadPath;
-                        newConfig.PostFileNameFormat = Config.PostFileNameFormat;
-                        newConfig.MessageFileNameFormat = Config.MessageFileNameFormat;
-                        newConfig.PaidPostFileNameFormat = Config.PaidPostFileNameFormat;
-                        newConfig.PaidMessageFileNameFormat = Config.PaidMessageFileNameFormat;
+                        Config newConfig = new()
+                        {
+                            DownloadPath = Config.DownloadPath,
+                            PostFileNameFormat = Config.PostFileNameFormat,
+                            MessageFileNameFormat = Config.MessageFileNameFormat,
+                            PaidPostFileNameFormat = Config.PaidPostFileNameFormat,
+                            PaidMessageFileNameFormat = Config.PaidMessageFileNameFormat
+                        };
 
-                        if (configOptions.Contains("[red]DownloadAvatarHeaderPhoto[/]"))
-                        {
-                            newConfig.DownloadAvatarHeaderPhoto = true;
-                        }
-                        else
-                        {
-                            newConfig.DownloadAvatarHeaderPhoto = false;
-                        }
+                        newConfig.DownloadAvatarHeaderPhoto = configOptions.Contains("[red]DownloadAvatarHeaderPhoto[/]");
+                        newConfig.DownloadPaidPosts = configOptions.Contains("[red]DownloadPaidPosts[/]");
+                        newConfig.DownloadPosts = configOptions.Contains("[red]DownloadPosts[/]");
+                        newConfig.DownloadArchived = configOptions.Contains("[red]DownloadArchived[/]");
+                        newConfig.DownloadStories = configOptions.Contains("[red]DownloadStories[/]");
+                        newConfig.DownloadHighlights = configOptions.Contains("[red]DownloadHighlights[/]");
+                        newConfig.DownloadMessages = configOptions.Contains("[red]DownloadMessages[/]");
+                        newConfig.DownloadPaidMessages = configOptions.Contains("[red]DownloadPaidMessages[/]");
+                        newConfig.DownloadImages = configOptions.Contains("[red]DownloadImages[/]");
+                        newConfig.DownloadVideos = configOptions.Contains("[red]DownloadVideos[/]");
+                        newConfig.DownloadAudios = configOptions.Contains("[red]DownloadAudios[/]");
+                        newConfig.IncludeExpiredSubscriptions = configOptions.Contains("[red]IncludeExpiredSubscriptions[/]");
+                        newConfig.SkipAds = configOptions.Contains("[red]SkipAds[/]");
 
-                        if (configOptions.Contains("[red]DownloadPaidPosts[/]"))
-                        {
-                            newConfig.DownloadPaidPosts = true;
-                        }
-                        else
-                        {
-                            newConfig.DownloadPaidPosts = false;
-                        }
-
-                        if (configOptions.Contains("[red]DownloadPosts[/]"))
-                        {
-                            newConfig.DownloadPosts = true;
-                        }
-                        else
-                        {
-                            newConfig.DownloadPosts = false;
-                        }
-
-                        if (configOptions.Contains("[red]DownloadArchived[/]"))
-                        {
-                            newConfig.DownloadArchived = true;
-                        }
-                        else
-                        {
-                            newConfig.DownloadArchived = false;
-                        }
-
-                        if (configOptions.Contains("[red]DownloadStories[/]"))
-                        {
-                            newConfig.DownloadStories = true;
-                        }
-                        else
-                        {
-                            newConfig.DownloadStories = false;
-                        }
-
-                        if (configOptions.Contains("[red]DownloadHighlights[/]"))
-                        {
-                            newConfig.DownloadHighlights = true;
-                        }
-                        else
-                        {
-                            newConfig.DownloadHighlights = false;
-                        }
-
-                        if (configOptions.Contains("[red]DownloadMessages[/]"))
-                        {
-                            newConfig.DownloadMessages = true;
-                        }
-                        else
-                        {
-                            newConfig.DownloadMessages = false;
-                        }
-
-                        if (configOptions.Contains("[red]DownloadPaidMessages[/]"))
-                        {
-                            newConfig.DownloadPaidMessages = true;
-                        }
-                        else
-                        {
-                            newConfig.DownloadPaidMessages = false;
-                        }
-
-                        if (configOptions.Contains("[red]DownloadImages[/]"))
-                        {
-                            newConfig.DownloadImages = true;
-                        }
-                        else
-                        {
-                            newConfig.DownloadImages = false;
-                        }
-
-                        if (configOptions.Contains("[red]DownloadVideos[/]"))
-                        {
-                            newConfig.DownloadVideos = true;
-                        }
-                        else
-                        {
-                            newConfig.DownloadVideos = false;
-                        }
-
-                        if (configOptions.Contains("[red]DownloadAudios[/]"))
-                        {
-                            newConfig.DownloadAudios = true;
-                        }
-                        else
-                        {
-                            newConfig.DownloadAudios = false;
-                        }
-
-                        if (configOptions.Contains("[red]IncludeExpiredSubscriptions[/]"))
-                        {
-                            newConfig.IncludeExpiredSubscriptions = true;
-                        }
-                        else
-                        {
-                            newConfig.IncludeExpiredSubscriptions = false;
-                        }
-
-                        if (configOptions.Contains("[red]SkipAds[/]"))
-                        {
-                            newConfig.SkipAds = true;
-                        }
-                        else
-                        {
-                            newConfig.SkipAds = false;
-                        }
 
                         string newConfigString = JsonConvert.SerializeObject(newConfig, Formatting.Indented);
                         File.WriteAllText("config.json", newConfigString);
@@ -1049,23 +949,23 @@ public class Program
         if (lists.Count > 0)
         {
             return new List<string>
-				{
-					"[red]Select All[/]",
-					"[red]List[/]",
-					"[red]Custom[/]",
+			{
+				"[red]Select All[/]",
+				"[red]List[/]",
+				"[red]Custom[/]",
                 "[red]Edit config.json[/]",
-					"[red]Exit[/]"
-				};
+				"[red]Exit[/]"
+			};
         }
         else
         {
             return new List<string>
-				{
-					"[red]Select All[/]",
-					"[red]Custom[/]",
+			{
+				"[red]Select All[/]",
+				"[red]Custom[/]",
                 "[red]Edit config.json[/]",
                 "[red]Exit[/]"
-				};
+			};
         }
     }
 
