@@ -254,6 +254,7 @@ namespace OF_DL
                                                         if (isNew)
                                                         {
                                                             newPaidPostCount++;
+
                                                         }
                                                         else
                                                         {
@@ -339,16 +340,23 @@ namespace OF_DL
                                                 }
                                                 else
                                                 {
-                                                    Post.Medium mediaInfo = posts.PostMedia.FirstOrDefault(m => m.id == postKVP.Key);
-                                                    Post.List postInfo = posts.PostObjects.FirstOrDefault(p => p.media.Contains(mediaInfo));
-                                                    isNew = await downloadHelper.DownloadPostMedia(postKVP.Value, path, postKVP.Key, task, !string.IsNullOrEmpty(config.PostFileNameFormat) ? config.PostFileNameFormat : string.Empty, !string.IsNullOrEmpty(config.PostFileNameFormat) ? postInfo : null, !string.IsNullOrEmpty(config.PostFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(config.PostFileNameFormat) ? postInfo?.author : null, hasSelectedUsersKVP.Value);
-                                                    if (isNew)
+                                                    try
                                                     {
-                                                        newPostCount++;
+                                                        Post.Medium mediaInfo = posts.PostMedia.FirstOrDefault(m => m.id == postKVP.Key);
+                                                        Post.List postInfo = posts.PostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
+                                                        isNew = await downloadHelper.DownloadPostMedia(postKVP.Value, path, postKVP.Key, task, !string.IsNullOrEmpty(config.PostFileNameFormat) ? config.PostFileNameFormat : string.Empty, !string.IsNullOrEmpty(config.PostFileNameFormat) ? postInfo : null, !string.IsNullOrEmpty(config.PostFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(config.PostFileNameFormat) ? postInfo?.author : null, hasSelectedUsersKVP.Value);
+                                                        if (isNew)
+                                                        {
+                                                            newPostCount++;
+                                                        }
+                                                        else
+                                                        {
+                                                            oldPostCount++;
+                                                        }
                                                     }
-                                                    else
+                                                    catch
                                                     {
-                                                        oldPostCount++;
+                                                        Console.WriteLine("Media was null");
                                                     }
                                                 }
                                             }
