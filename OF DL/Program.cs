@@ -859,6 +859,7 @@ namespace OF_DL
                             newConfig.MessageFileNameFormat = config.MessageFileNameFormat;
                             newConfig.PaidPostFileNameFormat = config.PaidPostFileNameFormat;
                             newConfig.PaidMessageFileNameFormat = config.PaidMessageFileNameFormat;
+                            newConfig.Timeout = config.Timeout;
 
                             if (configOptions.Contains("[red]DownloadAvatarHeaderPhoto[/]"))
                             {
