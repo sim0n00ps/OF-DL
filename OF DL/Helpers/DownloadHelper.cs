@@ -27,6 +27,53 @@ namespace OF_DL.Helpers
             _FileNameHelper = new FileNameHelper();
         }
 
+        private static async Task<long> GetFileSizeAsync(string url, Auth auth)
+        {
+            long fileSize = 0;
+
+            try
+            {
+                Uri uri = new(url);
+
+                if (uri.Host == "cdn3.onlyfans.com" && uri.LocalPath.Contains("/dash/files"))
+                {
+                    string[] messageUrlParsed = url.Split(',');
+                    string mpdURL = messageUrlParsed[0];
+                    string policy = messageUrlParsed[1];
+                    string signature = messageUrlParsed[2];
+                    string kvp = messageUrlParsed[3];
+
+                    mpdURL = mpdURL.Replace(".mpd", "_source.mp4");
+
+                    using HttpClient client = new();
+                    client.DefaultRequestHeaders.Add("Cookie", $"CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {auth.COOKIE}");
+                    client.DefaultRequestHeaders.Add("User-Agent", auth.USER_AGENT);
+
+                    using HttpResponseMessage response = await client.GetAsync(mpdURL, HttpCompletionOption.ResponseHeadersRead);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        fileSize = response.Content.Headers.ContentLength ?? 0;
+                    }
+                }
+                else
+                {
+                    using HttpClient client = new();
+                    client.DefaultRequestHeaders.Add("User-Agent", auth.USER_AGENT);
+                    using HttpResponseMessage response = await client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        fileSize = response.Content.Headers.ContentLength ?? 0;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting file size for URL '{url}': {ex.Message}");
+            }
+
+            return fileSize;
+        }
+
         private static async Task<string> GenerateCustomFileName(string filenameFormat,
                                                                  Post.List postInfo,
                                                                  Post.Medium postMedia,
@@ -111,21 +158,20 @@ namespace OF_DL.Helpers
             return path;
         }
 
-
-        public async Task<bool> DownloadPostMedia(string url,
-                                                  string folder,
-                                                  long media_id,
-                                                  ProgressTask task,
-                                                  string filenameFormat,
-                                                  Post.List? postInfo,
-                                                  Post.Medium? postMedia,
-                                                  Post.Author? author,
-                                                  Dictionary<string, int> users)
+        public async Task<bool> DownloadMedia(string path,
+                                              string url,
+                                              string folder,
+                                              long media_id,
+                                              ProgressTask task,
+                                              string filenameFormat,
+                                              Post.List? postInfo,
+                                              Post.Medium? postMedia,
+                                              Post.Author? author,
+                                              Dictionary<string, int> users)
         {
             try
             {
                 string customFileName = string.Empty;
-                string path = "/Posts/Free";
                 if (!Directory.Exists(folder + path)) // check if the folder already exists
                 {
                     Directory.CreateDirectory(folder + path); // create the new folder
@@ -185,12 +231,35 @@ namespace OF_DL.Helpers
             return false;
         }
 
-        public async Task<bool> DownloadMessageMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Messages.List messageInfo, Messages.Medium messageMedia, Messages.FromUser fromUser, Dictionary<string, int> users)
+        public async Task<bool> DownloadPostMedia(string url,
+                                                  string folder,
+                                                  long media_id,
+                                                  ProgressTask task,
+                                                  string filenameFormat,
+                                                  Post.List? postInfo,
+                                                  Post.Medium? postMedia,
+                                                  Post.Author? author,
+                                                  Dictionary<string, int> users)
         {
+            string path = "/Posts/Free";
+            return await DownloadMedia(path, url,folder, media_id, task, filenameFormat, postInfo, postMedia, author, users);
+        }
+
+        public async Task<bool> DownloadMessageMedia(string url,
+                                                     string folder,
+                                                     long media_id,
+                                                     ProgressTask task,
+                                                     string filenameFormat,
+                                                     Messages.List messageInfo,
+                                                     Messages.Medium messageMedia,
+                                                     Messages.FromUser fromUser,
+                                                     Dictionary<string, int> users)
+        {
+            string path = "/Messages/Free";
             try
             {
                 string customFileName = string.Empty;
-                string path = "/Messages/Free";
+                
                 if (!Directory.Exists(folder + path)) // check if the folder already exists
                 {
                     Directory.CreateDirectory(folder + path); // create the new folder
@@ -280,7 +349,15 @@ namespace OF_DL.Helpers
             return false;
         }
 
-        public async Task<bool> DownloadArchivedMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Archived.List messageInfo, Archived.Medium messageMedia, Archived.Author author, Dictionary<string, int> users)
+        public async Task<bool> DownloadArchivedMedia(string url,
+                                                      string folder,
+                                                      long media_id,
+                                                      ProgressTask task,
+                                                      string filenameFormat,
+                                                      Archived.List messageInfo,
+                                                      Archived.Medium messageMedia,
+                                                      Archived.Author author,
+                                                      Dictionary<string, int> users)
         {
             try
             {
@@ -375,7 +452,10 @@ namespace OF_DL.Helpers
             return false;
         }
 
-        public async Task<bool> DownloadStoryMedia(string url, string folder, long media_id, ProgressTask task)
+        public async Task<bool> DownloadStoryMedia(string url,
+                                                   string folder,
+                                                   long media_id,
+                                                   ProgressTask task)
         {
             try
             {
@@ -453,7 +533,15 @@ namespace OF_DL.Helpers
             return false;
         }
 
-        public async Task<bool> DownloadPurchasedMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Purchased.List messageInfo, Purchased.Medium messageMedia, Purchased.FromUser fromUser, Dictionary<string, int> users)
+        public async Task<bool> DownloadPurchasedMedia(string url,
+                                                       string folder,
+                                                       long media_id,
+                                                       ProgressTask task,
+                                                       string filenameFormat,
+                                                       Purchased.List messageInfo,
+                                                       Purchased.Medium messageMedia,
+                                                       Purchased.FromUser fromUser,
+                                                       Dictionary<string, int> users)
         {
             try
             {
@@ -724,7 +812,25 @@ namespace OF_DL.Helpers
                 }
             }
         }
-        public async Task<bool> DownloadMessageDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string filenameFormat, Messages.List messageInfo, Messages.Medium messageMedia, Messages.FromUser fromUser, Dictionary<string, int> users)
+        public async Task<bool> DownloadMessageDRMVideo(string ytdlppath,
+                                                        string mp4decryptpath,
+                                                        string ffmpegpath,
+                                                        string user_agent,
+                                                        string policy,
+                                                        string signature,
+                                                        string kvp,
+                                                        string sess,
+                                                        string url,
+                                                        string decryptionKey,
+                                                        string folder,
+                                                        DateTime lastModified,
+                                                        long media_id,
+                                                        ProgressTask task,
+                                                        string filenameFormat,
+                                                        Messages.List messageInfo,
+                                                        Messages.Medium messageMedia,
+                                                        Messages.FromUser fromUser,
+                                                        Dictionary<string, int> users)
         {
             try
             {
@@ -879,7 +985,25 @@ namespace OF_DL.Helpers
             return false;
         }
 
-        public async Task<bool> DownloadPurchasedMessageDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string filenameFormat, Purchased.List messageInfo, Purchased.Medium messageMedia, Purchased.FromUser fromUser, Dictionary<string, int> users)
+        public async Task<bool> DownloadPurchasedMessageDRMVideo(string ytdlppath,
+                                                                 string mp4decryptpath,
+                                                                 string ffmpegpath,
+                                                                 string user_agent,
+                                                                 string policy,
+                                                                 string signature,
+                                                                 string kvp,
+                                                                 string sess,
+                                                                 string url,
+                                                                 string decryptionKey,
+                                                                 string folder,
+                                                                 DateTime lastModified,
+                                                                 long media_id,
+                                                                 ProgressTask task,
+                                                                 string filenameFormat,
+                                                                 Purchased.List messageInfo,
+                                                                 Purchased.Medium messageMedia,
+                                                                 Purchased.FromUser fromUser,
+                                                                 Dictionary<string, int> users)
         {
             try
             {
@@ -1186,7 +1310,25 @@ namespace OF_DL.Helpers
             return false;
         }
 
-        public async Task<bool> DownloadPurchasedPostDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string filenameFormat, Purchased.List postInfo, Purchased.Medium postMedia, Purchased.FromUser fromUser, Dictionary<string, int> users)
+        public async Task<bool> DownloadPurchasedPostDRMVideo(string ytdlppath,
+                                                              string mp4decryptpath,
+                                                              string ffmpegpath,
+                                                              string user_agent,
+                                                              string policy,
+                                                              string signature,
+                                                              string kvp,
+                                                              string sess,
+                                                              string url,
+                                                              string decryptionKey,
+                                                              string folder,
+                                                              DateTime lastModified,
+                                                              long media_id,
+                                                              ProgressTask task,
+                                                              string filenameFormat,
+                                                              Purchased.List postInfo,
+                                                              Purchased.Medium postMedia,
+                                                              Purchased.FromUser fromUser,
+                                                              Dictionary<string, int> users)
         {
             try
             {
@@ -1339,7 +1481,25 @@ namespace OF_DL.Helpers
             }
             return false;
         }
-        public async Task<bool> DownloadArchivedPostDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string filenameFormat, Archived.List postInfo, Archived.Medium postMedia, Archived.Author author, Dictionary<string, int> users)
+        public async Task<bool> DownloadArchivedPostDRMVideo(string ytdlppath,
+                                                             string mp4decryptpath,
+                                                             string ffmpegpath,
+                                                             string user_agent,
+                                                             string policy,
+                                                             string signature,
+                                                             string kvp,
+                                                             string sess,
+                                                             string url,
+                                                             string decryptionKey,
+                                                             string folder,
+                                                             DateTime lastModified,
+                                                             long media_id,
+                                                             ProgressTask task,
+                                                             string filenameFormat,
+                                                             Archived.List postInfo,
+                                                             Archived.Medium postMedia,
+                                                             Archived.Author author,
+                                                             Dictionary<string, int> users)
         {
             try
             {
@@ -1539,51 +1699,6 @@ namespace OF_DL.Helpers
             return totalFileSize;
         }
 
-        private async Task<long> GetFileSizeAsync(string url, Auth auth)
-        {
-            long fileSize = 0;
-
-            try
-            {
-                Uri uri = new(url);
-                
-                if (uri.Host == "cdn3.onlyfans.com" && uri.LocalPath.Contains("/dash/files"))
-                {
-                    string[] messageUrlParsed = url.Split(',');
-                    string mpdURL = messageUrlParsed[0];
-                    string policy = messageUrlParsed[1];
-                    string signature = messageUrlParsed[2];
-                    string kvp = messageUrlParsed[3];
-
-                    mpdURL = mpdURL.Replace(".mpd", "_source.mp4");
-
-                    using HttpClient client = new();
-                    client.DefaultRequestHeaders.Add("Cookie", $"CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {auth.COOKIE}");
-                    client.DefaultRequestHeaders.Add("User-Agent", auth.USER_AGENT);
-
-                    using HttpResponseMessage response = await client.GetAsync(mpdURL, HttpCompletionOption.ResponseHeadersRead);
-                    if (response.IsSuccessStatusCode)
-                    {
-                        fileSize = response.Content.Headers.ContentLength ?? 0;
-                    }
-                }
-                else
-                {
-                    using HttpClient client = new();
-                    client.DefaultRequestHeaders.Add("User-Agent", auth.USER_AGENT);
-                    using HttpResponseMessage response = await client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead);
-                    if (response.IsSuccessStatusCode)
-                    {
-                        fileSize = response.Content.Headers.ContentLength ?? 0;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error getting file size for URL '{url}': {ex.Message}");
-            }
-
-            return fileSize;
-        }
+        
     }
 }
