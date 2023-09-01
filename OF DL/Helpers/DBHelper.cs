@@ -30,43 +30,43 @@ namespace OF_DL.Helpers
                 // create the 'medias' table
                 using (SqliteCommand cmd = new("CREATE TABLE IF NOT EXISTS medias (id INTEGER NOT NULL, media_id INTEGER, post_id INTEGER NOT NULL, link VARCHAR, directory VARCHAR, filename VARCHAR, size INTEGER, api_type VARCHAR, media_type VARCHAR, preview INTEGER, linked VARCHAR, downloaded INTEGER, created_at TIMESTAMP, PRIMARY KEY(id), UNIQUE(media_id));", connection))
                 {
-                    cmd.ExecuteNonQuery();
+                    await cmd.ExecuteNonQueryAsync();
                 }
 
                 // create the 'messages' table
                 using (SqliteCommand cmd = new("CREATE TABLE IF NOT EXISTS messages (id INTEGER NOT NULL, post_id INTEGER NOT NULL, text VARCHAR, price INTEGER, paid INTEGER, archived BOOLEAN, created_at TIMESTAMP, user_id INTEGER, PRIMARY KEY(id), UNIQUE(post_id));", connection))
                 {
-                    cmd.ExecuteNonQuery();
+                    await cmd.ExecuteNonQueryAsync();
                 }
 
                 // create the 'posts' table
                 using (SqliteCommand cmd = new("CREATE TABLE IF NOT EXISTS posts (id INTEGER NOT NULL, post_id INTEGER NOT NULL, text VARCHAR, price INTEGER, paid INTEGER, archived BOOLEAN, created_at TIMESTAMP, PRIMARY KEY(id), UNIQUE(post_id));", connection))
                 {
-                    cmd.ExecuteNonQuery();
+                    await cmd.ExecuteNonQueryAsync();
                 }
 
                 // create the 'stories' table
                 using (SqliteCommand cmd = new("CREATE TABLE IF NOT EXISTS stories (id INTEGER NOT NULL, post_id INTEGER NOT NULL, text VARCHAR, price INTEGER, paid INTEGER, archived BOOLEAN, created_at TIMESTAMP, PRIMARY KEY(id), UNIQUE(post_id));", connection))
                 {
-                    cmd.ExecuteNonQuery();
+                    await cmd.ExecuteNonQueryAsync();
                 }
 
                 // create the 'others' table
                 using (SqliteCommand cmd = new("CREATE TABLE IF NOT EXISTS others (id INTEGER NOT NULL, post_id INTEGER NOT NULL, text VARCHAR, price INTEGER, paid INTEGER, archived BOOLEAN, created_at TIMESTAMP, PRIMARY KEY(id), UNIQUE(post_id));", connection))
                 {
-                    cmd.ExecuteNonQuery();
+                    await cmd.ExecuteNonQueryAsync();
                 }
 
                 // create the 'products' table
                 using (SqliteCommand cmd = new("CREATE TABLE IF NOT EXISTS products (id INTEGER NOT NULL, post_id INTEGER NOT NULL, text VARCHAR, price INTEGER, paid INTEGER, archived BOOLEAN, created_at TIMESTAMP, title VARCHAR, PRIMARY KEY(id), UNIQUE(post_id));", connection))
                 {
-                    cmd.ExecuteNonQuery();
+                    await cmd.ExecuteNonQueryAsync();
                 }
 
                 // create the 'profiles' table
                 using (SqliteCommand cmd = new("CREATE TABLE IF NOT EXISTS profiles (id INTEGER NOT NULL, user_id INTEGER NOT NULL, username VARCHAR NOT NULL, PRIMARY KEY(id), UNIQUE(username));", connection))
                 {
-                    cmd.ExecuteNonQuery();
+                    await cmd.ExecuteNonQueryAsync();
                 }
             }
             catch (Exception ex)
@@ -80,6 +80,8 @@ namespace OF_DL.Helpers
                 }
             }
         }
+
+
         public async Task AddMessage(string folder, long post_id, string message_text, string price, bool is_paid, bool is_archived, DateTime created_at, int user_id)
         {
             try
@@ -88,7 +90,7 @@ namespace OF_DL.Helpers
                 connection.Open();
                 using SqliteCommand cmd = new($"SELECT COUNT(*) FROM messages WHERE post_id=@post_id", connection);
                 cmd.Parameters.AddWithValue("@post_id", post_id);
-                int count = Convert.ToInt32(cmd.ExecuteScalar());
+                int count = Convert.ToInt32(await cmd.ExecuteScalarAsync());
                 if (count == 0)
                 {
                     // If the record doesn't exist, insert a new one
@@ -100,7 +102,7 @@ namespace OF_DL.Helpers
                     insertCmd.Parameters.AddWithValue("@is_archived", is_archived);
                     insertCmd.Parameters.AddWithValue("@created_at", created_at);
                     insertCmd.Parameters.AddWithValue("@user_id", user_id);
-                    insertCmd.ExecuteNonQuery();
+                    await insertCmd.ExecuteNonQueryAsync();
                 }
             }
             catch (Exception ex)
@@ -114,6 +116,8 @@ namespace OF_DL.Helpers
                 }
             }
         }
+
+
         public async Task AddPost(string folder, long post_id, string message_text, string price, bool is_paid, bool is_archived, DateTime created_at)
         {
             try
@@ -122,7 +126,7 @@ namespace OF_DL.Helpers
                 connection.Open();
                 using SqliteCommand cmd = new($"SELECT COUNT(*) FROM posts WHERE post_id=@post_id", connection);
                 cmd.Parameters.AddWithValue("@post_id", post_id);
-                int count = Convert.ToInt32(cmd.ExecuteScalar());
+                int count = Convert.ToInt32(await cmd.ExecuteScalarAsync());
                 if (count == 0)
                 {
                     // If the record doesn't exist, insert a new one
@@ -133,7 +137,7 @@ namespace OF_DL.Helpers
                     insertCmd.Parameters.AddWithValue("@is_paid", is_paid);
                     insertCmd.Parameters.AddWithValue("@is_archived", is_archived);
                     insertCmd.Parameters.AddWithValue("@created_at", created_at);
-                    insertCmd.ExecuteNonQuery();
+                    await insertCmd.ExecuteNonQueryAsync();
                 }
             }
             catch (Exception ex)
@@ -147,6 +151,8 @@ namespace OF_DL.Helpers
                 }
             }
         }
+
+
         public async Task AddStory(string folder, long post_id, string message_text, string price, bool is_paid, bool is_archived, DateTime created_at)
         {
             try
@@ -155,7 +161,7 @@ namespace OF_DL.Helpers
                 connection.Open();
                 using SqliteCommand cmd = new($"SELECT COUNT(*) FROM stories WHERE post_id=@post_id", connection);
                 cmd.Parameters.AddWithValue("@post_id", post_id);
-                int count = Convert.ToInt32(cmd.ExecuteScalar());
+                int count = Convert.ToInt32(await cmd.ExecuteScalarAsync());
                 if (count == 0)
                 {
                     // If the record doesn't exist, insert a new one
@@ -166,7 +172,7 @@ namespace OF_DL.Helpers
                     insertCmd.Parameters.AddWithValue("@is_paid", is_paid);
                     insertCmd.Parameters.AddWithValue("@is_archived", is_archived);
                     insertCmd.Parameters.AddWithValue("@created_at", created_at);
-                    insertCmd.ExecuteNonQuery();
+                    await insertCmd.ExecuteNonQueryAsync();
                 }
             }
             catch (Exception ex)
@@ -194,7 +200,7 @@ namespace OF_DL.Helpers
                 {
                     // If the record doesn't exist, insert a new one
                     using SqliteCommand insertCmd = new($"INSERT INTO medias(media_id, post_id, link, directory, filename, size, api_type, media_type, preview, downloaded, created_at) VALUES({media_id}, {post_id}, '{link}', '{directory?.ToString() ?? "NULL"}', '{filename?.ToString() ?? "NULL"}', {size?.ToString() ?? "NULL"}, '{api_type}', '{media_type}', {Convert.ToInt32(preview)}, {Convert.ToInt32(downloaded)}, '{created_at?.ToString("yyyy-MM-dd HH:mm:ss")}')", connection);
-                    insertCmd.ExecuteNonQuery();
+                    await insertCmd.ExecuteNonQueryAsync();
                 }
             }
             catch (Exception ex)
@@ -219,7 +225,7 @@ namespace OF_DL.Helpers
                 {
                     connection.Open();
                     using SqliteCommand cmd = new($"SELECT downloaded FROM medias WHERE media_id={media_id}", connection);
-                    downloaded = Convert.ToBoolean(cmd.ExecuteScalar());
+                    downloaded = Convert.ToBoolean(await cmd.ExecuteScalarAsync());
                 }
                 return downloaded;
             }
@@ -256,8 +262,10 @@ namespace OF_DL.Helpers
             command.Parameters.AddWithValue("@media_id", media_id);
 
             // Execute the command
-            command.ExecuteNonQuery();
+            await command.ExecuteNonQueryAsync();
         }
+
+
         public async Task<long> GetStoredFileSize(string folder, long media_id)
         {
             long size;
@@ -265,7 +273,7 @@ namespace OF_DL.Helpers
             {
                 connection.Open();
                 using SqliteCommand cmd = new($"SELECT size FROM medias WHERE media_id={media_id}", connection);
-                size = Convert.ToInt64(cmd.ExecuteScalar());
+                size = Convert.ToInt64(await cmd.ExecuteScalarAsync());
             }
             return size;
         }
