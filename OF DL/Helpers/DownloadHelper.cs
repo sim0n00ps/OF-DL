@@ -27,6 +27,145 @@ namespace OF_DL.Helpers
             _FileNameHelper = new FileNameHelper();
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="url"></param>
+        /// <param name="folder"></param>
+        /// <param name="media_id"></param>
+        /// <param name="task"></param>
+        /// <param name="filenameFormat"></param>
+        /// <param name="generalInfo"></param>
+        /// <param name="generalMedia"></param>
+        /// <param name="generalAuthor"></param>
+        /// <param name="users"></param>
+        /// <returns></returns>
+        public async Task<bool> CreateDirectoriesAndDownloadMedia(string path,
+                                                                  string url,
+                                                                  string folder,
+                                                                  long media_id,
+                                                                  ProgressTask task,
+                                                                  string filenameFormat,
+                                                                  object? generalInfo,
+                                                                  object? generalMedia,
+                                                                  object? generalAuthor,
+                                                                  Dictionary<string, int> users)
+        {
+            try
+            {
+                string customFileName = string.Empty;
+                if (!Directory.Exists(folder + path)) // check if the folder already exists
+                {
+                    Directory.CreateDirectory(folder + path); // create the new folder
+                }
+                string extension = Path.GetExtension(url.Split("?")[0]);
+
+                path = UpdatePathBasedOnExtension(folder, path, extension);
+
+                Uri uri = new(url);
+                string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
+
+
+                // 1. Simplify filename generation and checks
+                string resolvedFilename = filename;
+                if (!string.IsNullOrEmpty(filenameFormat) && generalInfo != null && generalMedia != null && generalAuthor != null)
+                {
+                    resolvedFilename = await GenerateCustomFileName(filenameFormat, generalInfo, generalMedia, generalAuthor, users, _FileNameHelper);
+                }
+
+                string fullPath = $"{folder}{path}/{resolvedFilename}{extension}";
+
+                return await ProcessMediaDownload(folder, media_id, fullPath, url, path, resolvedFilename, extension, task);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine("\nInner Exception:");
+                    Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                }
+            }
+            return false;
+        }
+
+
+        /// <summary>
+        /// Updates the given path based on the file extension.
+        /// </summary>
+        /// <param name="folder">The parent folder.</param>
+        /// <param name="path">The initial relative path.</param>
+        /// <param name="extension">The file extension.</param>
+        /// <returns>A string that represents the updated path based on the file extension.</returns>
+        private static string UpdatePathBasedOnExtension(string folder, string path, string extension)
+        {
+            string subdirectory = string.Empty;
+
+            switch (extension.ToLower())
+            {
+                case ".jpg":
+                case ".jpeg":
+                case ".png":
+                    subdirectory = "/Images";
+                    break;
+                case ".mp4":
+                case ".avi":
+                case ".wmv":
+                case ".gif":
+                case ".mov":
+                    subdirectory = "/Videos";
+                    break;
+                case ".mp3":
+                case ".wav":
+                case ".ogg":
+                    subdirectory = "/Audios";
+                    break;
+            }
+
+            if (!string.IsNullOrEmpty(subdirectory))
+            {
+                path += subdirectory;
+                string fullPath = folder + path;
+
+                if (!Directory.Exists(fullPath))
+                {
+                    Directory.CreateDirectory(fullPath);
+                }
+            }
+
+            return path;
+        }
+
+        /// <summary>
+        /// Generates a custom filename based on the given format and properties.
+        /// </summary>
+        /// <param name="filenameFormat">The format string for the filename.</param>
+        /// <param name="postInfo">General information about the post.</param>
+        /// <param name="postMedia">Media associated with the post.</param>
+        /// <param name="author">Author of the post.</param>
+        /// <param name="users">Dictionary containing user-related data.</param>
+        /// <param name="fileNameHelper">Helper class for filename operations.</param>
+        /// <returns>A Task resulting in a string that represents the custom filename.</returns>
+        private static async Task<string> GenerateCustomFileName(string filenameFormat,
+                                                                 object postInfo,
+                                                                 object postMedia,
+                                                                 object author,
+                                                                 Dictionary<string, int> users,
+                                                                 IFileNameHelper fileNameHelper)
+        {
+            List<string> properties = new();
+            string pattern = @"\{(.*?)\}";
+            MatchCollection matches = Regex.Matches(filenameFormat, pattern);
+            properties.AddRange(matches.Select(match => match.Groups[1].Value));
+
+            Dictionary<string, string> values = await fileNameHelper.GetFilename(postInfo, postMedia, author, properties, users);
+            return await fileNameHelper.BuildFilename(filenameFormat, values);
+        }
+
+
         private static async Task<long> GetFileSizeAsync(string url, Auth auth)
         {
             long fileSize = 0;
@@ -74,22 +213,132 @@ namespace OF_DL.Helpers
             return fileSize;
         }
 
-        private static async Task<string> GenerateCustomFileName(string filenameFormat,
-                                                                 object postInfo,
-                                                                 object postMedia,
-                                                                 object author,
-                                                                 Dictionary<string, int> users,
-                                                                 IFileNameHelper fileNameHelper)
+        /// <summary>
+        /// Processes the download and database update of media.
+        /// </summary>
+        /// <param name="folder">The folder where the media is stored.</param>
+        /// <param name="media_id">The ID of the media.</param>
+        /// <param name="fullPath">The full path to the media.</param>
+        /// <param name="url">The URL from where to download the media.</param>
+        /// <param name="path">The relative path to the media.</param>
+        /// <param name="resolvedFilename">The filename after any required manipulations.</param>
+        /// <param name="extension">The file extension.</param>
+        /// <param name="task">The task object for tracking progress.</param>
+        /// <returns>A Task resulting in a boolean indicating whether the media is newly downloaded or not.</returns>
+        public async Task<bool> ProcessMediaDownload(string folder,
+                                                     long media_id,
+                                                     string fullPath,
+                                                     string url,
+                                                     string path,
+                                                     string resolvedFilename,
+                                                     string extension,
+                                                     ProgressTask task)
         {
-            List<string> properties = new();
-            string pattern = @"\{(.*?)\}";
-            MatchCollection matches = Regex.Matches(filenameFormat, pattern);
-            properties.AddRange(matches.Select(match => match.Groups[1].Value));
+            DBHelper dBHelper = new();
 
-            Dictionary<string, string> values = await fileNameHelper.GetFilename(postInfo, postMedia, author, properties, users);
-            return await fileNameHelper.BuildFilename(filenameFormat, values);
+            try
+            {
+                if (!await dBHelper.CheckDownloaded(folder, media_id))
+                {
+                    return await HandleNewMedia(folder, media_id, fullPath, url, path, resolvedFilename, extension, task, dBHelper);
+                }
+                else
+                {
+                    return await HandlePreviouslyDownloadedMediaAsync(folder, media_id, task, dBHelper);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Handle exception (e.g., log it)
+                Console.WriteLine($"An error occurred: {ex.Message}");
+                return false;
+            }
         }
 
+
+        /// <summary>
+        /// Handles new media by downloading and updating the database.
+        /// </summary>
+        /// <param name="folder"></param>
+        /// <param name="media_id"></param>
+        /// <param name="fullPath"></param>
+        /// <param name="url"></param>
+        /// <param name="path"></param>
+        /// <param name="resolvedFilename"></param>
+        /// <param name="extension"></param>
+        /// <param name="task"></param>
+        /// <param name="dBHelper"></param>
+        /// <returns>A Task resulting in a boolean indicating whether the media is newly downloaded or not.</returns>
+        private async Task<bool> HandleNewMedia(string folder,
+                                                long media_id,
+                                                string fullPath,
+                                                string url,
+                                                string path,
+                                                string resolvedFilename,
+                                                string extension,
+                                                ProgressTask task,
+
+                                                DBHelper dBHelper)
+        {
+            long fileSizeInBytes;
+            DateTime lastModified;
+
+            if (!File.Exists(fullPath))
+            {
+                lastModified = await DownloadFile(url, fullPath, task);
+                fileSizeInBytes = GetLocalFileSize(fullPath);
+                task.Increment(fileSizeInBytes);
+                return true;
+            }
+            else
+            {
+                fileSizeInBytes = GetLocalFileSize(fullPath);
+                lastModified = File.GetLastWriteTime(fullPath);
+                task.Increment(fileSizeInBytes);
+            }
+
+            await dBHelper.UpdateMedia(folder, media_id, folder + path, resolvedFilename + extension, fileSizeInBytes, true, lastModified);
+            return false;
+        }
+
+
+        /// <summary>
+        /// Handles media that has been previously downloaded and updates the task accordingly.
+        /// </summary>
+        /// <param name="folder"></param>
+        /// <param name="media_id"></param>
+        /// <param name="task"></param>
+        /// <param name="dBHelper"></param>
+        /// <returns>A boolean indicating whether the media is newly downloaded or not.</returns>
+        private static async Task<bool> HandlePreviouslyDownloadedMediaAsync(string folder,
+                                                                             long media_id,
+                                                                             ProgressTask task,
+                                                                             DBHelper dBHelper)
+        {
+            long size = await dBHelper.GetStoredFileSize(folder, media_id);
+            task.Increment(size);
+            return false;
+        }
+
+
+        /// <summary>
+        /// Gets the file size of the media.
+        /// </summary>
+        /// <param name="filePath">The path to the file.</param>
+        /// <returns>The file size in bytes.</returns>
+        private static long GetLocalFileSize(string filePath)
+        {
+            return new FileInfo(filePath).Length;
+        }
+
+
+        /// <summary>
+        /// Downloads a file from the given URL and saves it to the specified destination path.
+        /// </summary>
+        /// <param name="url">The URL to download the file from.</param>
+        /// <param name="destinationPath">The path where the downloaded file will be saved.</param>
+        /// <param name="task">Progress tracking object.</param>
+        /// <returns>A Task resulting in a DateTime indicating the last modified date of the downloaded file.</returns>
 
         private static async Task<DateTime> DownloadFile(string url, string destinationPath, ProgressTask task)
         {
@@ -118,119 +367,7 @@ namespace OF_DL.Helpers
             return response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now;
         }
 
-
-        private static string UpdatePathBasedOnExtension(string folder, string path, string extension)
-        {
-            string subdirectory = string.Empty;
-
-            switch (extension.ToLower())
-            {
-                case ".jpg":
-                case ".jpeg":
-                case ".png":
-                    subdirectory = "/Images";
-                    break;
-                case ".mp4":
-                case ".avi":
-                case ".wmv":
-                case ".gif":
-                case ".mov":
-                    subdirectory = "/Videos";
-                    break;
-                case ".mp3":
-                case ".wav":
-                case ".ogg":
-                    subdirectory = "/Audios";
-                    break;
-            }
-
-            if (!string.IsNullOrEmpty(subdirectory))
-            {
-                path += subdirectory;
-                string fullPath = folder + path;
-
-                if (!Directory.Exists(fullPath))
-                {
-                    Directory.CreateDirectory(fullPath);
-                }
-            }
-
-            return path;
-        }
-
-        public async Task<bool> CreateDirectoriesAndDownloadMedia(string path,
-                                                                  string url,
-                                                                  string folder,
-                                                                  long media_id,
-                                                                  ProgressTask task,
-                                                                  string filenameFormat,
-                                                                  object? generalInfo,
-                                                                  object? generalMedia,
-                                                                  object? generalAuthor,
-                                                                  Dictionary<string, int> users)
-        {
-            try
-            {
-                string customFileName = string.Empty;
-                if (!Directory.Exists(folder + path)) // check if the folder already exists
-                {
-                    Directory.CreateDirectory(folder + path); // create the new folder
-                }
-                string extension = Path.GetExtension(url.Split("?")[0]);
-
-                path = UpdatePathBasedOnExtension(folder, path, extension);
-
-                Uri uri = new(url);
-                string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
-                DBHelper dBHelper = new();
-
-                // 1. Simplify filename generation and checks
-                string resolvedFilename = filename;
-                if (!string.IsNullOrEmpty(filenameFormat) && generalInfo != null && generalMedia != null && generalAuthor != null)
-                {
-                    resolvedFilename = await GenerateCustomFileName(filenameFormat, generalInfo, generalMedia, generalAuthor, users, _FileNameHelper);
-                }
-
-                string fullPath = $"{folder}{path}/{resolvedFilename}{extension}";
-                // Check if media is downloaded
-                if (!await dBHelper.CheckDownloaded(folder, media_id))
-                {
-                    
-                    if (!File.Exists(fullPath))
-                    {
-                        var lastModified = await DownloadFile(url, fullPath, task);
-                        long fileSizeInBytes = new FileInfo(fullPath).Length;
-                        await dBHelper.UpdateMedia(folder, media_id, folder + path, resolvedFilename + extension, fileSizeInBytes, true, lastModified);
-                        return true;
-                    }
-                    else
-                    {
-                        DateTime lastModified = File.GetLastWriteTime(fullPath);
-                        long fileSizeInBytes = new FileInfo(fullPath).Length;
-                        task.Increment(fileSizeInBytes);
-                        await dBHelper.UpdateMedia(folder, media_id, folder + path, resolvedFilename + extension, fileSizeInBytes, true, lastModified);
-                    }
-                }
-                else
-                {
-                    long size = await dBHelper.GetFileSize(folder, media_id);
-                    task.Increment(size);
-                }
-                return false;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
-                if (ex.InnerException != null)
-                {
-                    Console.WriteLine("\nInner Exception:");
-                    Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
-                }
-            }
-            return false;
-        }
-
+        
         public async Task<bool> DownloadPostMedia(string url,
                                                   string folder,
                                                   long media_id,
@@ -244,6 +381,7 @@ namespace OF_DL.Helpers
             string path = "/Posts/Free";
             return await CreateDirectoriesAndDownloadMedia(path, url,folder, media_id, task, filenameFormat, postInfo, postMedia, author, users);
         }
+
 
         public async Task<bool> DownloadMessageMedia(string url,
                                                      string folder,
@@ -259,6 +397,7 @@ namespace OF_DL.Helpers
             return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filenameFormat, messageInfo, messageMedia, fromUser, users);
         }
 
+
         public async Task<bool> DownloadArchivedMedia(string url,
                                                       string folder,
                                                       long media_id,
@@ -272,6 +411,7 @@ namespace OF_DL.Helpers
             string path = "/Archived/Posts/Free";
             return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filenameFormat, messageInfo, messageMedia, author, users);
         }
+
 
         public async Task<bool> DownloadStoryMedia(string url,
                                                    string folder,
@@ -338,7 +478,7 @@ namespace OF_DL.Helpers
                 }
                 else
                 {
-                    long size = await dBHelper.GetFileSize(folder, media_id);
+                    long size = await dBHelper.GetStoredFileSize(folder, media_id);
                     task.Increment(size);
                 }
                 return false;
@@ -619,7 +759,7 @@ namespace OF_DL.Helpers
                 }
                 else
                 {
-                    long size = await dBHelper.GetFileSize(folder, media_id);
+                    long size = await dBHelper.GetStoredFileSize(folder, media_id);
                     task.Increment(size);
                 }
                 return false;
@@ -791,7 +931,7 @@ namespace OF_DL.Helpers
                 }
                 else
                 {
-                    long size = await dBHelper.GetFileSize(folder, media_id);
+                    long size = await dBHelper.GetStoredFileSize(folder, media_id);
                     task.Increment(size);
                 }
                 return false;
@@ -944,7 +1084,7 @@ namespace OF_DL.Helpers
                 }
                 else
                 {
-                    long size = await dBHelper.GetFileSize(folder, media_id);
+                    long size = await dBHelper.GetStoredFileSize(folder, media_id);
                     task.Increment(size);
                 }
                 return false;
@@ -1116,7 +1256,7 @@ namespace OF_DL.Helpers
                 }
                 else
                 {
-                    long size = await dBHelper.GetFileSize(folder, media_id);
+                    long size = await dBHelper.GetStoredFileSize(folder, media_id);
                     task.Increment(size);
                 }
                 return false;
@@ -1287,7 +1427,7 @@ namespace OF_DL.Helpers
                 }
                 else
                 {
-                    long size = await dBHelper.GetFileSize(folder, media_id);
+                    long size = await dBHelper.GetStoredFileSize(folder, media_id);
                     task.Increment(size);
                 }
                 return false;

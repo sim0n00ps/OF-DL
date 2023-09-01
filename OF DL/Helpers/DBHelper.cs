@@ -258,7 +258,7 @@ namespace OF_DL.Helpers
             // Execute the command
             command.ExecuteNonQuery();
         }
-        public async Task<long> GetFileSize(string folder, long media_id)
+        public async Task<long> GetStoredFileSize(string folder, long media_id)
         {
             long size;
             using (SqliteConnection connection = new($"Data Source={folder}/Metadata/user_data.db"))
