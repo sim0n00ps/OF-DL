@@ -9,9 +9,13 @@ namespace OF_DL.Helpers
 {
     public class FileNameHelper : IFileNameHelper
     {
-        public async Task<Dictionary<string, string>> GetFilename(object obj1, object obj2, object obj3, List<string> selectedProperties, Dictionary<string, int> users = null)
+        public async Task<Dictionary<string, string>> GetFilename(object obj1,
+                                                                  object obj2,
+                                                                  object obj3,
+                                                                  List<string> selectedProperties,
+                                                                  Dictionary<string, int> users = null)
         {
-            Dictionary<string, string> values = new Dictionary<string, string>();
+            Dictionary<string, string> values = new();
             Type type1 = obj1.GetType();
             Type type2 = obj2.GetType();
             PropertyInfo[] properties1 = type1.GetProperties();
@@ -54,7 +58,7 @@ namespace OF_DL.Helpers
                                 object sourcePropertyValue = sourceProperty.GetValue(propertyValue);
                                 if(sourcePropertyValue != null)
                                 {
-                                    Uri uri = new Uri(sourcePropertyValue.ToString());
+                                    Uri uri = new(sourcePropertyValue.ToString());
                                     string filename = System.IO.Path.GetFileName(uri.LocalPath);
                                     values.Add(propertyName, filename.Split(".")[0]);
                                 }
@@ -64,7 +68,7 @@ namespace OF_DL.Helpers
                                     object nestedPropertyValue = GetNestedPropertyValue(obj2, propertyPath);
                                     if (nestedPropertyValue != null)
                                     {
-                                        Uri uri = new Uri(nestedPropertyValue.ToString());
+                                        Uri uri = new(nestedPropertyValue.ToString());
                                         string filename = System.IO.Path.GetFileName(uri.LocalPath);
                                         values.Add(propertyName, filename.Split(".")[0] + "_source.mp4");
                                     }
@@ -110,11 +114,7 @@ namespace OF_DL.Helpers
             object value = source;
             foreach (var propertyName in propertyPath.Split('.'))
             {
-                PropertyInfo property = value.GetType().GetProperty(propertyName);
-                if (property == null)
-                {
-                    throw new ArgumentException($"Property '{propertyName}' not found.");
-                }
+                PropertyInfo property = value.GetType().GetProperty(propertyName) ?? throw new ArgumentException($"Property '{propertyName}' not found.");
                 value = property.GetValue(value);
             }
             return value;
