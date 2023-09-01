@@ -362,9 +362,54 @@ public class DownloadHelper : IDownloadHelper
         return response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now;
     }
 
+    public async Task<long> CalculateTotalFileSize(List<string> urls, Auth auth)
+    {
+        long totalFileSize = 0;
+        if (urls.Count > 250)
+        {
+            int batchSize = 250;
+
+            var tasks = new List<Task<long>>();
+
+            for (int i = 0; i < urls.Count; i += batchSize)
+            {
+                var batchUrls = urls.Skip(i).Take(batchSize).ToList();
+
+                var batchTasks = batchUrls.Select(url => GetFileSizeAsync(url, auth));
+                tasks.AddRange(batchTasks);
+
+                await Task.WhenAll(batchTasks);
+
+                await Task.Delay(5000);
+            }
+
+            long[] fileSizes = await Task.WhenAll(tasks);
+            foreach (long fileSize in fileSizes)
+            {
+                totalFileSize += fileSize;
+            }
+        }
+        else
+        {
+            var tasks = new List<Task<long>>();
+
+            foreach (string url in urls)
+            {
+                tasks.Add(GetFileSizeAsync(url, auth));
+            }
+
+            long[] fileSizes = await Task.WhenAll(tasks);
+            foreach (long fileSize in fileSizes)
+            {
+                totalFileSize += fileSize;
+            }
+        }
+
+        return totalFileSize;
+    }
     #endregion
 
-    #region drm
+    #region drm common
 
     private static async Task<bool> DownloadDrmMedia(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string customFileName, string filename, string path, DBHelper dBHelper)
     {
@@ -469,7 +514,7 @@ public class DownloadHelper : IDownloadHelper
     }
     #endregion
 
-
+    #region normal posts
     public async Task<bool> DownloadPostMedia(string url,
                                               string folder,
                                               long media_id,
@@ -485,7 +530,7 @@ public class DownloadHelper : IDownloadHelper
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
         string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, postInfo, postMedia, author, users, _FileNameHelper);
 
-        return await CreateDirectoriesAndDownloadMedia(path, url,folder, media_id, task, resolvedFilename);
+        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, resolvedFilename);
     }
 
 
@@ -571,6 +616,7 @@ public class DownloadHelper : IDownloadHelper
         return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, resolvedFilename);
     }
 
+    #endregion
     public async Task DownloadAvatarHeader(string? avatarUrl, string? headerUrl, string folder)
     {
         try
@@ -654,7 +700,7 @@ public class DownloadHelper : IDownloadHelper
         }
     }
 
-
+    #region drm posts
     public async Task<bool> DownloadMessageDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string filenameFormat, Messages.List messageInfo, Messages.Medium messageMedia, Messages.FromUser fromUser, Dictionary<string, int> users)
     {
         try
@@ -774,6 +820,8 @@ public class DownloadHelper : IDownloadHelper
         }
         return false;
     }
+
+
     public async Task<bool> DownloadPostDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string filenameFormat, Post.List postInfo, Post.Medium postMedia, Post.Author author, Dictionary<string, int> users)
     {
         try
@@ -951,52 +999,5 @@ public class DownloadHelper : IDownloadHelper
         }
         return false;
     }
-
-
-    public async Task<long> CalculateTotalFileSize(List<string> urls, Auth auth)
-    {
-        long totalFileSize = 0;
-        if (urls.Count > 250)
-        {
-            int batchSize = 250;
-
-            var tasks = new List<Task<long>>();
-
-            for (int i = 0; i < urls.Count; i += batchSize)
-            {
-                var batchUrls = urls.Skip(i).Take(batchSize).ToList();
-
-                var batchTasks = batchUrls.Select(url => GetFileSizeAsync(url, auth));
-                tasks.AddRange(batchTasks);
-
-                await Task.WhenAll(batchTasks);
-
-                await Task.Delay(5000);
-            }
-
-            long[] fileSizes = await Task.WhenAll(tasks);
-            foreach (long fileSize in fileSizes)
-            {
-                totalFileSize += fileSize;
-            }
-        }
-        else
-        {
-            var tasks = new List<Task<long>>();
-
-            foreach (string url in urls)
-            {
-                tasks.Add(GetFileSizeAsync(url, auth));
-            }
-
-            long[] fileSizes = await Task.WhenAll(tasks);
-            foreach (long fileSize in fileSizes)
-            {
-                totalFileSize += fileSize;
-            }
-        }
-
-        return totalFileSize;
-    }
-
+    #endregion
 }
