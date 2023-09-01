@@ -213,6 +213,7 @@ namespace OF_DL.Helpers
             return fileSize;
         }
 
+
         /// <summary>
         /// Processes the download and database update of media.
         /// </summary>
@@ -277,28 +278,29 @@ namespace OF_DL.Helpers
                                                 string resolvedFilename,
                                                 string extension,
                                                 ProgressTask task,
-
                                                 DBHelper dBHelper)
         {
             long fileSizeInBytes;
             DateTime lastModified;
+            bool status;
 
             if (!File.Exists(fullPath))
             {
                 lastModified = await DownloadFile(url, fullPath, task);
                 fileSizeInBytes = GetLocalFileSize(fullPath);
                 task.Increment(fileSizeInBytes);
-                return true;
+                status = true;
             }
             else
             {
                 fileSizeInBytes = GetLocalFileSize(fullPath);
                 lastModified = File.GetLastWriteTime(fullPath);
                 task.Increment(fileSizeInBytes);
+                status = false;
             }
 
             await dBHelper.UpdateMedia(folder, media_id, folder + path, resolvedFilename + extension, fileSizeInBytes, true, lastModified);
-            return false;
+            return status;
         }
 
 
