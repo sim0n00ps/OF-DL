@@ -383,7 +383,6 @@ public class Program
                     {
                         Purchased.Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
 
-
                         Purchased.List messageInfo = paidMessageCollection.PaidMessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
                         isNew = await m_DownloadHelper.DownloadPurchasedMedia(paidMessageKVP.Value, path, paidMessageKVP.Key, task, !string.IsNullOrEmpty(Config.PaidMessageFileNameFormat) ? Config.PaidMessageFileNameFormat : string.Empty, !string.IsNullOrEmpty(Config.PaidMessageFileNameFormat) ? messageInfo : null, !string.IsNullOrEmpty(Config.PaidMessageFileNameFormat) ? mediaInfo : null, !string.IsNullOrEmpty(Config.PaidMessageFileNameFormat) ? messageInfo.fromUser : null, hasSelectedUsersKVP.Value);
                         if (isNew)
@@ -1068,6 +1067,7 @@ public class Program
                             MessageFileNameFormat = Config.MessageFileNameFormat,
                             PaidPostFileNameFormat = Config.PaidPostFileNameFormat,
                             PaidMessageFileNameFormat = Config.PaidMessageFileNameFormat,
+                            Timeout = Config.Timeout,
                             DownloadAvatarHeaderPhoto = configOptions.Contains("[red]DownloadAvatarHeaderPhoto[/]"),
                             DownloadPaidPosts = configOptions.Contains("[red]DownloadPaidPosts[/]"),
                             DownloadPosts = configOptions.Contains("[red]DownloadPosts[/]"),
