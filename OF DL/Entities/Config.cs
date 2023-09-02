@@ -27,5 +27,9 @@ namespace OF_DL.Entities
         public string? PaidMessageFileNameFormat { get; set; } = string.Empty;
         public string? MessageFileNameFormat { get; set; } = string.Empty;
         public int? Timeout { get; set; } = -1;
+        public bool FolderPerPaidPost { get; set; } = false;
+        public bool FolderPerPost { get; set; } = false;
+        public bool FolderPerPaidMessage { get; set; } = false;
+        public bool FolderPerMessage { get; set; } = false;
     }
 }

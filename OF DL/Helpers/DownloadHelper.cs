@@ -9,6 +9,7 @@ using Spectre.Console;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -486,9 +487,18 @@ public class DownloadHelper : IDownloadHelper
     #endregion
 
     #region normal posts
-    public async Task<bool> DownloadPostMedia(string url, string folder, long media_id, ProgressTask task, string? filenameFormat, Post.List? postInfo, Post.Medium? postMedia, Post.Author? author, Dictionary<string, int> users)
+    public async Task<bool> DownloadPostMedia(string url, string folder, long media_id, ProgressTask task, string? filenameFormat, Post.List? postInfo, Post.Medium? postMedia, Post.Author? author, Dictionary<string, int> users, Config config)
     {
-        string path = "/Posts/Free";
+        string path;
+        if (config.FolderPerPost && postInfo != null)
+        {
+            path = $"/Posts/Free/{postInfo.id} {postInfo.postedAt.ToString("yyyy-MM-dd HH-mm-ss")}";
+        }
+        else
+        {
+            path = "/Posts/Free";
+        }
+        
         Uri uri = new(url);
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
         string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, postInfo, postMedia, author, users, _FileNameHelper);
@@ -497,10 +507,17 @@ public class DownloadHelper : IDownloadHelper
     }
 
 
-    public async Task<bool> DownloadMessageMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Messages.List messageInfo,
-                                                 Messages.Medium messageMedia, Messages.FromUser fromUser, Dictionary<string, int> users)
+    public async Task<bool> DownloadMessageMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Messages.List messageInfo, Messages.Medium messageMedia, Messages.FromUser fromUser, Dictionary<string, int> users, Config config)
     {
-        string path = "/Messages/Free";
+        string path;
+        if (config.FolderPerMessage && messageInfo != null)
+        {
+            path = $"/Messages/Free/{messageInfo.id} {messageInfo.createdAt.Value.ToString("yyyy-MM-dd HH-mm-ss")}";
+        }
+        else
+        {
+            path = "/Messages/Free";
+        }
         Uri uri = new(url);
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
         string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, messageInfo, messageMedia, fromUser, users, _FileNameHelper);
@@ -527,18 +544,34 @@ public class DownloadHelper : IDownloadHelper
         return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename);
     }
 
-    public async Task<bool> DownloadPurchasedMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Purchased.List messageInfo, Purchased.Medium messageMedia, Purchased.FromUser fromUser, Dictionary<string, int> users)
+    public async Task<bool> DownloadPurchasedMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Purchased.List messageInfo, Purchased.Medium messageMedia, Purchased.FromUser fromUser, Dictionary<string, int> users, Config config)
     {
-        string path = "/Messages/Paid";
+        string path;
+        if (config.FolderPerPaidMessage && messageInfo != null)
+        {
+            path = $"/Messages/Paid/{messageInfo.id} {messageInfo.createdAt.Value.ToString("yyyy-MM-dd HH-mm-ss")}";
+        }
+        else
+        {
+            path = "/Messages/Paid";
+        }
         Uri uri = new(url);
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
         string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, messageInfo, messageMedia, fromUser, users, _FileNameHelper);
         return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, resolvedFilename);
     }
 
-    public async Task<bool> DownloadPurchasedPostMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Purchased.List messageInfo, Purchased.Medium messageMedia, Purchased.FromUser fromUser, Dictionary<string, int> users)
+    public async Task<bool> DownloadPurchasedPostMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Purchased.List messageInfo, Purchased.Medium messageMedia, Purchased.FromUser fromUser, Dictionary<string, int> users, Config config)
     {
-        string path = "/Posts/Paid";
+        string path;
+        if (config.FolderPerPaidPost && messageInfo != null)
+        {
+            path = $"/Posts/Paid/{messageInfo.id} {messageInfo.postedAt.Value.ToString("yyyy-MM-dd HH-mm-ss")}";
+        }
+        else
+        {
+            path = "/Posts/Paid";
+        }
         Uri uri = new(url);
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
         string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, messageInfo, messageMedia, fromUser, users, _FileNameHelper);
@@ -630,14 +663,22 @@ public class DownloadHelper : IDownloadHelper
     }
 
     #region drm posts
-    public async Task<bool> DownloadMessageDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string filenameFormat, Messages.List messageInfo, Messages.Medium messageMedia, Messages.FromUser fromUser, Dictionary<string, int> users)
+    public async Task<bool> DownloadMessageDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string filenameFormat, Messages.List messageInfo, Messages.Medium messageMedia, Messages.FromUser fromUser, Dictionary<string, int> users, Config config)
     {
         try
         {
             string customFileName = string.Empty;
+            string path;
             Uri uri = new(url);
             string filename = System.IO.Path.GetFileName(uri.LocalPath).Split(".")[0];
-            string path = "/Messages/Free/Videos";
+            if (config.FolderPerMessage && messageInfo != null)
+            {
+                path = $"/Messages/Free/{messageInfo.id} {messageInfo.createdAt.Value.ToString("yyyy-MM-dd HH-mm-ss")}/Videos";
+            }
+            else
+            {
+                path = "/Messages/Free/Videos";
+            }
             if (!Directory.Exists(folder + path)) // check if the folder already exists
             {
                 Directory.CreateDirectory(folder + path); // create the new folder
@@ -691,14 +732,22 @@ public class DownloadHelper : IDownloadHelper
     }
 
 
-    public async Task<bool> DownloadPurchasedMessageDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string filenameFormat, Purchased.List messageInfo, Purchased.Medium messageMedia, Purchased.FromUser fromUser, Dictionary<string, int> users)
+    public async Task<bool> DownloadPurchasedMessageDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string filenameFormat, Purchased.List messageInfo, Purchased.Medium messageMedia, Purchased.FromUser fromUser, Dictionary<string, int> users, Config config)
     {
         try
         {
             string customFileName = string.Empty;
+            string path;
             Uri uri = new(url);
             string filename = System.IO.Path.GetFileName(uri.LocalPath).Split(".")[0];
-            string path = "/Messages/Paid/Videos";
+            if (config.FolderPerPaidMessage && messageInfo != null)
+            {
+                path = $"/Messages/Paid/{messageInfo.id} {messageInfo.createdAt.Value.ToString("yyyy-MM-dd HH-mm-ss")}/Videos";
+            }
+            else
+            {
+                path = "/Messages/Paid/Videos";
+            }
             if (!Directory.Exists(folder + path)) // check if the folder already exists
             {
                 Directory.CreateDirectory(folder + path); // create the new folder
@@ -751,14 +800,22 @@ public class DownloadHelper : IDownloadHelper
     }
 
 
-    public async Task<bool> DownloadPostDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string filenameFormat, Post.List postInfo, Post.Medium postMedia, Post.Author author, Dictionary<string, int> users)
+    public async Task<bool> DownloadPostDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string filenameFormat, Post.List postInfo, Post.Medium postMedia, Post.Author author, Dictionary<string, int> users, Config config)
     {
         try
         {
             string customFileName = string.Empty;
+            string path;
             Uri uri = new(url);
             string filename = System.IO.Path.GetFileName(uri.LocalPath).Split(".")[0];
-            string path = "/Posts/Free/Videos";
+            if (config.FolderPerPost && postInfo != null)
+            {
+                path = $"/Posts/Free/{postInfo.id} {postInfo.postedAt.ToString("yyyy-MM-dd HH-mm-ss")}/Videos";
+            }
+            else
+            {
+                path = "/Posts/Free/Videos";
+            }
             if (!Directory.Exists(folder + path)) // check if the folder already exists
             {
                 Directory.CreateDirectory(folder + path); // create the new folder
@@ -810,14 +867,22 @@ public class DownloadHelper : IDownloadHelper
         return false;
     }
 
-    public async Task<bool> DownloadPurchasedPostDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string filenameFormat, Purchased.List postInfo, Purchased.Medium postMedia, Purchased.FromUser fromUser, Dictionary<string, int> users)
+    public async Task<bool> DownloadPurchasedPostDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string filenameFormat, Purchased.List postInfo, Purchased.Medium postMedia, Purchased.FromUser fromUser, Dictionary<string, int> users, Config config)
     {
         try
         {
             string customFileName = string.Empty;
+            string path;
             Uri uri = new(url);
             string filename = System.IO.Path.GetFileName(uri.LocalPath).Split(".")[0];
-            string path = "/Posts/Paid/Videos";
+            if (config.FolderPerPaidPost && postInfo != null)
+            {
+                path = $"/Posts/Paid/{postInfo.id} {postInfo.postedAt.Value.ToString("yyyy-MM-dd HH-mm-ss")}/Videos";
+            }
+            else
+            {
+                path = "/Posts/Paid/Videos";
+            }
             if (!Directory.Exists(folder + path)) // check if the folder already exists
             {
                 Directory.CreateDirectory(folder + path); // create the new folder
