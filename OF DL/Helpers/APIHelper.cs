@@ -22,7 +22,7 @@ namespace OF_DL.Helpers
     {
         public async Task<Dictionary<string, string>> Headers(string path, string queryParams, Auth auth)
         {
-            DynamicRules root = new DynamicRules();
+            DynamicRules root = new();
             var client = new HttpClient();
             var request = new HttpRequestMessage
             {
@@ -40,27 +40,23 @@ namespace OF_DL.Helpers
 
 
             string input = $"{root.static_param}\n{timestamp}\n{path + queryParams}\n{auth.USER_ID}";
-            string hashString = string.Empty;
-            using (SHA1 sha1 = SHA1.Create())
-            {
-                byte[] inputBytes = Encoding.UTF8.GetBytes(input);
-                byte[] hashBytes = sha1.ComputeHash(inputBytes);
-                hashString = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
-            }
+            byte[] inputBytes = Encoding.UTF8.GetBytes(input);
+            byte[] hashBytes = SHA1.HashData(inputBytes);
+            string hashString = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
 
             int checksum = 0;
             foreach (int number in root.checksum_indexes)
             {
-                List<int> test = new List<int>
-            {
+                List<int> test = new()
+                {
                 hashString[number]
             };
-                checksum = checksum + test.Sum();
+                checksum += test.Sum();
             }
-            checksum = checksum + root.checksum_constant.Value;
+            checksum += root.checksum_constant.Value;
             string sign = $"{root.start}:{hashString}:{checksum.ToString("X").ToLower()}:{root.end}";
 
-            Dictionary<string, string> headers = new Dictionary<string, string>
+            Dictionary<string, string> headers = new()
             {
                 { "accept", "application/json, text/plain" },
                 { "app-token", root.app_token },
@@ -73,36 +69,27 @@ namespace OF_DL.Helpers
             };
             return headers;
         }
+
+
         public async Task<Entities.User> GetUserInfo(string endpoint, Auth auth)
         {
             try
             {
-                Entities.User user = new Entities.User();
+                Entities.User user = new();
                 int post_limit = 50;
-                Dictionary<string, string> GetParams = new Dictionary<string, string>
+                Dictionary<string, string> GetParams = new()
                 {
                     { "limit", post_limit.ToString() },
                     { "order", "publish_date_asc" }
                 };
 
-                string queryParams = "?";
-                foreach (KeyValuePair<string, string> kvp in GetParams)
-                {
-                    if (kvp.Key == GetParams.Keys.Last())
-                    {
-                        queryParams += $"{kvp.Key}={kvp.Value}";
-                    }
-                    else
-                    {
-                        queryParams += $"{kvp.Key}={kvp.Value}&";
-                    }
-                }
+                string queryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
 
                 Dictionary<string, string> headers = await Headers("/api2/v2" + endpoint, queryParams, auth);
 
-                HttpClient client = new HttpClient();
+                HttpClient client = new();
 
-                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
+                HttpRequestMessage request = new(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
 
                 foreach (KeyValuePair<string, string> keyValuePair in headers)
                 {
@@ -138,6 +125,7 @@ namespace OF_DL.Helpers
             }
             return null;
         }
+
         public async Task<Dictionary<string, int>> GetActiveSubscriptions(string endpoint, Auth auth)
         {
             try
@@ -153,25 +141,14 @@ namespace OF_DL.Helpers
                     { "format", "infinite"}
                 };
 
-                Dictionary<string, int> users = new Dictionary<string, int>();
-                string queryParams = "?";
-                foreach (KeyValuePair<string, string> kvp in GetParams)
-                {
-                    if (kvp.Key == GetParams.Keys.Last())
-                    {
-                        queryParams += $"{kvp.Key}={kvp.Value}";
-                    }
-                    else
-                    {
-                        queryParams += $"{kvp.Key}={kvp.Value}&";
-                    }
-                }
+                Dictionary<string, int> users = new();
+                string queryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
 
                 Dictionary<string, string> headers = await Headers("/api2/v2" + endpoint, queryParams, auth);
 
-                HttpClient client = new HttpClient();
+                HttpClient client = new();
 
-                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
+                HttpRequestMessage request = new(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
 
                 foreach (KeyValuePair<string, string> keyValuePair in headers)
                 {
@@ -189,23 +166,12 @@ namespace OF_DL.Helpers
                         GetParams["offset"] = subscriptions.list.Count.ToString();
                         while (true)
                         {
-                            string loopqueryParams = "?";
-                            foreach (KeyValuePair<string, string> kvp in GetParams)
-                            {
-                                if (kvp.Key == GetParams.Keys.Last())
-                                {
-                                    loopqueryParams += $"{kvp.Key}={kvp.Value}";
-                                }
-                                else
-                                {
-                                    loopqueryParams += $"{kvp.Key}={kvp.Value}&";
-                                }
-                            }
-                            Subscriptions newSubscriptions = new Subscriptions();
+                            string loopqueryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
+                            Subscriptions newSubscriptions = new();
                             Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams, auth);
-                            HttpClient loopclient = new HttpClient();
+                            HttpClient loopclient = new();
 
-                            HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
+                            HttpRequestMessage looprequest = new(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
 
                             foreach (KeyValuePair<string, string> keyValuePair in loopheaders)
                             {
@@ -372,40 +338,31 @@ namespace OF_DL.Helpers
             }
             return null;
         }
+
+
         public async Task<Dictionary<string, int>> GetLists(string endpoint, Auth auth)
         {
             try
             {
                 int offset = 0;
                 bool loop = true;
-                Dictionary<string, string> GetParams = new Dictionary<string, string>
+                Dictionary<string, string> GetParams = new()
                 {
                     { "offset", offset.ToString() },
                     { "skip_users", "all" },
                     { "limit", "50" },
                     { "format", "infinite" }
                 };
-                Dictionary<string, int> lists = new Dictionary<string, int>();
+                Dictionary<string, int> lists = new();
                 while (loop)
                 {
-                    string queryParams = "?";
-                    foreach (KeyValuePair<string, string> kvp in GetParams)
-                    {
-                        if (kvp.Key == GetParams.Keys.Last())
-                        {
-                            queryParams += $"{kvp.Key}={kvp.Value}";
-                        }
-                        else
-                        {
-                            queryParams += $"{kvp.Key}={kvp.Value}&";
-                        }
-                    }
+                    string queryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
 
                     Dictionary<string, string> headers = await Headers("/api2/v2" + endpoint, queryParams, auth);
 
-                    HttpClient client = new HttpClient();
+                    HttpClient client = new();
 
-                    HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
+                    HttpRequestMessage request = new(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
 
                     foreach (KeyValuePair<string, string> keyValuePair in headers)
                     {
@@ -455,38 +412,29 @@ namespace OF_DL.Helpers
             }
             return null;
         }
+
+
         public async Task<List<string>> GetListUsers(string endpoint, Auth auth)
         {
             try
             {
                 int offset = 0;
                 bool loop = true;
-                Dictionary<string, string> GetParams = new Dictionary<string, string>
+                Dictionary<string, string> GetParams = new()
                 {
                     { "offset", offset.ToString() },
                     { "limit", "50" }
                 };
-                List<string> users = new List<string>();
+                List<string> users = new();
                 while (loop)
                 {
-                    string queryParams = "?";
-                    foreach (KeyValuePair<string, string> kvp in GetParams)
-                    {
-                        if (kvp.Key == GetParams.Keys.Last())
-                        {
-                            queryParams += $"{kvp.Key}={kvp.Value}";
-                        }
-                        else
-                        {
-                            queryParams += $"{kvp.Key}={kvp.Value}&";
-                        }
-                    }
+                    string queryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
 
                     Dictionary<string, string> headers = await Headers("/api2/v2" + endpoint, queryParams, auth);
 
-                    HttpClient client = new HttpClient();
+                    HttpClient client = new();
 
-                    HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
+                    HttpRequestMessage request = new(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
 
                     foreach (KeyValuePair<string, string> keyValuePair in headers)
                     {
@@ -537,24 +485,24 @@ namespace OF_DL.Helpers
         {
             try
             {
-                Dictionary<long, string> return_urls = new Dictionary<long, string>();
+                Dictionary<long, string> return_urls = new();
                 int post_limit = 50;
                 int limit = 5;
                 int offset = 0;
-                Purchased paidposts = new Purchased();
+                Purchased paidposts = new();
                 bool isPaidPosts = false;
-                Post posts = new Post();
-                PostCollection postsCollection = new PostCollection();
+                Post posts = new();
+                PostCollection postsCollection = new();
                 bool isPosts = false;
-                Messages messages = new Messages();
+                Messages messages = new();
                 bool isMessages = false;
-                Archived archived = new Archived();
+                Archived archived = new();
                 bool isArchived = false;
-                List<Stories> stories = new List<Stories>();
+                List<Stories> stories = new();
                 bool isStories = false;
-                Highlights highlights = new Highlights();
+                Highlights highlights = new();
                 bool isHighlights = false;
-                Purchased paidMessages = new Purchased();
+                Purchased paidMessages = new();
                 bool isPurchased = false;
 
                 Dictionary<string, string> GetParams = null;
@@ -632,32 +580,24 @@ namespace OF_DL.Helpers
                         break;
                 }
 
-                string queryParams = "?";
-                foreach (KeyValuePair<string, string> kvp in GetParams)
-                {
-                    if (kvp.Key == GetParams.Keys.Last())
-                    {
-                        queryParams += $"{kvp.Key}={kvp.Value}";
-                    }
-                    else
-                    {
-                        queryParams += $"{kvp.Key}={kvp.Value}&";
-                    }
-                }
+                string queryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
 
                 Dictionary<string, string> headers = await Headers("/api2/v2" + endpoint, queryParams, auth);
 
                 HttpClient client = GetHttpClient(config);
 
-                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
+                HttpRequestMessage request = new(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
 
                 foreach (KeyValuePair<string, string> keyValuePair in headers)
                 {
                     request.Headers.Add(keyValuePair.Key, keyValuePair.Value);
                 }
 
-                var jsonSerializerSettings = new JsonSerializerSettings();
-                jsonSerializerSettings.MissingMemberHandling = MissingMemberHandling.Ignore;
+                var jsonSerializerSettings = new JsonSerializerSettings
+                {
+                    MissingMemberHandling = MissingMemberHandling.Ignore
+                };
+
                 using (var response = await client.SendAsync(request))
                 {
                     response.EnsureSuccessStatusCode();
@@ -671,23 +611,12 @@ namespace OF_DL.Helpers
                             GetParams["offset"] = paidposts.list.Count.ToString();
                             while (true)
                             {
-                                string loopqueryParams = "?";
-                                foreach (KeyValuePair<string, string> kvp in GetParams)
-                                {
-                                    if (kvp.Key == GetParams.Keys.Last())
-                                    {
-                                        loopqueryParams += $"{kvp.Key}={kvp.Value}";
-                                    }
-                                    else
-                                    {
-                                        loopqueryParams += $"{kvp.Key}={kvp.Value}&";
-                                    }
-                                }
-                                Purchased newPaidPosts = new Purchased();
+                                string loopqueryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
+                                Purchased newPaidPosts = new();
                                 Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams, auth);
                                 HttpClient loopclient = GetHttpClient(config);
 
-                                HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
+                                HttpRequestMessage looprequest = new(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
 
                                 foreach (KeyValuePair<string, string> keyValuePair in loopheaders)
                                 {
@@ -708,12 +637,12 @@ namespace OF_DL.Helpers
                             }
                         }
 
-                        DBHelper dBHelper = new DBHelper();
+                        DBHelper dBHelper = new();
                         foreach (Purchased.List purchase in paidposts.list)
                         {
                             if (purchase.responseType == "post" && purchase.media != null && purchase.media.Count > 0)
                             {
-                                List<long> previewids = new List<long>();
+                                List<long> previewids = new();
                                 if (purchase.previews != null)
                                 {
                                     for (int i = 0; i < purchase.previews.Count; i++)
@@ -797,23 +726,12 @@ namespace OF_DL.Helpers
                             GetParams["beforePublishTime"] = posts.tailMarker;
                             while (true)
                             {
-                                string loopqueryParams = "?";
-                                foreach (KeyValuePair<string, string> kvp in GetParams)
-                                {
-                                    if (kvp.Key == GetParams.Keys.Last())
-                                    {
-                                        loopqueryParams += $"{kvp.Key}={kvp.Value}";
-                                    }
-                                    else
-                                    {
-                                        loopqueryParams += $"{kvp.Key}={kvp.Value}&";
-                                    }
-                                }
-                                Post newposts = new Post();
+                                string loopqueryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
+                                Post newposts = new();
                                 Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams, auth);
                                 HttpClient loopclient = GetHttpClient(config);
 
-                                HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
+                                HttpRequestMessage looprequest = new(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
 
                                 foreach (KeyValuePair<string, string> keyValuePair in loopheaders)
                                 {
@@ -834,10 +752,10 @@ namespace OF_DL.Helpers
                             }
                         }
 
-                        DBHelper dBHelper = new DBHelper();
+                        DBHelper dBHelper = new();
                         foreach (Post.List post in posts.list.Where(p => config.SkipAds == false || (!p.rawText.Contains("#ad") && !p.rawText.Contains("/trial/"))))
                         {
-                            List<long> postPreviewIds = new List<long>();
+                            List<long> postPreviewIds = new();
                             if (post.preview != null && post.preview.Count > 0)
                             {
                                 foreach (var id in post.preview)
@@ -909,23 +827,12 @@ namespace OF_DL.Helpers
                             GetParams["beforePublishTime"] = archived.tailMarker;
                             while (true)
                             {
-                                string loopqueryParams = "?";
-                                foreach (KeyValuePair<string, string> kvp in GetParams)
-                                {
-                                    if (kvp.Key == GetParams.Keys.Last())
-                                    {
-                                        loopqueryParams += $"{kvp.Key}={kvp.Value}";
-                                    }
-                                    else
-                                    {
-                                        loopqueryParams += $"{kvp.Key}={kvp.Value}&";
-                                    }
-                                }
-                                Archived newarchived = new Archived();
+                                string loopqueryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
+                                Archived newarchived = new();
                                 Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams, auth);
                                 HttpClient loopclient = GetHttpClient(config);
 
-                                HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
+                                HttpRequestMessage looprequest = new(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
 
                                 foreach (KeyValuePair<string, string> keyValuePair in loopheaders)
                                 {
@@ -946,10 +853,10 @@ namespace OF_DL.Helpers
                             }
                         }
 
-                        DBHelper dBHelper = new DBHelper();
+                        DBHelper dBHelper = new();
                         foreach (Archived.List archive in archived.list)
                         {
-                            List<long> previewids = new List<long>();
+                            List<long> previewids = new();
                             if (archive.preview != null)
                             {
                                 for (int i = 0; i < archive.preview.Count; i++)
@@ -1001,7 +908,7 @@ namespace OF_DL.Helpers
                         stories = JsonConvert.DeserializeObject<List<Stories>>(body, jsonSerializerSettings);
                         stories = stories.OrderByDescending(x => x.createdAt).ToList();
                         
-                        DBHelper dBHelper = new DBHelper();
+                        DBHelper dBHelper = new();
                         foreach (Stories story in stories)
                         {
                             if (story.createdAt != null)
@@ -1046,7 +953,7 @@ namespace OF_DL.Helpers
                     }
                     else if (isHighlights)
                     {
-                        List<string> highlight_ids = new List<string>();
+                        List<string> highlight_ids = new();
                         highlights = JsonConvert.DeserializeObject<Highlights>(body, jsonSerializerSettings);
                         
                         if (highlights.hasMore)
@@ -1055,23 +962,12 @@ namespace OF_DL.Helpers
                             GetParams["offset"] = offset.ToString();
                             while (true)
                             {
-                                string loopqueryParams = "?";
-                                foreach (KeyValuePair<string, string> kvp in GetParams)
-                                {
-                                    if (kvp.Key == GetParams.Keys.Last())
-                                    {
-                                        loopqueryParams += $"{kvp.Key}={kvp.Value}";
-                                    }
-                                    else
-                                    {
-                                        loopqueryParams += $"{kvp.Key}={kvp.Value}&";
-                                    }
-                                }
-                                Highlights newhighlights = new Highlights();
+                                string loopqueryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
+                                Highlights newhighlights = new();
                                 Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams, auth);
                                 HttpClient loopclient = GetHttpClient(config);
 
-                                HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
+                                HttpRequestMessage looprequest = new(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
 
                                 foreach (KeyValuePair<string, string> keyValuePair in loopheaders)
                                 {
@@ -1099,15 +995,15 @@ namespace OF_DL.Helpers
                                 highlight_ids.Add(list.id.ToString());
                             }
                         }
-                        DBHelper dBHelper = new DBHelper();
+                        DBHelper dBHelper = new();
                         foreach (string highlight_id in highlight_ids)
                         {
-                            HighlightMedia highlightMedia = new HighlightMedia();
+                            HighlightMedia highlightMedia = new();
                             Dictionary<string, string> highlight_headers = await Headers("/api2/v2/stories/highlights/" + highlight_id, string.Empty, auth);
 
                             HttpClient highlight_client = GetHttpClient(config);
 
-                            HttpRequestMessage highlight_request = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2/stories/highlights/" + highlight_id);
+                            HttpRequestMessage highlight_request = new(HttpMethod.Get, "https://onlyfans.com/api2/v2/stories/highlights/" + highlight_id);
 
                             foreach (KeyValuePair<string, string> keyValuePair in highlight_headers)
                             {
@@ -1164,26 +1060,15 @@ namespace OF_DL.Helpers
                         
                         if (messages.hasMore)
                         {
-                            GetParams["id"] = messages.list[messages.list.Count - 1].id.ToString();
+                            GetParams["id"] = messages.list[^1].id.ToString();
                             while (true)
                             {
-                                string loopqueryParams = "?";
-                                foreach (KeyValuePair<string, string> kvp in GetParams)
-                                {
-                                    if (kvp.Key == GetParams.Keys.Last())
-                                    {
-                                        loopqueryParams += $"{kvp.Key}={kvp.Value}";
-                                    }
-                                    else
-                                    {
-                                        loopqueryParams += $"{kvp.Key}={kvp.Value}&";
-                                    }
-                                }
-                                Messages newmessages = new Messages();
+                                string loopqueryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
+                                Messages newmessages = new();
                                 Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams, auth);
                                 HttpClient loopclient = GetHttpClient(config);
 
-                                HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
+                                HttpRequestMessage looprequest = new(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
 
                                 foreach (KeyValuePair<string, string> keyValuePair in loopheaders)
                                 {
@@ -1204,10 +1089,10 @@ namespace OF_DL.Helpers
                             }
                         }
 
-                        DBHelper dBHelper = new DBHelper();
+                        DBHelper dBHelper = new();
                         foreach (Messages.List list in messages.list.Where(p => config.SkipAds == false || (!p.text.Contains("#ad") && !p.text.Contains("/trial/"))))
                         {
-                            List<long> messagePreviewIds = new List<long>();
+                            List<long> messagePreviewIds = new();
                             if (list.previews != null && list.previews.Count > 0)
                             {
                                 foreach (var id in list.previews)
@@ -1285,23 +1170,12 @@ namespace OF_DL.Helpers
                             GetParams["offset"] = paidMessages.list.Count.ToString();
                             while (true)
                             {
-                                string loopqueryParams = "?";
-                                foreach (KeyValuePair<string, string> kvp in GetParams)
-                                {
-                                    if (kvp.Key == GetParams.Keys.Last())
-                                    {
-                                        loopqueryParams += $"{kvp.Key}={kvp.Value}";
-                                    }
-                                    else
-                                    {
-                                        loopqueryParams += $"{kvp.Key}={kvp.Value}&";
-                                    }
-                                }
-                                Purchased newpaidMessages = new Purchased();
+                                string loopqueryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
+                                Purchased newpaidMessages = new();
                                 Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams, auth);
                                 HttpClient loopclient = GetHttpClient(config);
 
-                                HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
+                                HttpRequestMessage looprequest = new(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
 
                                 foreach (KeyValuePair<string, string> keyValuePair in loopheaders)
                                 {
@@ -1322,7 +1196,7 @@ namespace OF_DL.Helpers
                             }
                         }
 
-                        DBHelper dBHelper = new DBHelper();
+                        DBHelper dBHelper = new();
                         foreach (Purchased.List purchase in paidMessages.list.Where(p => p.responseType == "message").OrderByDescending(p => p.postedAt ?? p.createdAt))
                         {
                             if (purchase.postedAt != null)
@@ -1336,7 +1210,7 @@ namespace OF_DL.Helpers
 
                             if (purchase.media != null && purchase.media.Count > 0)
                             {
-                                List<long> previewids = new List<long>();
+                                List<long> previewids = new();
                                 if (purchase.previews != null)
                                 {
                                     for (int i = 0; i < purchase.previews.Count; i++)
@@ -1487,34 +1361,23 @@ namespace OF_DL.Helpers
         {
             try
             {
-                Purchased paidPosts = new Purchased();
-                PaidPostCollection paidPostCollection = new PaidPostCollection();
+                Purchased paidPosts = new();
+                PaidPostCollection paidPostCollection = new();
                 int post_limit = 50;
-                Dictionary<string, string> GetParams = new Dictionary<string, string>
+                Dictionary<string, string> GetParams = new()
                 {
                     { "limit", post_limit.ToString() },
                     { "order", "publish_date_desc" },
                     { "format", "infinite" },
                     { "user_id", username }
                 };
-                string queryParams = "?";
-                foreach (KeyValuePair<string, string> kvp in GetParams)
-                {
-                    if (kvp.Key == GetParams.Keys.Last())
-                    {
-                        queryParams += $"{kvp.Key}={kvp.Value}";
-                    }
-                    else
-                    {
-                        queryParams += $"{kvp.Key}={kvp.Value}&";
-                    }
-                }
+                string queryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
 
                 Dictionary<string, string> headers = await Headers("/api2/v2" + endpoint, queryParams, auth);
 
                 HttpClient client = GetHttpClient(config);
 
-                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
+                HttpRequestMessage request = new(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
 
                 foreach (KeyValuePair<string, string> keyValuePair in headers)
                 {
@@ -1533,23 +1396,12 @@ namespace OF_DL.Helpers
                         GetParams["offset"] = paidPosts.list.Count.ToString();
                         while (true)
                         {
-                            string loopqueryParams = "?";
-                            foreach (KeyValuePair<string, string> kvp in GetParams)
-                            {
-                                if (kvp.Key == GetParams.Keys.Last())
-                                {
-                                    loopqueryParams += $"{kvp.Key}={kvp.Value}";
-                                }
-                                else
-                                {
-                                    loopqueryParams += $"{kvp.Key}={kvp.Value}&";
-                                }
-                            }
-                            Purchased newPaidPosts = new Purchased();
+                            string loopqueryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
+                            Purchased newPaidPosts = new();
                             Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams, auth);
                             HttpClient loopclient = GetHttpClient(config);
 
-                            HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
+                            HttpRequestMessage looprequest = new(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
 
                             foreach (KeyValuePair<string, string> keyValuePair in loopheaders)
                             {
@@ -1571,12 +1423,12 @@ namespace OF_DL.Helpers
                     }
                 }
 
-                DBHelper dBHelper = new DBHelper();
+                DBHelper dBHelper = new();
                 foreach (Purchased.List purchase in paidPosts.list)
                 {
                     if (purchase.responseType == "post" && purchase.media != null && purchase.media.Count > 0)
                     {
-                        List<long> previewids = new List<long>();
+                        List<long> previewids = new();
                         if (purchase.previews != null)
                         {
                             for (int i = 0; i < purchase.previews.Count; i++)
@@ -1685,37 +1537,29 @@ namespace OF_DL.Helpers
             }
             return null;
         }
+
+
         public async Task<PostCollection> GetPosts(string endpoint, string folder, Auth auth, Config config, List<long> paid_post_ids)
         {
             try
             {
-                Post posts = new Post();
-                PostCollection postCollection = new PostCollection();
+                Post posts = new();
+                PostCollection postCollection = new();
                 int post_limit = 50;
-                Dictionary<string, string> GetParams = new Dictionary<string, string>
+                Dictionary<string, string> GetParams = new()
                 {
                     { "limit", post_limit.ToString() },
                     { "order", "publish_date_desc" },
                     { "format", "infinite" }
                 };
-                string queryParams = "?";
-                foreach (KeyValuePair<string, string> kvp in GetParams)
-                {
-                    if (kvp.Key == GetParams.Keys.Last())
-                    {
-                        queryParams += $"{kvp.Key}={kvp.Value}";
-                    }
-                    else
-                    {
-                        queryParams += $"{kvp.Key}={kvp.Value}&";
-                    }
-                }
+
+                string queryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
 
                 Dictionary<string, string> headers = await Headers("/api2/v2" + endpoint, queryParams, auth);
 
                 HttpClient client = GetHttpClient(config);
 
-                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
+                HttpRequestMessage request = new(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
 
                 foreach (KeyValuePair<string, string> keyValuePair in headers)
                 {
@@ -1734,23 +1578,12 @@ namespace OF_DL.Helpers
                         GetParams["beforePublishTime"] = posts.tailMarker;
                         while (true)
                         {
-                            string loopqueryParams = "?";
-                            foreach (KeyValuePair<string, string> kvp in GetParams)
-                            {
-                                if (kvp.Key == GetParams.Keys.Last())
-                                {
-                                    loopqueryParams += $"{kvp.Key}={kvp.Value}";
-                                }
-                                else
-                                {
-                                    loopqueryParams += $"{kvp.Key}={kvp.Value}&";
-                                }
-                            }
-                            Post newposts = new Post();
+                            string loopqueryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
+                            Post newposts = new();
                             Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams, auth);
                             HttpClient loopclient = GetHttpClient(config);
 
-                            HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
+                            HttpRequestMessage looprequest = new(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
 
                             foreach (KeyValuePair<string, string> keyValuePair in loopheaders)
                             {
@@ -1771,10 +1604,10 @@ namespace OF_DL.Helpers
                         }
                     }
 
-                    DBHelper dBHelper = new DBHelper();
+                    DBHelper dBHelper = new();
                     foreach (Post.List post in posts.list.Where(p => !config.SkipAds || (!p.rawText.Contains("#ad") && !p.rawText.Contains("/trial/"))))
                     {
-                        List<long> postPreviewIds = new List<long>();
+                        List<long> postPreviewIds = new();
                         if (post.preview != null && post.preview.Count > 0)
                         {
                             foreach (var id in post.preview)
@@ -1858,34 +1691,23 @@ namespace OF_DL.Helpers
         {
             try
             {
-                Archived archived = new Archived();
-                ArchivedCollection archivedCollection = new ArchivedCollection();
+                Archived archived = new();
+                ArchivedCollection archivedCollection = new();
                 int post_limit = 50;
-                Dictionary<string, string> GetParams = new Dictionary<string, string>
+                Dictionary<string, string> GetParams = new()
                 {
                     { "limit", post_limit.ToString() },
                     { "order", "publish_date_desc" },
                     { "format", "infinite" },
                     { "label", "archived" }
                 };
-                string queryParams = "?";
-                foreach (KeyValuePair<string, string> kvp in GetParams)
-                {
-                    if (kvp.Key == GetParams.Keys.Last())
-                    {
-                        queryParams += $"{kvp.Key}={kvp.Value}";
-                    }
-                    else
-                    {
-                        queryParams += $"{kvp.Key}={kvp.Value}&";
-                    }
-                }
 
+                string queryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
                 Dictionary<string, string> headers = await Headers("/api2/v2" + endpoint, queryParams, auth);
 
                 HttpClient client = GetHttpClient(config);
 
-                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
+                HttpRequestMessage request = new(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
 
                 foreach (KeyValuePair<string, string> keyValuePair in headers)
                 {
@@ -1904,23 +1726,13 @@ namespace OF_DL.Helpers
                         GetParams["beforePublishTime"] = archived.tailMarker;
                         while (true)
                         {
-                            string loopqueryParams = "?";
-                            foreach (KeyValuePair<string, string> kvp in GetParams)
-                            {
-                                if (kvp.Key == GetParams.Keys.Last())
-                                {
-                                    loopqueryParams += $"{kvp.Key}={kvp.Value}";
-                                }
-                                else
-                                {
-                                    loopqueryParams += $"{kvp.Key}={kvp.Value}&";
-                                }
-                            }
-                            Archived newarchived = new Archived();
+                            string loopqueryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
+                           
+                            Archived newarchived = new();
                             Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams, auth);
                             HttpClient loopclient = GetHttpClient(config);
 
-                            HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
+                            HttpRequestMessage looprequest = new(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
 
                             foreach (KeyValuePair<string, string> keyValuePair in loopheaders)
                             {
@@ -1941,10 +1753,10 @@ namespace OF_DL.Helpers
                         }
                     }
 
-                    DBHelper dBHelper = new DBHelper();
+                    DBHelper dBHelper = new();
                     foreach (Archived.List archive in archived.list)
                     {
-                        List<long> previewids = new List<long>();
+                        List<long> previewids = new();
                         if (archive.preview != null)
                         {
                             for (int i = 0; i < archive.preview.Count; i++)
@@ -2019,32 +1831,21 @@ namespace OF_DL.Helpers
         {
             try
             {
-                Messages messages = new Messages();
-                MessageCollection messageCollection = new MessageCollection();
+                Messages messages = new();
+                MessageCollection messageCollection = new();
                 int post_limit = 50;
-                Dictionary<string, string> GetParams = new Dictionary<string, string>
+                Dictionary<string, string> GetParams = new()
                 {
                     { "limit", post_limit.ToString() },
                     { "order", "desc" }
                 };
-                string queryParams = "?";
-                foreach (KeyValuePair<string, string> kvp in GetParams)
-                {
-                    if (kvp.Key == GetParams.Keys.Last())
-                    {
-                        queryParams += $"{kvp.Key}={kvp.Value}";
-                    }
-                    else
-                    {
-                        queryParams += $"{kvp.Key}={kvp.Value}&";
-                    }
-                }
+                string queryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
 
                 Dictionary<string, string> headers = await Headers("/api2/v2" + endpoint, queryParams, auth);
 
                 HttpClient client = GetHttpClient(config);
 
-                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
+                HttpRequestMessage request = new(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
 
                 foreach (KeyValuePair<string, string> keyValuePair in headers)
                 {
@@ -2063,23 +1864,12 @@ namespace OF_DL.Helpers
                         GetParams["id"] = messages.list[messages.list.Count - 1].id.ToString();
                         while (true)
                         {
-                            string loopqueryParams = "?";
-                            foreach (KeyValuePair<string, string> kvp in GetParams)
-                            {
-                                if (kvp.Key == GetParams.Keys.Last())
-                                {
-                                    loopqueryParams += $"{kvp.Key}={kvp.Value}";
-                                }
-                                else
-                                {
-                                    loopqueryParams += $"{kvp.Key}={kvp.Value}&";
-                                }
-                            }
-                            Messages newmessages = new Messages();
+                            string loopqueryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
+                            Messages newmessages = new();
                             Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams, auth);
                             HttpClient loopclient = GetHttpClient(config);
 
-                            HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
+                            HttpRequestMessage looprequest = new(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
 
                             foreach (KeyValuePair<string, string> keyValuePair in loopheaders)
                             {
@@ -2100,10 +1890,10 @@ namespace OF_DL.Helpers
                         }
                     }
 
-                    DBHelper dBHelper = new DBHelper();
+                    DBHelper dBHelper = new();
                     foreach (Messages.List list in messages.list.Where(m => !config.SkipAds || (!m.text.Contains("#ad") && !m.text.Contains("/trial/"))))
                     {
-                        List<long> messagePreviewIds = new List<long>();
+                        List<long> messagePreviewIds = new();
                         if (list.previews != null && list.previews.Count > 0)
                         {
                             foreach (var id in list.previews)
@@ -2248,34 +2038,23 @@ namespace OF_DL.Helpers
         {
             try
             {
-                Purchased paidMessages = new Purchased();
-                PaidMessageCollection paidMessageCollection = new PaidMessageCollection();
+                Purchased paidMessages = new();
+                PaidMessageCollection paidMessageCollection = new();
                 int post_limit = 50;
-                Dictionary<string, string> GetParams = new Dictionary<string, string>
+                Dictionary<string, string> GetParams = new()
                 {
                     { "limit", post_limit.ToString() },
                     { "order", "publish_date_desc" },
                     { "format", "infinite" },
                     { "user_id", username }
                 };
-                string queryParams = "?";
-                foreach (KeyValuePair<string, string> kvp in GetParams)
-                {
-                    if (kvp.Key == GetParams.Keys.Last())
-                    {
-                        queryParams += $"{kvp.Key}={kvp.Value}";
-                    }
-                    else
-                    {
-                        queryParams += $"{kvp.Key}={kvp.Value}&";
-                    }
-                }
+                string queryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
 
                 Dictionary<string, string> headers = await Headers("/api2/v2" + endpoint, queryParams, auth);
 
                 HttpClient client = GetHttpClient(config);
 
-                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
+                HttpRequestMessage request = new(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + queryParams);
 
                 foreach (KeyValuePair<string, string> keyValuePair in headers)
                 {
@@ -2294,23 +2073,12 @@ namespace OF_DL.Helpers
                         GetParams["offset"] = paidMessages.list.Count.ToString();
                         while (true)
                         {
-                            string loopqueryParams = "?";
-                            foreach (KeyValuePair<string, string> kvp in GetParams)
-                            {
-                                if (kvp.Key == GetParams.Keys.Last())
-                                {
-                                    loopqueryParams += $"{kvp.Key}={kvp.Value}";
-                                }
-                                else
-                                {
-                                    loopqueryParams += $"{kvp.Key}={kvp.Value}&";
-                                }
-                            }
-                            Purchased newpaidMessages = new Purchased();
+                            string loopqueryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
+                            Purchased newpaidMessages = new();
                             Dictionary<string, string> loopheaders = await Headers("/api2/v2" + endpoint, loopqueryParams, auth);
                             HttpClient loopclient = GetHttpClient(config);
 
-                            HttpRequestMessage looprequest = new HttpRequestMessage(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
+                            HttpRequestMessage looprequest = new(HttpMethod.Get, "https://onlyfans.com/api2/v2" + endpoint + loopqueryParams);
 
                             foreach (KeyValuePair<string, string> keyValuePair in loopheaders)
                             {
@@ -2331,7 +2099,7 @@ namespace OF_DL.Helpers
                         }
                     }
 
-                    DBHelper dBHelper = new DBHelper();
+                    DBHelper dBHelper = new();
                     if(paidMessages.list != null && paidMessages.list.Count > 0)
                     {
                         foreach (Purchased.List purchase in paidMessages.list.Where(p => p.responseType == "message").OrderByDescending(p => p.postedAt ?? p.createdAt))
@@ -2347,7 +2115,7 @@ namespace OF_DL.Helpers
                             paidMessageCollection.PaidMessageObjects.Add(purchase);
                             if (purchase.media != null && purchase.media.Count > 0)
                             {
-                                List<long> previewids = new List<long>();
+                                List<long> previewids = new();
                                 if (purchase.previews != null)
                                 {
                                     for (int i = 0; i < purchase.previews.Count; i++)
@@ -2503,8 +2271,8 @@ namespace OF_DL.Helpers
             {
                 string pssh = null;
                 
-                HttpClient client = new HttpClient();
-                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, mpdUrl);
+                HttpClient client = new();
+                HttpRequestMessage request = new(HttpMethod.Get, mpdUrl);
                 request.Headers.Add("user-agent", auth.USER_AGENT);
                 request.Headers.Add("Accept", "*/*");
                 request.Headers.Add("Cookie", $"CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {auth.COOKIE};");
@@ -2539,8 +2307,8 @@ namespace OF_DL.Helpers
             {
                 DateTime lastmodified;
                 
-                HttpClient client = new HttpClient();
-                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, mpdUrl);
+                HttpClient client = new();
+                HttpRequestMessage request = new(HttpMethod.Get, mpdUrl);
                 request.Headers.Add("user-agent", auth.USER_AGENT);
                 request.Headers.Add("Accept", "*/*");
                 request.Headers.Add("Cookie", $"CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {auth.COOKIE};");
@@ -2563,6 +2331,8 @@ namespace OF_DL.Helpers
             }
             return DateTime.Now;
         }
+
+
         public async Task<string> GetDecryptionKey(Dictionary<string, string> drmHeaders, string licenceURL, string pssh, Auth auth)
         {
             try
@@ -2572,7 +2342,7 @@ namespace OF_DL.Helpers
                 string proxy = "";
                 bool cache = true;
 
-                StringBuilder sb = new StringBuilder();
+                StringBuilder sb = new();
                 sb.Append("{\n");
                 sb.AppendFormat("  \"license\": \"{0}\",\n", licenceURL);
                 sb.Append("  \"headers\": \"");
@@ -2595,9 +2365,9 @@ namespace OF_DL.Helpers
                 sb.AppendFormat("  \"cache\": {0}\n", cache.ToString().ToLower());
                 sb.Append("}");
                 string json = sb.ToString();
-                HttpClient client = new HttpClient();
+                HttpClient client = new();
 
-                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "https://cdrm-project.com/wv");
+                HttpRequestMessage request = new(HttpMethod.Post, "https://cdrm-project.com/wv");
                 request.Content = new StringContent(json);
                 using (var response = await client.SendAsync(request))
                 {

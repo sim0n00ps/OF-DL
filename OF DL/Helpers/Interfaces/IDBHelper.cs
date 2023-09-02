@@ -8,7 +8,7 @@
         Task AddStory(string folder, long post_id, string message_text, string price, bool is_paid, bool is_archived, DateTime created_at);
         Task<bool> CheckDownloaded(string folder, long media_id);
         Task CreateDB(string folder);
-        Task<long> GetFileSize(string folder, long media_id);
+        Task<long> GetStoredFileSize(string folder, long media_id);
         Task UpdateMedia(string folder, long media_id, string directory, string filename, long size, bool downloaded, DateTime created_at);
     }
 }
