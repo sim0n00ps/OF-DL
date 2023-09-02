@@ -21,15 +21,15 @@ namespace OF_DL.Helpers
             {
                 if (propertyName.Contains("media"))
                 {
-                    PropertyInfo property = Array.Find(properties2, p => p.Name.Equals(propertyName.Replace("media", ""), StringComparison.OrdinalIgnoreCase));
+                    PropertyInfo? property = Array.Find(properties2, p => p.Name.Equals(propertyName.Replace("media", ""), StringComparison.OrdinalIgnoreCase));
                     if (property != null)
                     {
-                        object propertyValue = property.GetValue(obj2);
+                        object? propertyValue = property.GetValue(obj2);
                         if (propertyValue != null)
                         {
                             if (propertyValue is DateTime dateTimeValue)
                             {
-                                values.Add(propertyName, dateTimeValue.ToString("yyyy-MM-dd"));
+                                values.Add(propertyName, dateTimeValue.ToString("yyyy-MM-dd.HH"));
                             }
                             else
                             {
@@ -92,7 +92,7 @@ namespace OF_DL.Helpers
                         {
                             if (propertyValue is DateTime dateTimeValue)
                             {
-                                values.Add(propertyName, dateTimeValue.ToString("yyyy-MM-dd"));
+                                values.Add(propertyName, dateTimeValue.ToString("yyyy-MM-dd.HH"));
                             }
                             else
                             {

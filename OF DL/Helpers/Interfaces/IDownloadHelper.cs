@@ -28,7 +28,8 @@ namespace OF_DL.Helpers
                                                 Archived.List postInfo,
                                                 Archived.Medium postMedia,
                                                 Archived.Author author,
-                                                Dictionary<string, int> users);
+                                                Dictionary<string, int> users,
+                                                Config config);
         Task<bool> DownloadArchivedMedia(string url,
                                          string folder,
                                          long media_id,
@@ -37,7 +38,8 @@ namespace OF_DL.Helpers
                                          Archived.List messageInfo,
                                          Archived.Medium messageMedia,
                                          Archived.Author author,
-                                         Dictionary<string, int> users);
+                                         Dictionary<string, int> users,
+                                         Config config);
         Task DownloadAvatarHeader(string? avatarUrl, string? headerUrl, string folder);
         Task<bool> DownloadMessageDRMVideo(string ytdlppath,
                                            string mp4decryptpath,

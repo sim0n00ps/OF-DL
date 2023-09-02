@@ -680,7 +680,8 @@ public class Program
                                 postInfo: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? postInfo : null,
                                 postMedia: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? mediaInfo : null,
                                 author: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? postInfo.author : null,
-                                users: hasSelectedUsersKVP.Value);
+                                users: hasSelectedUsersKVP.Value,
+                                config: Config);
 
                             if (isNew)
                             {
@@ -706,7 +707,8 @@ public class Program
                             messageInfo: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? postInfo : null,
                             messageMedia: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? mediaInfo : null,
                             author: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? postInfo.author : null,
-                            users: hasSelectedUsersKVP.Value);
+                            users: hasSelectedUsersKVP.Value,
+                            config: Config);
 
                         if (isNew)
                         {
@@ -1091,6 +1093,7 @@ public class Program
                             MessageFileNameFormat = Config.MessageFileNameFormat,
                             PaidPostFileNameFormat = Config.PaidPostFileNameFormat,
                             PaidMessageFileNameFormat = Config.PaidMessageFileNameFormat,
+                            RenameExistingFilesWhenCustomFormatIsSelected = Config.RenameExistingFilesWhenCustomFormatIsSelected,
                             Timeout = Config.Timeout,
                             DownloadAvatarHeaderPhoto = configOptions.Contains("[red]DownloadAvatarHeaderPhoto[/]"),
                             DownloadPaidPosts = configOptions.Contains("[red]DownloadPaidPosts[/]"),

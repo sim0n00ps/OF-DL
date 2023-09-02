@@ -5,6 +5,7 @@ using OF_DL.Entities.Post;
 using OF_DL.Entities.Purchased;
 using OF_DL.Entities.Stories;
 using Org.BouncyCastle.Asn1.Tsp;
+using Org.BouncyCastle.Asn1.X509;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
@@ -43,7 +44,14 @@ public class DownloadHelper : IDownloadHelper
     /// <param name="generalAuthor"></param>
     /// <param name="users"></param>
     /// <returns></returns>
-    public static async Task<bool> CreateDirectoriesAndDownloadMedia(string path, string url, string folder, long media_id, ProgressTask task, string filename)
+    public static async Task<bool> CreateDirectoriesAndDownloadMedia(string path,
+                                                                     string url,
+                                                                     string folder,
+                                                                     long media_id,
+                                                                     ProgressTask task,
+                                                                     string serverFileName,
+                                                                     string resolvedFileName,
+                                                                     bool renameExistingFiles = false)
     {
         try
         {
@@ -56,9 +64,9 @@ public class DownloadHelper : IDownloadHelper
 
             path = UpdatePathBasedOnExtension(folder, path, extension);
 
-            string fullPath = $"{folder}{path}/{filename}{extension}";
+            string fullPath = $"{folder}{path}/{resolvedFileName}{extension}";
 
-            return await ProcessMediaDownload(folder, media_id, fullPath, url, path, filename, extension, task);
+            return await ProcessMediaDownload(folder, media_id, fullPath, url, path, serverFileName, resolvedFileName, extension, renameExistingFiles, task);
         }
         catch (Exception ex)
         {
@@ -209,7 +217,16 @@ public class DownloadHelper : IDownloadHelper
     /// <param name="extension">The file extension.</param>
     /// <param name="task">The task object for tracking progress.</param>
     /// <returns>A Task resulting in a boolean indicating whether the media is newly downloaded or not.</returns>
-    public static async Task<bool> ProcessMediaDownload(string folder, long media_id, string fullPath, string url, string path, string resolvedFilename, string extension, ProgressTask task)
+    public static async Task<bool> ProcessMediaDownload(string folder,
+                                                        long media_id,
+                                                        string fullPath,
+                                                        string url,
+                                                        string path,
+                                                        string serverFilename,
+                                                        string resolvedFilename,
+                                                        string extension,
+                                                        bool renameExistingFiles,
+                                                        ProgressTask task)
     {
         DBHelper dBHelper = new();
 
@@ -221,7 +238,12 @@ public class DownloadHelper : IDownloadHelper
             }
             else
             {
-                return await HandlePreviouslyDownloadedMediaAsync(folder, media_id, task, dBHelper);
+                bool status = await HandlePreviouslyDownloadedMediaAsync(folder, media_id, task, dBHelper);
+                if (renameExistingFiles)
+                {
+                    await HandleRenamingOfExistingFilesAsync(folder, media_id, path, serverFilename, resolvedFilename, extension, dBHelper);
+                }
+                return status;
             }
         }
         catch (Exception ex)
@@ -230,6 +252,38 @@ public class DownloadHelper : IDownloadHelper
             Console.WriteLine($"An error occurred: {ex.Message}");
             return false;
         }
+    }
+
+
+    private static async Task<bool> HandleRenamingOfExistingFilesAsync(string folder,
+                                                                       long media_id,
+                                                                       string path,
+                                                                       string serverFilename,
+                                                                       string resolvedFilename,
+                                                                       string extension,
+                                                                       DBHelper dBHelper)
+    {
+        string fullPathWithTheServerFileName = $"{folder}{path}/{serverFilename}{extension}";
+        string fullPathWithTheNewFileName = $"{folder}{path}/{resolvedFilename}{extension}";
+        if (!File.Exists(fullPathWithTheServerFileName))
+        {
+            return false;
+        }
+
+        try
+        {
+            File.Move(fullPathWithTheServerFileName, fullPathWithTheNewFileName);
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"An error occurred: {ex.Message}");
+            return false;
+        }
+
+        long size = await dBHelper.GetStoredFileSize(folder, media_id);
+        var lastModified = File.GetLastWriteTime(fullPathWithTheNewFileName);
+        await dBHelper.UpdateMedia(folder, media_id, folder + path, resolvedFilename + extension, size, true, lastModified);
+        return true;
     }
 
 
@@ -284,6 +338,10 @@ public class DownloadHelper : IDownloadHelper
     {
         long size = await dBHelper.GetStoredFileSize(folder, media_id);
         task.Increment(size);
+
+
+
+
         return false;
     }
 
@@ -503,7 +561,7 @@ public class DownloadHelper : IDownloadHelper
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
         string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, postInfo, postMedia, author, users, _FileNameHelper);
 
-        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, resolvedFilename);
+        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config.RenameExistingFilesWhenCustomFormatIsSelected);
     }
 
 
@@ -521,17 +579,17 @@ public class DownloadHelper : IDownloadHelper
         Uri uri = new(url);
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
         string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, messageInfo, messageMedia, fromUser, users, _FileNameHelper);
-        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, resolvedFilename);
+        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config.RenameExistingFilesWhenCustomFormatIsSelected);
     }
 
 
-    public async Task<bool> DownloadArchivedMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Archived.List messageInfo, Archived.Medium messageMedia, Archived.Author author, Dictionary<string, int> users)
+    public async Task<bool> DownloadArchivedMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Archived.List messageInfo, Archived.Medium messageMedia, Archived.Author author, Dictionary<string, int> users, Config config)
     {
         string path = "/Archived/Posts/Free";
         Uri uri = new(url);
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
         string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, messageInfo, messageMedia, author, users, _FileNameHelper);
-        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, resolvedFilename);
+        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config.RenameExistingFilesWhenCustomFormatIsSelected);
     }
 
 
@@ -541,7 +599,7 @@ public class DownloadHelper : IDownloadHelper
         string path = "/Stories/Free";
         Uri uri = new(url);
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
-        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename);
+        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, filename);
     }
 
     public async Task<bool> DownloadPurchasedMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Purchased.List messageInfo, Purchased.Medium messageMedia, Purchased.FromUser fromUser, Dictionary<string, int> users, Config config)
@@ -558,10 +616,19 @@ public class DownloadHelper : IDownloadHelper
         Uri uri = new(url);
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
         string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, messageInfo, messageMedia, fromUser, users, _FileNameHelper);
-        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, resolvedFilename);
+        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config.RenameExistingFilesWhenCustomFormatIsSelected);
     }
 
-    public async Task<bool> DownloadPurchasedPostMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Purchased.List messageInfo, Purchased.Medium messageMedia, Purchased.FromUser fromUser, Dictionary<string, int> users, Config config)
+    public async Task<bool> DownloadPurchasedPostMedia(string url,
+                                                       string folder,
+                                                       long media_id,
+                                                       ProgressTask task,
+                                                       string filenameFormat,
+                                                       Purchased.List messageInfo,
+                                                       Purchased.Medium messageMedia,
+                                                       Purchased.FromUser fromUser,
+                                                       Dictionary<string, int> users,
+                                                       Config config)
     {
         string path;
         if (config.FolderPerPaidPost && messageInfo != null && messageInfo?.id is not null && messageInfo?.postedAt is not null)
@@ -575,7 +642,7 @@ public class DownloadHelper : IDownloadHelper
         Uri uri = new(url);
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
         string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, messageInfo, messageMedia, fromUser, users, _FileNameHelper);
-        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, resolvedFilename);
+        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config.RenameExistingFilesWhenCustomFormatIsSelected);
     }
 
     #endregion
@@ -935,7 +1002,7 @@ public class DownloadHelper : IDownloadHelper
     }
 
 
-    public async Task<bool> DownloadArchivedPostDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string filenameFormat, Archived.List postInfo, Archived.Medium postMedia, Archived.Author author, Dictionary<string, int> users)
+    public async Task<bool> DownloadArchivedPostDRMVideo(string ytdlppath, string mp4decryptpath, string ffmpegpath, string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string filenameFormat, Archived.List postInfo, Archived.Medium postMedia, Archived.Author author, Dictionary<string, int> users, Config config)
     {
         try
         {
