@@ -1,17 +1,13 @@
 using Newtonsoft.Json;
 using OF_DL.Entities;
 using OF_DL.Entities.Archived;
-using OF_DL.Entities.Highlights;
 using OF_DL.Entities.Messages;
 using OF_DL.Entities.Post;
 using OF_DL.Entities.Purchased;
-using OF_DL.Entities.Stories;
 using OF_DL.Enumurations;
 using OF_DL.Helpers;
-using Org.BouncyCastle.Asn1.Tsp;
 using Spectre.Console;
 using System.Text.RegularExpressions;
-using static OF_DL.Entities.Lists.UserList;
 
 namespace OF_DL;
 
@@ -181,10 +177,28 @@ public class Program
         do
         {
             DateTime startTime = DateTime.Now;
-            Dictionary<string, int> users = await m_ApiHelper.GetSubscriptions("/subscriptions/subscribes", Config!.IncludeExpiredSubscriptions, Auth!);
+            Dictionary<string, int> users = new Dictionary<string, int>();
+            Dictionary<string, int> activeSubs = await m_ApiHelper.GetActiveSubscriptions("/subscriptions/subscribes", Auth);
+            foreach (KeyValuePair<string, int> activeSub in activeSubs)
+            {
+                if (!users.ContainsKey(activeSub.Key))
+                {
+                    users.Add(activeSub.Key, activeSub.Value);
+                }
+            }
+            if (Config!.IncludeExpiredSubscriptions)
+            {
+                Dictionary<string, int> expiredSubs = await m_ApiHelper.GetExpiredSubscriptions("/subscriptions/subscribes", Auth);
+                foreach (KeyValuePair<string, int> expiredSub in expiredSubs)
+                {
+                    if (!users.ContainsKey(expiredSub.Key))
+                    {
+                        users.Add(expiredSub.Key, expiredSub.Value);
+                    }
+                }
+            }
             Dictionary<string, int> lists = await m_ApiHelper.GetLists("/lists", Auth);
             Dictionary<string, int> selectedUsers = new();
-            // Call the HandleUserSelection method to handle user selection and processing
             KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP = await HandleUserSelection(selectedUsers, users, lists);
 
             if (hasSelectedUsersKVP.Key && !hasSelectedUsersKVP.Value.ContainsKey("ConfigChanged"))

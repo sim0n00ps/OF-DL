@@ -125,7 +125,6 @@ namespace OF_DL.Helpers
             }
             return null;
         }
-
         public async Task<Dictionary<string, int>> GetActiveSubscriptions(string endpoint, Auth auth)
         {
             try
@@ -338,8 +337,6 @@ namespace OF_DL.Helpers
             }
             return null;
         }
-
-
         public async Task<Dictionary<string, int>> GetLists(string endpoint, Auth auth)
         {
             try
@@ -412,8 +409,6 @@ namespace OF_DL.Helpers
             }
             return null;
         }
-
-
         public async Task<List<string>> GetListUsers(string endpoint, Auth auth)
         {
             try
@@ -1356,7 +1351,6 @@ namespace OF_DL.Helpers
             }
             return null;
         }
-
         public async Task<PaidPostCollection> GetPaidPosts(string endpoint, string folder, string username, Auth auth, Config config, List<long> paid_post_ids)
         {
             try
@@ -1537,8 +1531,6 @@ namespace OF_DL.Helpers
             }
             return null;
         }
-
-
         public async Task<PostCollection> GetPosts(string endpoint, string folder, Auth auth, Config config, List<long> paid_post_ids)
         {
             try
@@ -2331,8 +2323,6 @@ namespace OF_DL.Helpers
             }
             return DateTime.Now;
         }
-
-
         public async Task<string> GetDecryptionKey(Dictionary<string, string> drmHeaders, string licenceURL, string pssh, Auth auth)
         {
             try

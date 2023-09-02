@@ -42,12 +42,7 @@ public class DownloadHelper : IDownloadHelper
     /// <param name="generalAuthor"></param>
     /// <param name="users"></param>
     /// <returns></returns>
-    public static async Task<bool> CreateDirectoriesAndDownloadMedia(string path,
-                                                                     string url,
-                                                                     string folder,
-                                                                     long media_id,
-                                                                     ProgressTask task,
-                                                                     string filename)
+    public static async Task<bool> CreateDirectoriesAndDownloadMedia(string path, string url, string folder, long media_id, ProgressTask task, string filename)
     {
         try
         {
@@ -135,13 +130,7 @@ public class DownloadHelper : IDownloadHelper
     /// <param name="users">Dictionary containing user-related data.</param>
     /// <param name="fileNameHelper">Helper class for filename operations.</param>
     /// <returns>A Task resulting in a string that represents the custom filename.</returns>
-    private static async Task<string> GenerateCustomFileName(string filename,
-                                                             string? filenameFormat,
-                                                             object? postInfo,
-                                                             object? postMedia,
-                                                             object? author,
-                                                             Dictionary<string, int> users,
-                                                             IFileNameHelper fileNameHelper)
+    private static async Task<string> GenerateCustomFileName(string filename, string? filenameFormat, object? postInfo, object? postMedia, object? author, Dictionary<string, int> users, IFileNameHelper fileNameHelper)
     {
         if (string.IsNullOrEmpty(filenameFormat) || postInfo == null || postMedia == null || author == null)
         {
@@ -219,14 +208,7 @@ public class DownloadHelper : IDownloadHelper
     /// <param name="extension">The file extension.</param>
     /// <param name="task">The task object for tracking progress.</param>
     /// <returns>A Task resulting in a boolean indicating whether the media is newly downloaded or not.</returns>
-    public static async Task<bool> ProcessMediaDownload(string folder,
-                                                 long media_id,
-                                                 string fullPath,
-                                                 string url,
-                                                 string path,
-                                                 string resolvedFilename,
-                                                 string extension,
-                                                 ProgressTask task)
+    public static async Task<bool> ProcessMediaDownload(string folder, long media_id, string fullPath, string url, string path, string resolvedFilename, string extension, ProgressTask task)
     {
         DBHelper dBHelper = new();
 
@@ -263,15 +245,7 @@ public class DownloadHelper : IDownloadHelper
     /// <param name="task"></param>
     /// <param name="dBHelper"></param>
     /// <returns>A Task resulting in a boolean indicating whether the media is newly downloaded or not.</returns>
-    private static async Task<bool> HandleNewMedia(string folder,
-                                                   long media_id,
-                                                   string fullPath,
-                                                   string url,
-                                                   string path,
-                                                   string resolvedFilename,
-                                                   string extension,
-                                                   ProgressTask task,
-                                                   DBHelper dBHelper)
+    private static async Task<bool> HandleNewMedia(string folder, long media_id, string fullPath, string url, string path, string resolvedFilename, string extension, ProgressTask task, DBHelper dBHelper)
     {
         long fileSizeInBytes;
         DateTime lastModified;
@@ -305,10 +279,7 @@ public class DownloadHelper : IDownloadHelper
     /// <param name="task"></param>
     /// <param name="dBHelper"></param>
     /// <returns>A boolean indicating whether the media is newly downloaded or not.</returns>
-    private static async Task<bool> HandlePreviouslyDownloadedMediaAsync(string folder,
-                                                                         long media_id,
-                                                                         ProgressTask task,
-                                                                         DBHelper dBHelper)
+    private static async Task<bool> HandlePreviouslyDownloadedMediaAsync(string folder, long media_id, ProgressTask task, DBHelper dBHelper)
     {
         long size = await dBHelper.GetStoredFileSize(folder, media_id);
         task.Increment(size);
@@ -515,15 +486,7 @@ public class DownloadHelper : IDownloadHelper
     #endregion
 
     #region normal posts
-    public async Task<bool> DownloadPostMedia(string url,
-                                              string folder,
-                                              long media_id,
-                                              ProgressTask task,
-                                              string? filenameFormat,
-                                              Post.List? postInfo,
-                                              Post.Medium? postMedia,
-                                              Post.Author? author,
-                                              Dictionary<string, int> users)
+    public async Task<bool> DownloadPostMedia(string url, string folder, long media_id, ProgressTask task, string? filenameFormat, Post.List? postInfo, Post.Medium? postMedia, Post.Author? author, Dictionary<string, int> users)
     {
         string path = "/Posts/Free";
         Uri uri = new(url);
@@ -534,15 +497,8 @@ public class DownloadHelper : IDownloadHelper
     }
 
 
-    public async Task<bool> DownloadMessageMedia(string url,
-                                                 string folder,
-                                                 long media_id,
-                                                 ProgressTask task,
-                                                 string filenameFormat,
-                                                 Messages.List messageInfo,
-                                                 Messages.Medium messageMedia,
-                                                 Messages.FromUser fromUser,
-                                                 Dictionary<string, int> users)
+    public async Task<bool> DownloadMessageMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Messages.List messageInfo,
+                                                 Messages.Medium messageMedia, Messages.FromUser fromUser, Dictionary<string, int> users)
     {
         string path = "/Messages/Free";
         Uri uri = new(url);
@@ -552,15 +508,7 @@ public class DownloadHelper : IDownloadHelper
     }
 
 
-    public async Task<bool> DownloadArchivedMedia(string url,
-                                                  string folder,
-                                                  long media_id,
-                                                  ProgressTask task,
-                                                  string filenameFormat,
-                                                  Archived.List messageInfo,
-                                                  Archived.Medium messageMedia,
-                                                  Archived.Author author,
-                                                  Dictionary<string, int> users)
+    public async Task<bool> DownloadArchivedMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Archived.List messageInfo, Archived.Medium messageMedia, Archived.Author author, Dictionary<string, int> users)
     {
         string path = "/Archived/Posts/Free";
         Uri uri = new(url);
@@ -571,10 +519,7 @@ public class DownloadHelper : IDownloadHelper
 
 
 
-    public async Task<bool> DownloadStoryMedia(string url,
-                                               string folder,
-                                               long media_id,
-                                               ProgressTask task)
+    public async Task<bool> DownloadStoryMedia(string url, string folder, long media_id, ProgressTask task)
     {
         string path = "/Stories/Free";
         Uri uri = new(url);
@@ -582,15 +527,7 @@ public class DownloadHelper : IDownloadHelper
         return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename);
     }
 
-    public async Task<bool> DownloadPurchasedMedia(string url,
-                                                   string folder,
-                                                   long media_id,
-                                                   ProgressTask task,
-                                                   string filenameFormat,
-                                                   Purchased.List messageInfo,
-                                                   Purchased.Medium messageMedia,
-                                                   Purchased.FromUser fromUser,
-                                                   Dictionary<string, int> users)
+    public async Task<bool> DownloadPurchasedMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Purchased.List messageInfo, Purchased.Medium messageMedia, Purchased.FromUser fromUser, Dictionary<string, int> users)
     {
         string path = "/Messages/Paid";
         Uri uri = new(url);
@@ -599,15 +536,7 @@ public class DownloadHelper : IDownloadHelper
         return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, resolvedFilename);
     }
 
-    public async Task<bool> DownloadPurchasedPostMedia(string url,
-                                                       string folder,
-                                                       long media_id,
-                                                       ProgressTask task,
-                                                       string filenameFormat,
-                                                       Purchased.List messageInfo,
-                                                       Purchased.Medium messageMedia,
-                                                       Purchased.FromUser fromUser,
-                                                       Dictionary<string, int> users)
+    public async Task<bool> DownloadPurchasedPostMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Purchased.List messageInfo, Purchased.Medium messageMedia, Purchased.FromUser fromUser, Dictionary<string, int> users)
     {
         string path = "/Posts/Paid";
         Uri uri = new(url);

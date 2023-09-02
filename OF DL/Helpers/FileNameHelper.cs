@@ -9,11 +9,7 @@ namespace OF_DL.Helpers
 {
     public class FileNameHelper : IFileNameHelper
     {
-        public async Task<Dictionary<string, string>> GetFilename(object obj1,
-                                                                  object obj2,
-                                                                  object obj3,
-                                                                  List<string> selectedProperties,
-                                                                  Dictionary<string, int> users = null)
+        public async Task<Dictionary<string, string>> GetFilename(object obj1, object obj2, object obj3, List<string> selectedProperties, Dictionary<string, int> users = null)
         {
             Dictionary<string, string> values = new();
             Type type1 = obj1.GetType();

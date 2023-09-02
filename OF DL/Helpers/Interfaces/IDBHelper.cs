@@ -1,4 +1,4 @@
-﻿namespace OF_DL.Helpers
+namespace OF_DL.Helpers
 {
     public interface IDBHelper
     {
