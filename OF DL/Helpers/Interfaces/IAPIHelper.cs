@@ -21,8 +21,9 @@ namespace OF_DL.Helpers
         Task<ArchivedCollection> GetArchived(string endpoint, string folder, Auth auth, Config config);
         Task<MessageCollection> GetMessages(string endpoint, string folder, Auth auth, Config config);
         Task<PaidMessageCollection> GetPaidMessages(string endpoint, string folder, string username, Auth auth, Config config);
-        Task<Dictionary<string, int>> GetSubscriptions(string endpoint, bool includeExpiredSubscriptions, Auth auth);
         Task<User> GetUserInfo(string endpoint, Auth auth);
         Task<Dictionary<string, string>> Headers(string path, string queryParam, Auth auth);
+        Task<Dictionary<string, int>> GetActiveSubscriptions(string endpoint, Auth auth);
+        Task<Dictionary<string, int>> GetExpiredSubscriptions(string endpoint, Auth auth);
     }
 }

@@ -715,7 +715,7 @@ public class Program
             AnsiConsole.Markup($"[red]Found 0 Posts\n[/]");
             return 0;
         }
-
+      
         AnsiConsole.Markup($"[red]Found {posts.Posts.Count} Posts\n[/]");
         postCount = posts.Posts.Count;
         long totalSize = await m_DownloadHelper.CalculateTotalFileSize(posts.Posts.Values.ToList(), Auth!);
