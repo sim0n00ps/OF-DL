@@ -4,6 +4,7 @@ using OF_DL.Entities.Messages;
 using OF_DL.Entities.Post;
 using OF_DL.Entities.Purchased;
 using OF_DL.Entities.Stories;
+using OF_DL.Enumerations;
 using Org.BouncyCastle.Asn1.Tsp;
 using Org.BouncyCastle.Asn1.X509;
 using Spectre.Console;
@@ -139,12 +140,23 @@ public class DownloadHelper : IDownloadHelper
     /// <param name="users">Dictionary containing user-related data.</param>
     /// <param name="fileNameHelper">Helper class for filename operations.</param>
     /// <returns>A Task resulting in a string that represents the custom filename.</returns>
-    private static async Task<string> GenerateCustomFileName(string filename, string? filenameFormat, object? postInfo, object? postMedia, object? author, Dictionary<string, int> users, IFileNameHelper fileNameHelper)
+    private static async Task<string> GenerateCustomFileName(string filename,
+                                                             string? filenameFormat,
+                                                             object? postInfo,
+                                                             object? postMedia,
+                                                             object? author,
+                                                             Dictionary<string, int> users,
+                                                             IFileNameHelper fileNameHelper,
+                                                             CustomFileNameOption option)
     {
         if (string.IsNullOrEmpty(filenameFormat) || postInfo == null || postMedia == null || author == null)
         {
-            //no custom filename. return the original name
-            return filename;
+            return option switch
+            {
+                CustomFileNameOption.ReturnOriginal => filename,
+                CustomFileNameOption.ReturnEmpty => string.Empty,
+                _ => filename,
+            };
         }
 
         List<string> properties = new();
@@ -559,7 +571,7 @@ public class DownloadHelper : IDownloadHelper
         
         Uri uri = new(url);
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
-        string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, postInfo, postMedia, author, users, _FileNameHelper);
+        string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, postInfo, postMedia, author, users, _FileNameHelper, CustomFileNameOption.ReturnOriginal);
 
         return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config.RenameExistingFilesWhenCustomFormatIsSelected);
     }
@@ -578,7 +590,7 @@ public class DownloadHelper : IDownloadHelper
         }
         Uri uri = new(url);
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
-        string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, messageInfo, messageMedia, fromUser, users, _FileNameHelper);
+        string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, messageInfo, messageMedia, fromUser, users, _FileNameHelper, CustomFileNameOption.ReturnOriginal);
         return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config.RenameExistingFilesWhenCustomFormatIsSelected);
     }
 
@@ -588,7 +600,7 @@ public class DownloadHelper : IDownloadHelper
         string path = "/Archived/Posts/Free";
         Uri uri = new(url);
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
-        string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, messageInfo, messageMedia, author, users, _FileNameHelper);
+        string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, messageInfo, messageMedia, author, users, _FileNameHelper, CustomFileNameOption.ReturnOriginal);
         return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config.RenameExistingFilesWhenCustomFormatIsSelected);
     }
 
@@ -615,7 +627,7 @@ public class DownloadHelper : IDownloadHelper
         }
         Uri uri = new(url);
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
-        string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, messageInfo, messageMedia, fromUser, users, _FileNameHelper);
+        string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, messageInfo, messageMedia, fromUser, users, _FileNameHelper, CustomFileNameOption.ReturnOriginal);
         return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config.RenameExistingFilesWhenCustomFormatIsSelected);
     }
 
@@ -641,7 +653,7 @@ public class DownloadHelper : IDownloadHelper
         }
         Uri uri = new(url);
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
-        string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, messageInfo, messageMedia, fromUser, users, _FileNameHelper);
+        string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, messageInfo, messageMedia, fromUser, users, _FileNameHelper, CustomFileNameOption.ReturnOriginal);
         return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config.RenameExistingFilesWhenCustomFormatIsSelected);
     }
 
@@ -955,6 +967,7 @@ public class DownloadHelper : IDownloadHelper
                 Directory.CreateDirectory(folder + path); // create the new folder
             }
             DBHelper dBHelper = new();
+
             if (!string.IsNullOrEmpty(filenameFormat) && postInfo != null && postMedia != null)
             {
                 List<string> properties = new();
