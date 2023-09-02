@@ -490,9 +490,9 @@ public class DownloadHelper : IDownloadHelper
     public async Task<bool> DownloadPostMedia(string url, string folder, long media_id, ProgressTask task, string? filenameFormat, Post.List? postInfo, Post.Medium? postMedia, Post.Author? author, Dictionary<string, int> users, Config config)
     {
         string path;
-        if (config.FolderPerPost && postInfo != null)
+        if (config.FolderPerPost && postInfo != null && postInfo?.id is not null && postInfo?.postedAt is not null)
         {
-            path = $"/Posts/Free/{postInfo.id} {postInfo.postedAt.ToString("yyyy-MM-dd HH-mm-ss")}";
+            path = $"/Posts/Free/{postInfo.id} {postInfo.postedAt:yyyy-MM-dd HH-mm-ss}";
         }
         else
         {
@@ -510,9 +510,9 @@ public class DownloadHelper : IDownloadHelper
     public async Task<bool> DownloadMessageMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Messages.List messageInfo, Messages.Medium messageMedia, Messages.FromUser fromUser, Dictionary<string, int> users, Config config)
     {
         string path;
-        if (config.FolderPerMessage && messageInfo != null)
+        if (config.FolderPerMessage && messageInfo != null && messageInfo?.id is not null && messageInfo?.createdAt is not null)
         {
-            path = $"/Messages/Free/{messageInfo.id} {messageInfo.createdAt.Value.ToString("yyyy-MM-dd HH-mm-ss")}";
+            path = $"/Messages/Free/{messageInfo.id} {messageInfo.createdAt.Value:yyyy-MM-dd HH-mm-ss}";
         }
         else
         {
@@ -547,9 +547,9 @@ public class DownloadHelper : IDownloadHelper
     public async Task<bool> DownloadPurchasedMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Purchased.List messageInfo, Purchased.Medium messageMedia, Purchased.FromUser fromUser, Dictionary<string, int> users, Config config)
     {
         string path;
-        if (config.FolderPerPaidMessage && messageInfo != null)
+        if (config.FolderPerPaidMessage && messageInfo != null && messageInfo?.id is not null && messageInfo?.createdAt is not null)
         {
-            path = $"/Messages/Paid/{messageInfo.id} {messageInfo.createdAt.Value.ToString("yyyy-MM-dd HH-mm-ss")}";
+            path = $"/Messages/Paid/{messageInfo.id} {messageInfo.createdAt.Value:yyyy-MM-dd HH-mm-ss}";
         }
         else
         {
@@ -564,9 +564,9 @@ public class DownloadHelper : IDownloadHelper
     public async Task<bool> DownloadPurchasedPostMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Purchased.List messageInfo, Purchased.Medium messageMedia, Purchased.FromUser fromUser, Dictionary<string, int> users, Config config)
     {
         string path;
-        if (config.FolderPerPaidPost && messageInfo != null)
+        if (config.FolderPerPaidPost && messageInfo != null && messageInfo?.id is not null && messageInfo?.postedAt is not null)
         {
-            path = $"/Posts/Paid/{messageInfo.id} {messageInfo.postedAt.Value.ToString("yyyy-MM-dd HH-mm-ss")}";
+            path = $"/Posts/Paid/{messageInfo.id} {messageInfo.postedAt.Value:yyyy-MM-dd HH-mm-ss}";
         }
         else
         {
@@ -671,9 +671,9 @@ public class DownloadHelper : IDownloadHelper
             string path;
             Uri uri = new(url);
             string filename = System.IO.Path.GetFileName(uri.LocalPath).Split(".")[0];
-            if (config.FolderPerMessage && messageInfo != null)
+            if (config.FolderPerMessage && messageInfo != null && messageInfo?.id is not null && messageInfo?.createdAt is not null)
             {
-                path = $"/Messages/Free/{messageInfo.id} {messageInfo.createdAt.Value.ToString("yyyy-MM-dd HH-mm-ss")}/Videos";
+                path = $"/Messages/Free/{messageInfo.id} {messageInfo.createdAt.Value:yyyy-MM-dd HH-mm-ss}/Videos";
             }
             else
             {
@@ -740,9 +740,9 @@ public class DownloadHelper : IDownloadHelper
             string path;
             Uri uri = new(url);
             string filename = System.IO.Path.GetFileName(uri.LocalPath).Split(".")[0];
-            if (config.FolderPerPaidMessage && messageInfo != null)
+            if (config.FolderPerPaidMessage && messageInfo != null && messageInfo?.id is not null && messageInfo?.createdAt is not null)
             {
-                path = $"/Messages/Paid/{messageInfo.id} {messageInfo.createdAt.Value.ToString("yyyy-MM-dd HH-mm-ss")}/Videos";
+                path = $"/Messages/Paid/{messageInfo.id} {messageInfo.createdAt.Value:yyyy-MM-dd HH-mm-ss}/Videos";
             }
             else
             {
@@ -808,9 +808,9 @@ public class DownloadHelper : IDownloadHelper
             string path;
             Uri uri = new(url);
             string filename = System.IO.Path.GetFileName(uri.LocalPath).Split(".")[0];
-            if (config.FolderPerPost && postInfo != null)
+            if (config.FolderPerPost && postInfo != null && postInfo?.id is not null && postInfo?.postedAt is not null)
             {
-                path = $"/Posts/Free/{postInfo.id} {postInfo.postedAt.ToString("yyyy-MM-dd HH-mm-ss")}/Videos";
+                path = $"/Posts/Free/{postInfo.id} {postInfo.postedAt:yyyy-MM-dd HH-mm-ss}/Videos";
             }
             else
             {
@@ -875,9 +875,9 @@ public class DownloadHelper : IDownloadHelper
             string path;
             Uri uri = new(url);
             string filename = System.IO.Path.GetFileName(uri.LocalPath).Split(".")[0];
-            if (config.FolderPerPaidPost && postInfo != null)
+            if (config.FolderPerPaidPost && postInfo != null && postInfo?.id is not null && postInfo?.postedAt is not null)
             {
-                path = $"/Posts/Paid/{postInfo.id} {postInfo.postedAt.Value.ToString("yyyy-MM-dd HH-mm-ss")}/Videos";
+                path = $"/Posts/Paid/{postInfo.id} {postInfo.postedAt.Value:yyyy-MM-dd HH-mm-ss}/Videos";
             }
             else
             {
