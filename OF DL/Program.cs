@@ -1027,7 +1027,7 @@ public class Program
                         selectedNamesPrompt.Title("[red]Select users[/]");
                         selectedNamesPrompt.PageSize(10);
                         selectedNamesPrompt.AddChoice("[red]Go Back[/]");
-                        foreach (string key in users.Keys.Select(k => $"[red]{k}[/]").ToList())
+                        foreach (string key in users.Keys.OrderBy(k => k).Select(k => $"[red]{k}[/]").ToList())
                         {
                             selectedNamesPrompt.AddChoice(key);
                         }
