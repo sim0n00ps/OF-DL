@@ -26,6 +26,7 @@ namespace OF_DL.Entities
         public string? PostFileNameFormat { get; set; } = string.Empty;
         public string? PaidMessageFileNameFormat { get; set; } = string.Empty;
         public string? MessageFileNameFormat { get; set; } = string.Empty;
+        public bool RenameExistingFilesWhenCustomFormatIsSelected { get; set; } = false;
         public int? Timeout { get; set; } = -1;
         public bool FolderPerPaidPost { get; set; } = false;
         public bool FolderPerPost { get; set; } = false;
