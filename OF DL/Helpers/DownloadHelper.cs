@@ -256,7 +256,7 @@ public class DownloadHelper : IDownloadHelper
             else
             {
                 bool status = await HandlePreviouslyDownloadedMediaAsync(folder, media_id, task, dBHelper);
-                if (renameExistingFiles)
+                if (renameExistingFiles && (serverFilename != resolvedFilename))
                 {
                     await HandleRenamingOfExistingFilesAsync(folder, media_id, path, serverFilename, resolvedFilename, extension, dBHelper);
                 }
