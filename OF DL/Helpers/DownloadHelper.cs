@@ -5,6 +5,7 @@ using OF_DL.Entities.Post;
 using OF_DL.Entities.Purchased;
 using OF_DL.Entities.Stories;
 using OF_DL.Enumerations;
+using OF_DL.Utils;
 using Org.BouncyCastle.Asn1.Tsp;
 using Org.BouncyCastle.Asn1.X509;
 using Spectre.Console;
@@ -52,7 +53,7 @@ public class DownloadHelper : IDownloadHelper
                                                                      ProgressTask task,
                                                                      string serverFileName,
                                                                      string resolvedFileName,
-                                                                     bool renameExistingFiles = false)
+                                                                     Config config)
     {
         try
         {
@@ -65,7 +66,7 @@ public class DownloadHelper : IDownloadHelper
 
             path = UpdatePathBasedOnExtension(folder, path, extension);
 
-            return await ProcessMediaDownload(folder, media_id, url, path, serverFileName, resolvedFileName, extension, renameExistingFiles, task);
+            return await ProcessMediaDownload(folder, media_id, url, path, serverFileName, resolvedFileName, extension, config, task);
         }
         catch (Exception ex)
         {
@@ -234,7 +235,7 @@ public class DownloadHelper : IDownloadHelper
                                                         string serverFilename,
                                                         string resolvedFilename,
                                                         string extension,
-                                                        bool renameExistingFiles,
+                                                        Config config,
                                                         ProgressTask task)
     {
         DBHelper dBHelper = new();
@@ -251,12 +252,13 @@ public class DownloadHelper : IDownloadHelper
                                             resolvedFilename: resolvedFilename,
                                             extension: extension,
                                             task: task,
-                                            dBHelper: dBHelper);
+                                            dBHelper: dBHelper,
+                                            config);
             }
             else
             {
                 bool status = await HandlePreviouslyDownloadedMediaAsync(folder, media_id, task, dBHelper);
-                if (renameExistingFiles && (serverFilename != resolvedFilename))
+                if (config.RenameExistingFilesWhenCustomFormatIsSelected && (serverFilename != resolvedFilename))
                 {
                     await HandleRenamingOfExistingFilesAsync(folder, media_id, path, serverFilename, resolvedFilename, extension, dBHelper);
                 }
@@ -324,7 +326,8 @@ public class DownloadHelper : IDownloadHelper
                                                    string resolvedFilename,
                                                    string extension,
                                                    ProgressTask task,
-                                                   DBHelper dBHelper)
+                                                   DBHelper dBHelper,
+                                                   Config config)
     {
         long fileSizeInBytes;
         DateTime lastModified;
@@ -382,7 +385,7 @@ public class DownloadHelper : IDownloadHelper
         }
         else //file doesn't exist and we should download it. 
         {
-            lastModified = await DownloadFile(url, fullPathWithTheNewFileName, task);
+            lastModified = await DownloadFile(url, fullPathWithTheNewFileName, task, config);
             fileSizeInBytes = GetLocalFileSize(fullPathWithTheNewFileName);
             task.Increment(fileSizeInBytes);
             status = true;
@@ -431,7 +434,7 @@ public class DownloadHelper : IDownloadHelper
     /// <param name="task">Progress tracking object.</param>
     /// <returns>A Task resulting in a DateTime indicating the last modified date of the downloaded file.</returns>
 
-    private static async Task<DateTime> DownloadFile(string url, string destinationPath, ProgressTask task)
+    private static async Task<DateTime> DownloadFile(string url, string destinationPath, ProgressTask task, Config config)
     {
         using var client = new HttpClient();
         var request = new HttpRequestMessage
@@ -444,7 +447,23 @@ public class DownloadHelper : IDownloadHelper
         response.EnsureSuccessStatusCode();
         var body = await response.Content.ReadAsStreamAsync();
 
-        using (FileStream fileStream = new(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None, 16384, true))
+        // Wrap the body stream with the ThrottledStream to limit read rate.
+        using (ThrottledStream throttledStream = new(body, config.DownloadLimitInMbPerSec * 1_000_000, config.LimitDownloadRate))
+        {
+            using FileStream fileStream = new(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None, 16384, true);
+            var buffer = new byte[16384];
+            int read;
+            while ((read = await throttledStream.ReadAsync(buffer, CancellationToken.None)) > 0)
+            {
+                // Assume task.Increment is a method that updates some kind of progress.
+                // Replace this with whatever you are doing to keep track of progress.
+                task.Increment(read);
+
+                await fileStream.WriteAsync(buffer.AsMemory(0, read), CancellationToken.None);
+            }
+        }
+
+/*        using (FileStream fileStream = new(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None, 16384, true))
         {
             var buffer = new byte[16384];
             int read;
@@ -453,7 +472,7 @@ public class DownloadHelper : IDownloadHelper
                 task.Increment(read);
                 await fileStream.WriteAsync(buffer.AsMemory(0, read));
             }
-        }
+        }*/
         File.SetLastWriteTime(destinationPath, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
         return response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now;
     }
@@ -627,7 +646,7 @@ public class DownloadHelper : IDownloadHelper
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
         string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, postInfo, postMedia, author, users, _FileNameHelper, CustomFileNameOption.ReturnOriginal);
 
-        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config.RenameExistingFilesWhenCustomFormatIsSelected);
+        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config);
     }
 
 
@@ -645,7 +664,7 @@ public class DownloadHelper : IDownloadHelper
         Uri uri = new(url);
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
         string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, messageInfo, messageMedia, fromUser, users, _FileNameHelper, CustomFileNameOption.ReturnOriginal);
-        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config.RenameExistingFilesWhenCustomFormatIsSelected);
+        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config);
     }
 
 
@@ -655,17 +674,17 @@ public class DownloadHelper : IDownloadHelper
         Uri uri = new(url);
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
         string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, messageInfo, messageMedia, author, users, _FileNameHelper, CustomFileNameOption.ReturnOriginal);
-        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config.RenameExistingFilesWhenCustomFormatIsSelected);
+        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config);
     }
 
 
 
-    public async Task<bool> DownloadStoryMedia(string url, string folder, long media_id, ProgressTask task)
+    public async Task<bool> DownloadStoryMedia(string url, string folder, long media_id, ProgressTask task, Config config)
     {
         string path = "/Stories/Free";
         Uri uri = new(url);
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
-        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, filename);
+        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, filename, config);
     }
 
     public async Task<bool> DownloadPurchasedMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Purchased.List messageInfo, Purchased.Medium messageMedia, Purchased.FromUser fromUser, Dictionary<string, int> users, Config config)
@@ -682,7 +701,7 @@ public class DownloadHelper : IDownloadHelper
         Uri uri = new(url);
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
         string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, messageInfo, messageMedia, fromUser, users, _FileNameHelper, CustomFileNameOption.ReturnOriginal);
-        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config.RenameExistingFilesWhenCustomFormatIsSelected);
+        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config);
     }
 
     public async Task<bool> DownloadPurchasedPostMedia(string url,
@@ -708,7 +727,7 @@ public class DownloadHelper : IDownloadHelper
         Uri uri = new(url);
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
         string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, messageInfo, messageMedia, fromUser, users, _FileNameHelper, CustomFileNameOption.ReturnOriginal);
-        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config.RenameExistingFilesWhenCustomFormatIsSelected);
+        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config);
     }
 
     #endregion
