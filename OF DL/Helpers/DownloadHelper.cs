@@ -572,7 +572,7 @@ public class DownloadHelper : IDownloadHelper
         ProcessStartInfo mp4decryptStartInfoVideo = new()
         {
             FileName = mp4decryptpath,
-            Arguments = $"--key {decryptionKey} {$"{tempFilename}"}.mp4 {$"{tempFilename}"}_vdec.mp4",
+            Arguments = $"--key {decryptionKey} \"{tempFilename}.mp4\" \"{tempFilename}_vdec.mp4\"",
             CreateNoWindow = true
         };
 
@@ -586,7 +586,7 @@ public class DownloadHelper : IDownloadHelper
         ProcessStartInfo mp4decryptStartInfoAudio = new()
         {
             FileName = mp4decryptpath,
-            Arguments = $"--key {decryptionKey} {$"{tempFilename}"}.m4a {$"{tempFilename}"}_adec.mp4",
+            Arguments = $"--key {decryptionKey} \"{tempFilename}.m4a\" \"{tempFilename}_adec.mp4\"",
             CreateNoWindow = true
         };
 
@@ -601,7 +601,7 @@ public class DownloadHelper : IDownloadHelper
         ProcessStartInfo ffmpegStartInfo = new()
         {
             FileName = ffmpegpath,
-            Arguments = $"-i {$"{tempFilename}"}_vdec.mp4 -i {$"{tempFilename}"}_adec.mp4 -c copy {$"{tempFilename}"}_source.mp4",
+            Arguments = $"-i \"{tempFilename}_vdec.mp4\" -i \"{tempFilename}_adec.mp4\" -c copy \"{tempFilename}_source.mp4\"",
             CreateNoWindow = true
         };
 
@@ -611,7 +611,10 @@ public class DownloadHelper : IDownloadHelper
         };
         ffmpegProcess.Start();
         ffmpegProcess.WaitForExit();
-        File.SetLastWriteTime($"{tempFilename}_source.mp4", lastModified);
+        if (File.Exists($"{tempFilename}_source.mp4"))
+        {
+            File.SetLastWriteTime($"{tempFilename}_source.mp4", lastModified);
+        }
         if (!string.IsNullOrEmpty(customFileName))
         {
             File.Move($"{$"{tempFilename}"}_source.mp4", $"{folder + path + "/" + customFileName + ".mp4"}");
@@ -629,7 +632,7 @@ public class DownloadHelper : IDownloadHelper
     }
     #endregion
 
-    #region normal posts
+            #region normal posts
     public async Task<bool> DownloadPostMedia(string url, string folder, long media_id, ProgressTask task, string? filenameFormat, Post.List? postInfo, Post.Medium? postMedia, Post.Author? author, Dictionary<string, int> users, Config config)
     {
         string path;
