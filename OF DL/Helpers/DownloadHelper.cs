@@ -455,24 +455,11 @@ public class DownloadHelper : IDownloadHelper
             int read;
             while ((read = await throttledStream.ReadAsync(buffer, CancellationToken.None)) > 0)
             {
-                // Assume task.Increment is a method that updates some kind of progress.
-                // Replace this with whatever you are doing to keep track of progress.
                 task.Increment(read);
-
                 await fileStream.WriteAsync(buffer.AsMemory(0, read), CancellationToken.None);
             }
         }
 
-/*        using (FileStream fileStream = new(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None, 16384, true))
-        {
-            var buffer = new byte[16384];
-            int read;
-            while ((read = await body.ReadAsync(buffer)) > 0)
-            {
-                task.Increment(read);
-                await fileStream.WriteAsync(buffer.AsMemory(0, read));
-            }
-        }*/
         File.SetLastWriteTime(destinationPath, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
         return response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now;
     }
@@ -632,7 +619,7 @@ public class DownloadHelper : IDownloadHelper
     }
     #endregion
 
-            #region normal posts
+    #region normal posts
     public async Task<bool> DownloadPostMedia(string url, string folder, long media_id, ProgressTask task, string? filenameFormat, Post.List? postInfo, Post.Medium? postMedia, Post.Author? author, Dictionary<string, int> users, Config config)
     {
         string path;
