@@ -177,7 +177,7 @@ public class Program
         do
         {
             DateTime startTime = DateTime.Now;
-            Dictionary<string, int> users = new Dictionary<string, int>();
+            Dictionary<string, int> users = new();
             Dictionary<string, int> activeSubs = await m_ApiHelper.GetActiveSubscriptions("/subscriptions/subscribes", Auth);
             foreach (KeyValuePair<string, int> activeSub in activeSubs)
             {
@@ -554,7 +554,7 @@ public class Program
                 task.StartTask();
                 foreach (KeyValuePair<long, string> highlightKVP in highlights)
                 {
-                    bool isNew = await m_DownloadHelper.DownloadStoryMedia(highlightKVP.Value, path, highlightKVP.Key, task);
+                    bool isNew = await m_DownloadHelper.DownloadStoryMedia(highlightKVP.Value, path, highlightKVP.Key, task, Config!);
                     if (isNew)
                     {
                         newHighlightsCount++;
@@ -597,7 +597,7 @@ public class Program
                 task.StartTask();
                 foreach (KeyValuePair<long, string> storyKVP in stories)
                 {
-                    bool isNew = await m_DownloadHelper.DownloadStoryMedia(storyKVP.Value, path, storyKVP.Key, task);
+                    bool isNew = await m_DownloadHelper.DownloadStoryMedia(storyKVP.Value, path, storyKVP.Key, task, Config!);
                     if (isNew)
                     {
                         newStoriesCount++;
@@ -1067,7 +1067,9 @@ public class Program
                             ( "[red]FolderPerPaidPost[/]", Config.FolderPerPaidPost ),
                             ( "[red]FolderPerPost[/]", Config.FolderPerPost ),
                             ( "[red]FolderPerPaidMessage[/]", Config.FolderPerPaidMessage ),
-                            ( "[red]FolderPerMessage[/]", Config.FolderPerMessage )
+                            ( "[red]FolderPerMessage[/]", Config.FolderPerMessage ),
+                            ( "[red]LimitDownloadRate[/]", Config.LimitDownloadRate ),
+                            ( "[red]RenameExistingFilesOnCustomFormat[/]", Config.RenameExistingFilesWhenCustomFormatIsSelected )
                         });
 
                         MultiSelectionPrompt<string> multiSelectionPrompt = new MultiSelectionPrompt<string>()
@@ -1093,7 +1095,7 @@ public class Program
                             MessageFileNameFormat = Config.MessageFileNameFormat,
                             PaidPostFileNameFormat = Config.PaidPostFileNameFormat,
                             PaidMessageFileNameFormat = Config.PaidMessageFileNameFormat,
-                            RenameExistingFilesWhenCustomFormatIsSelected = Config.RenameExistingFilesWhenCustomFormatIsSelected,
+                            DownloadLimitInMbPerSec = Config.DownloadLimitInMbPerSec,
                             Timeout = Config.Timeout,
                             DownloadAvatarHeaderPhoto = configOptions.Contains("[red]DownloadAvatarHeaderPhoto[/]"),
                             DownloadPaidPosts = configOptions.Contains("[red]DownloadPaidPosts[/]"),
@@ -1111,7 +1113,9 @@ public class Program
                             FolderPerPaidPost = configOptions.Contains("[red]FolderPerPaidPost[/]"),
                             FolderPerPost = configOptions.Contains("[red]FolderPerPost[/]"),
                             FolderPerPaidMessage = configOptions.Contains("[red]FolderPerPaidMessage[/]"),
-                            FolderPerMessage = configOptions.Contains("[red]FolderPerMessage[/]")
+                            FolderPerMessage = configOptions.Contains("[red]FolderPerMessage[/]"),
+                            LimitDownloadRate = configOptions.Contains("[red]LimitDownloadRate[/]"),
+                            RenameExistingFilesWhenCustomFormatIsSelected = configOptions.Contains("[red]RenameExistingFilesOnCustomFormat[/]")
                         };
 
 
