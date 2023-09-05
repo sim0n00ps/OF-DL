@@ -387,7 +387,6 @@ public class DownloadHelper : IDownloadHelper
         {
             lastModified = await DownloadFile(url, fullPathWithTheNewFileName, task, config);
             fileSizeInBytes = GetLocalFileSize(fullPathWithTheNewFileName);
-            task.Increment(fileSizeInBytes);
             status = true;
         }
 
