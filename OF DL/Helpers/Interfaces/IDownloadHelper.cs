@@ -161,6 +161,6 @@ namespace OF_DL.Helpers
                                               Purchased.FromUser fromUser,
                                               Dictionary<string, int> users,
                                               Config config);
-        Task<bool> DownloadStoryMedia(string url, string folder, long media_id, ProgressTask task);
+        Task<bool> DownloadStoryMedia(string url, string folder, long media_id, ProgressTask task, Config config);
     }
 }

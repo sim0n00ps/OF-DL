@@ -32,5 +32,7 @@ namespace OF_DL.Entities
         public bool FolderPerPost { get; set; } = false;
         public bool FolderPerPaidMessage { get; set; } = false;
         public bool FolderPerMessage { get; set; } = false;
+        public bool LimitDownloadRate { get; set; } = false;
+        public int DownloadLimitInMbPerSec { get; set; } = 4;
     }
 }
