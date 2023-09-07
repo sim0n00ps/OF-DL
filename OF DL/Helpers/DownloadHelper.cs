@@ -618,7 +618,7 @@ public class DownloadHelper : IDownloadHelper
     }
     #endregion
 
-            #region normal posts
+    #region normal posts
     public async Task<bool> DownloadPostMedia(string url, string folder, long media_id, ProgressTask task, string? filenameFormat, Post.List? postInfo, Post.Medium? postMedia, Post.Author? author, Dictionary<string, int> users, Config config)
     {
         string path;
