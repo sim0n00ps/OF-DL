@@ -96,6 +96,22 @@ public class APIHelper : IAPIHelper
         return request;
     }
 
+    public static bool IsStringOnlyDigits(string input)
+    {
+        return input.All(char.IsDigit);
+    }
+
+
+    private static HttpClient GetHttpClient(Config? config = null)
+    {
+        var client = new HttpClient();
+        if (config?.Timeout != null && config.Timeout > 0)
+        {
+            client.Timeout = TimeSpan.FromSeconds(config.Timeout.Value);
+        }
+        return client;
+    }
+
 
     public async Task<User?> GetUserInfo(string endpoint, Auth auth)
     {
@@ -599,23 +615,10 @@ public class APIHelper : IAPIHelper
                     getParams["beforePublishTime"] = posts.tailMarker;
                     while (true)
                     {
-                        string loopqueryParams = "?" + string.Join("&", getParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
                         Post newposts = new();
-                        Dictionary<string, string> loopheaders = await GetDynamicHeaders("/api2/v2" + endpoint, loopqueryParams, auth);
-                        HttpClient loopclient = GetHttpClient(config);
+                        var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
+                        newposts = JsonConvert.DeserializeObject<Post>(loopbody, jsonSerializerSettings);
 
-                        HttpRequestMessage looprequest = new(HttpMethod.Get, $"{Constants.API_URL}{endpoint}{loopqueryParams}");
-
-                        foreach (KeyValuePair<string, string> keyValuePair in loopheaders)
-                        {
-                            looprequest.Headers.Add(keyValuePair.Key, keyValuePair.Value);
-                        }
-                        using (var loopresponse = await loopclient.SendAsync(looprequest))
-                        {
-                            loopresponse.EnsureSuccessStatusCode();
-                            var loopbody = await loopresponse.Content.ReadAsStringAsync();
-                            newposts = JsonConvert.DeserializeObject<Post>(loopbody, jsonSerializerSettings);
-                        }
                         posts.list.AddRange(newposts.list);
                         if (!newposts.hasMore)
                         {
@@ -700,23 +703,11 @@ public class APIHelper : IAPIHelper
                     getParams["beforePublishTime"] = archived.tailMarker;
                     while (true)
                     {
-                        string loopqueryParams = "?" + string.Join("&", getParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
                         Archived newarchived = new();
-                        Dictionary<string, string> loopheaders = await GetDynamicHeaders("/api2/v2" + endpoint, loopqueryParams, auth);
-                        HttpClient loopclient = GetHttpClient(config);
 
-                        HttpRequestMessage looprequest = new(HttpMethod.Get, $"{Constants.API_URL}{endpoint}{loopqueryParams}");
+                        var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
+                        newarchived = JsonConvert.DeserializeObject<Archived>(loopbody, jsonSerializerSettings);
 
-                        foreach (KeyValuePair<string, string> keyValuePair in loopheaders)
-                        {
-                            looprequest.Headers.Add(keyValuePair.Key, keyValuePair.Value);
-                        }
-                        using (var loopresponse = await loopclient.SendAsync(looprequest))
-                        {
-                            loopresponse.EnsureSuccessStatusCode();
-                            var loopbody = await loopresponse.Content.ReadAsStringAsync();
-                            newarchived = JsonConvert.DeserializeObject<Archived>(loopbody, jsonSerializerSettings);
-                        }
                         archived.list.AddRange(newarchived.list);
                         if (!newarchived.hasMore)
                         {
@@ -831,33 +822,21 @@ public class APIHelper : IAPIHelper
                     
                 if (highlights.hasMore)
                 {
-                    offset = offset + 5;
+                    offset += 5;
                     getParams["offset"] = offset.ToString();
                     while (true)
                     {
-                        string loopqueryParams = "?" + string.Join("&", getParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
                         Highlights newhighlights = new();
-                        Dictionary<string, string> loopheaders = await GetDynamicHeaders("/api2/v2" + endpoint, loopqueryParams, auth);
-                        HttpClient loopclient = GetHttpClient(config);
 
-                        HttpRequestMessage looprequest = new(HttpMethod.Get, $"{Constants.API_URL}{endpoint}{loopqueryParams}");
+                        var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
+                        newhighlights = JsonConvert.DeserializeObject<Highlights>(loopbody, jsonSerializerSettings);
 
-                        foreach (KeyValuePair<string, string> keyValuePair in loopheaders)
-                        {
-                            looprequest.Headers.Add(keyValuePair.Key, keyValuePair.Value);
-                        }
-                        using (var loopresponse = await loopclient.SendAsync(looprequest))
-                        {
-                            loopresponse.EnsureSuccessStatusCode();
-                            var loopbody = await loopresponse.Content.ReadAsStringAsync();
-                            newhighlights = JsonConvert.DeserializeObject<Highlights>(loopbody, jsonSerializerSettings);
-                        }
                         highlights.list.AddRange(newhighlights.list);
                         if (!newhighlights.hasMore)
                         {
                             break;
                         }
-                        offset = offset + 5;
+                        offset += 5;
                         getParams["offset"] = offset.ToString();
                     }
                 }
@@ -883,14 +862,10 @@ public class APIHelper : IAPIHelper
                         highlight_request.Headers.Add(keyValuePair.Key, keyValuePair.Value);
                     }
 
-                    JsonSerializerSettings highlightJsonSerializerSettings = new()
-                    {
-                        MissingMemberHandling = MissingMemberHandling.Ignore
-                    };
                     using var highlightResponse = await highlight_client.SendAsync(highlight_request);
                     highlightResponse.EnsureSuccessStatusCode();
                     var highlightBody = await highlightResponse.Content.ReadAsStringAsync();
-                    highlightMedia = JsonConvert.DeserializeObject<HighlightMedia>(highlightBody, highlightJsonSerializerSettings);
+                    highlightMedia = JsonConvert.DeserializeObject<HighlightMedia>(highlightBody, jsonSerializerSettings);
                     if (highlightMedia != null)
                     {
                         foreach (HighlightMedia.Story item in highlightMedia.stories)
@@ -936,29 +911,17 @@ public class APIHelper : IAPIHelper
                     getParams["id"] = messages.list[^1].id.ToString();
                     while (true)
                     {
-                        string loopqueryParams = "?" + string.Join("&", getParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
                         Messages newmessages = new();
-                        Dictionary<string, string> loopheaders = await GetDynamicHeaders("/api2/v2" + endpoint, loopqueryParams, auth);
-                        HttpClient loopclient = GetHttpClient(config);
 
-                        HttpRequestMessage looprequest = new(HttpMethod.Get, $"{Constants.API_URL}{endpoint}{loopqueryParams}");
+                        var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
+                        newmessages = JsonConvert.DeserializeObject<Messages>(loopbody, jsonSerializerSettings);
 
-                        foreach (KeyValuePair<string, string> keyValuePair in loopheaders)
-                        {
-                            looprequest.Headers.Add(keyValuePair.Key, keyValuePair.Value);
-                        }
-                        using (var loopresponse = await loopclient.SendAsync(looprequest))
-                        {
-                            loopresponse.EnsureSuccessStatusCode();
-                            var loopbody = await loopresponse.Content.ReadAsStringAsync();
-                            newmessages = JsonConvert.DeserializeObject<Messages>(loopbody, jsonSerializerSettings);
-                        }
                         messages.list.AddRange(newmessages.list);
                         if (!newmessages.hasMore)
                         {
                             break;
                         }
-                        getParams["id"] = newmessages.list[newmessages.list.Count - 1].id.ToString();
+                        getParams["id"] = newmessages.list[^1].id.ToString();
                     }
                 }
 
@@ -1043,23 +1006,11 @@ public class APIHelper : IAPIHelper
                     getParams["offset"] = paidMessages.list.Count.ToString();
                     while (true)
                     {
-                        string loopqueryParams = "?" + string.Join("&", getParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
                         Purchased newpaidMessages = new();
-                        Dictionary<string, string> loopheaders = await GetDynamicHeaders("/api2/v2" + endpoint, loopqueryParams, auth);
-                        HttpClient loopclient = GetHttpClient(config);
 
-                        HttpRequestMessage looprequest = new(HttpMethod.Get, $"{Constants.API_URL}{endpoint}{loopqueryParams}");
+                        var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
+                        newpaidMessages = JsonConvert.DeserializeObject<Purchased>(loopbody, jsonSerializerSettings);
 
-                        foreach (KeyValuePair<string, string> keyValuePair in loopheaders)
-                        {
-                            looprequest.Headers.Add(keyValuePair.Key, keyValuePair.Value);
-                        }
-                        using (var loopresponse = await loopclient.SendAsync(looprequest))
-                        {
-                            loopresponse.EnsureSuccessStatusCode();
-                            var loopbody = await loopresponse.Content.ReadAsStringAsync();
-                            newpaidMessages = JsonConvert.DeserializeObject<Purchased>(loopbody, jsonSerializerSettings);
-                        }
                         paidMessages.list.AddRange(newpaidMessages.list);
                         if (!newpaidMessages.hasMore)
                         {
@@ -1233,68 +1184,43 @@ public class APIHelper : IAPIHelper
 
     public async Task<PaidPostCollection> GetPaidPosts(string endpoint, string folder, string username, Auth auth, Config config, List<long> paid_post_ids)
     {
+        var jsonSerializerSettings = new JsonSerializerSettings();
+        jsonSerializerSettings.MissingMemberHandling = MissingMemberHandling.Ignore;
+
         try
         {
             Purchased paidPosts = new();
             PaidPostCollection paidPostCollection = new();
             int post_limit = 50;
-            Dictionary<string, string> GetParams = new()
+            Dictionary<string, string> getParams = new()
             {
                 { "limit", post_limit.ToString() },
                 { "order", "publish_date_desc" },
                 { "format", "infinite" },
                 { "user_id", username }
             };
-            string queryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
 
-            Dictionary<string, string> headers = await GetDynamicHeaders("/api2/v2" + endpoint, queryParams, auth);
-
-            HttpClient client = GetHttpClient(config);
-
-            HttpRequestMessage request = new(HttpMethod.Get, $"{Constants.API_URL}{endpoint}{queryParams}");
-
-            foreach (KeyValuePair<string, string> keyValuePair in headers)
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
+            paidPosts = JsonConvert.DeserializeObject<Purchased>(body, jsonSerializerSettings);
+            if (paidPosts != null && paidPosts.hasMore)
             {
-                request.Headers.Add(keyValuePair.Key, keyValuePair.Value);
-            }
-
-            var jsonSerializerSettings = new JsonSerializerSettings();
-            jsonSerializerSettings.MissingMemberHandling = MissingMemberHandling.Ignore;
-            using (var response = await client.SendAsync(request))
-            {
-                response.EnsureSuccessStatusCode();
-                var body = await response.Content.ReadAsStringAsync();
-                paidPosts = JsonConvert.DeserializeObject<Purchased>(body, jsonSerializerSettings);
-                if (paidPosts != null && paidPosts.hasMore)
+                getParams["offset"] = paidPosts.list.Count.ToString();
+                while (true)
                 {
-                    GetParams["offset"] = paidPosts.list.Count.ToString();
-                    while (true)
+
+                    Purchased newPaidPosts = new();
+
+                    var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
+                    newPaidPosts = JsonConvert.DeserializeObject<Purchased>(loopbody, jsonSerializerSettings);
+
+                    paidPosts.list.AddRange(newPaidPosts.list);
+                    if (!newPaidPosts.hasMore)
                     {
-                        string loopqueryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
-                        Purchased newPaidPosts = new();
-                        Dictionary<string, string> loopheaders = await GetDynamicHeaders("/api2/v2" + endpoint, loopqueryParams, auth);
-                        HttpClient loopclient = GetHttpClient(config);
-
-                        HttpRequestMessage looprequest = new(HttpMethod.Get, $"{Constants.API_URL}{endpoint}{loopqueryParams}");
-
-                        foreach (KeyValuePair<string, string> keyValuePair in loopheaders)
-                        {
-                            looprequest.Headers.Add(keyValuePair.Key, keyValuePair.Value);
-                        }
-                        using (var loopresponse = await loopclient.SendAsync(looprequest))
-                        {
-                            loopresponse.EnsureSuccessStatusCode();
-                            var loopbody = await loopresponse.Content.ReadAsStringAsync();
-                            newPaidPosts = JsonConvert.DeserializeObject<Purchased>(loopbody, jsonSerializerSettings);
-                        }
-                        paidPosts.list.AddRange(newPaidPosts.list);
-                        if (!newPaidPosts.hasMore)
-                        {
-                            break;
-                        }
-                        GetParams["offset"] = Convert.ToString(Convert.ToInt32(GetParams["offset"]) + post_limit);
+                        break;
                     }
+                    getParams["offset"] = Convert.ToString(Convert.ToInt32(getParams["offset"]) + post_limit);
                 }
+
             }
 
             DBHelper dBHelper = new();
@@ -1415,6 +1341,11 @@ public class APIHelper : IAPIHelper
 
     public async Task<PostCollection> GetPosts(string endpoint, string folder, Auth auth, Config config, List<long> paid_post_ids)
     {
+        JsonSerializerSettings jsonSerializerSettings = new()
+        {
+            MissingMemberHandling = MissingMemberHandling.Ignore
+        };
+
         try
         {
             Post posts = new();
@@ -1427,36 +1358,24 @@ public class APIHelper : IAPIHelper
                 { "format", "infinite" }
             };
 
-            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth);
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, new HttpClient());
             posts = JsonConvert.DeserializeObject<Post>(body, jsonSerializerSettings);
             if (posts != null && posts.hasMore)
             {
-                GetParams["beforePublishTime"] = posts.tailMarker;
+                getParams["beforePublishTime"] = posts.tailMarker;
                 while (true)
                 {
-                    string loopqueryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
                     Post newposts = new();
-                    Dictionary<string, string> loopheaders = await GetDynamicHeaders("/api2/v2" + endpoint, loopqueryParams, auth);
-                    HttpClient loopclient = GetHttpClient(config);
+                    
+                    var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
+                    newposts = JsonConvert.DeserializeObject<Post>(loopbody, jsonSerializerSettings);
 
-                    HttpRequestMessage looprequest = new(HttpMethod.Get, $"{Constants.API_URL}{endpoint}{loopqueryParams}");
-
-                    foreach (KeyValuePair<string, string> keyValuePair in loopheaders)
-                    {
-                        looprequest.Headers.Add(keyValuePair.Key, keyValuePair.Value);
-                    }
-                    using (var loopresponse = await loopclient.SendAsync(looprequest))
-                    {
-                        loopresponse.EnsureSuccessStatusCode();
-                        var loopbody = await loopresponse.Content.ReadAsStringAsync();
-                        newposts = JsonConvert.DeserializeObject<Post>(loopbody, jsonSerializerSettings);
-                    }
                     posts.list.AddRange(newposts.list);
                     if (!newposts.hasMore)
                     {
                         break;
                     }
-                    GetParams["beforePublishTime"] = newposts.tailMarker;
+                    getParams["beforePublishTime"] = newposts.tailMarker;
                 }
             }
 
@@ -1547,12 +1466,17 @@ public class APIHelper : IAPIHelper
 
     public async Task<ArchivedCollection> GetArchived(string endpoint, string folder, Auth auth, Config config)
     {
+        JsonSerializerSettings jsonSerializerSettings = new()
+        {
+            MissingMemberHandling = MissingMemberHandling.Ignore
+        };
+
         try
         {
             Archived archived = new();
             ArchivedCollection archivedCollection = new();
             int post_limit = 50;
-            Dictionary<string, string> GetParams = new()
+            Dictionary<string, string> getParams = new()
             {
                 { "limit", post_limit.ToString() },
                 { "order", "publish_date_desc" },
@@ -1560,113 +1484,82 @@ public class APIHelper : IAPIHelper
                 { "label", "archived" }
             };
 
-            string queryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
-            Dictionary<string, string> headers = await GetDynamicHeaders("/api2/v2" + endpoint, queryParams, auth);
-
-            HttpClient client = GetHttpClient(config);
-
-            HttpRequestMessage request = new(HttpMethod.Get, $"{Constants.API_URL}{endpoint}{queryParams}");
-
-            foreach (KeyValuePair<string, string> keyValuePair in headers)
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
+            archived = JsonConvert.DeserializeObject<Archived>(body, jsonSerializerSettings);
+            if (archived != null && archived.hasMore)
             {
-                request.Headers.Add(keyValuePair.Key, keyValuePair.Value);
+                getParams["beforePublishTime"] = archived.tailMarker;
+                while (true)
+                {
+                    Archived newarchived = new();
+
+                    var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
+                    newarchived = JsonConvert.DeserializeObject<Archived>(loopbody, jsonSerializerSettings);
+
+                    archived.list.AddRange(newarchived.list);
+                    if (!newarchived.hasMore)
+                    {
+                        break;
+                    }
+                    getParams["beforePublishTime"] = newarchived.tailMarker;
+                }
             }
 
-            var jsonSerializerSettings = new JsonSerializerSettings();
-            jsonSerializerSettings.MissingMemberHandling = MissingMemberHandling.Ignore;
-            using (var response = await client.SendAsync(request))
+            DBHelper dBHelper = new();
+            foreach (Archived.List archive in archived.list)
             {
-                response.EnsureSuccessStatusCode();
-                var body = await response.Content.ReadAsStringAsync();
-                archived = JsonConvert.DeserializeObject<Archived>(body, jsonSerializerSettings);
-                if (archived != null && archived.hasMore)
+                List<long> previewids = new();
+                if (archive.preview != null)
                 {
-                    GetParams["beforePublishTime"] = archived.tailMarker;
-                    while (true)
+                    for (int i = 0; i < archive.preview.Count; i++)
                     {
-                        string loopqueryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
-                       
-                        Archived newarchived = new();
-                        Dictionary<string, string> loopheaders = await GetDynamicHeaders("/api2/v2" + endpoint, loopqueryParams, auth);
-                        HttpClient loopclient = GetHttpClient(config);
-
-                        HttpRequestMessage looprequest = new(HttpMethod.Get, $"{Constants.API_URL}{endpoint}{loopqueryParams}");
-
-                        foreach (KeyValuePair<string, string> keyValuePair in loopheaders)
+                        if (archive.preview[i]?.ToString() != "poll")
                         {
-                            looprequest.Headers.Add(keyValuePair.Key, keyValuePair.Value);
+                            if (!previewids.Contains((long)archive.preview[i]))
+                            {
+                                previewids.Add((long)archive.preview[i]);
+                            }
                         }
-                        using (var loopresponse = await loopclient.SendAsync(looprequest))
-                        {
-                            loopresponse.EnsureSuccessStatusCode();
-                            var loopbody = await loopresponse.Content.ReadAsStringAsync();
-                            newarchived = JsonConvert.DeserializeObject<Archived>(loopbody, jsonSerializerSettings);
-                        }
-                        archived.list.AddRange(newarchived.list);
-                        if (!newarchived.hasMore)
-                        {
-                            break;
-                        }
-                        GetParams["beforePublishTime"] = newarchived.tailMarker;
                     }
                 }
-
-                DBHelper dBHelper = new();
-                foreach (Archived.List archive in archived.list)
+                await dBHelper.AddPost(folder, archive.id, archive.text != null ? archive.text : string.Empty, archive.price != null ? archive.price.ToString() : "0", archive.price != null && archive.isOpened ? true : false, archive.isArchived, archive.postedAt);
+                archivedCollection.ArchivedPostObjects.Add(archive);
+                if (archive.media != null && archive.media.Count > 0)
                 {
-                    List<long> previewids = new();
-                    if (archive.preview != null)
+                    foreach (Archived.Medium medium in archive.media)
                     {
-                        for (int i = 0; i < archive.preview.Count; i++)
+                        if (medium.type == "photo" && !config.DownloadImages)
                         {
-                            if (archive.preview[i]?.ToString() != "poll")
+                            continue;
+                        }
+                        if (medium.type == "video" && !config.DownloadVideos)
+                        {
+                            continue;
+                        }
+                        if (medium.type == "gif" && !config.DownloadVideos)
+                        {
+                            continue;
+                        }
+                        if (medium.type == "audio" && !config.DownloadAudios)
+                        {
+                            continue;
+                        }
+                        if (medium.canView && medium.files?.drm == null && !medium.source.source.Contains("upload"))
+                        {
+                            if (!archivedCollection.ArchivedPosts.ContainsKey(medium.id))
                             {
-                                if (!previewids.Contains((long)archive.preview[i]))
-                                {
-                                    previewids.Add((long)archive.preview[i]);
-                                }
+                                await dBHelper.AddMedia(folder, medium.id, archive.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
+                                archivedCollection.ArchivedPosts.Add(medium.id, medium.source.source);
+                                archivedCollection.ArchivedPostMedia.Add(medium);
                             }
                         }
-                    }
-                    await dBHelper.AddPost(folder, archive.id, archive.text != null ? archive.text : string.Empty, archive.price != null ? archive.price.ToString() : "0", archive.price != null && archive.isOpened ? true : false, archive.isArchived, archive.postedAt);
-                    archivedCollection.ArchivedPostObjects.Add(archive);
-                    if (archive.media != null && archive.media.Count > 0)
-                    {
-                        foreach (Archived.Medium medium in archive.media)
+                        else if (medium.canView && medium.files != null && medium.files.drm != null)
                         {
-                            if (medium.type == "photo" && !config.DownloadImages)
+                            if (!archivedCollection.ArchivedPosts.ContainsKey(medium.id))
                             {
-                                continue;
-                            }
-                            if (medium.type == "video" && !config.DownloadVideos)
-                            {
-                                continue;
-                            }
-                            if (medium.type == "gif" && !config.DownloadVideos)
-                            {
-                                continue;
-                            }
-                            if (medium.type == "audio" && !config.DownloadAudios)
-                            {
-                                continue;
-                            }
-                            if (medium.canView && medium.files?.drm == null && !medium.source.source.Contains("upload"))
-                            {
-                                if (!archivedCollection.ArchivedPosts.ContainsKey(medium.id))
-                                {
-                                    await dBHelper.AddMedia(folder, medium.id, archive.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
-                                    archivedCollection.ArchivedPosts.Add(medium.id, medium.source.source);
-                                    archivedCollection.ArchivedPostMedia.Add(medium);
-                                }
-                            }
-                            else if(medium.canView && medium.files != null && medium.files.drm != null)
-                            {
-                                if (!archivedCollection.ArchivedPosts.ContainsKey(medium.id))
-                                {
-                                    await dBHelper.AddMedia(folder, medium.id, archive.id, medium.files.drm.manifest.dash, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
-                                    archivedCollection.ArchivedPosts.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{archive.id}");
-                                    archivedCollection.ArchivedPostMedia.Add(medium);
-                                }
+                                await dBHelper.AddMedia(folder, medium.id, archive.id, medium.files.drm.manifest.dash, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
+                                archivedCollection.ArchivedPosts.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{archive.id}");
+                                archivedCollection.ArchivedPostMedia.Add(medium);
                             }
                         }
                     }
@@ -1699,49 +1592,22 @@ public class APIHelper : IAPIHelper
             Messages messages = new();
             MessageCollection messageCollection = new();
             int post_limit = 50;
-            Dictionary<string, string> GetParams = new()
+            Dictionary<string, string> getParams = new()
             {
                 { "limit", post_limit.ToString() },
                 { "order", "desc" }
             };
-            string queryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
 
-            Dictionary<string, string> headers = await GetDynamicHeaders("/api2/v2" + endpoint, queryParams, auth);
-
-            HttpClient client = GetHttpClient(config);
-
-            HttpRequestMessage request = new(HttpMethod.Get, $"{Constants.API_URL}{endpoint}{queryParams}");
-
-            foreach (KeyValuePair<string, string> keyValuePair in headers)
-            {
-                request.Headers.Add(keyValuePair.Key, keyValuePair.Value);
-            }
-
-            using var response = await client.SendAsync(request);
-
-            response.EnsureSuccessStatusCode();
-            var body = await response.Content.ReadAsStringAsync();
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
             messages = JsonConvert.DeserializeObject<Messages>(body, jsonSerializerSettings);
             if (messages.hasMore)
             {
-                GetParams["id"] = messages.list[messages.list.Count - 1].id.ToString();
+                getParams["id"] = messages.list[^1].id.ToString();
                 while (true)
                 {
-                    string loopqueryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
                     Messages newmessages = new();
-                    Dictionary<string, string> loopheaders = await GetDynamicHeaders("/api2/v2" + endpoint, loopqueryParams, auth);
-                    HttpClient loopclient = GetHttpClient(config);
 
-                    HttpRequestMessage looprequest = new(HttpMethod.Get, $"{Constants.API_URL}{endpoint}{loopqueryParams}");
-
-                    foreach (KeyValuePair<string, string> keyValuePair in loopheaders)
-                    {
-                        looprequest.Headers.Add(keyValuePair.Key, keyValuePair.Value);
-                    }
-                    using var loopresponse = await loopclient.SendAsync(looprequest);
-
-                    loopresponse.EnsureSuccessStatusCode();
-                    var loopbody = await loopresponse.Content.ReadAsStringAsync();
+                    var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
                     newmessages = JsonConvert.DeserializeObject<Messages>(loopbody, jsonSerializerSettings);
 
                     messages.list.AddRange(newmessages.list);
@@ -1749,7 +1615,7 @@ public class APIHelper : IAPIHelper
                     {
                         break;
                     }
-                    GetParams["id"] = newmessages.list[newmessages.list.Count - 1].id.ToString();
+                    getParams["id"] = newmessages.list[newmessages.list.Count - 1].id.ToString();
                 }
             }
 
@@ -1911,37 +1777,22 @@ public class APIHelper : IAPIHelper
             Purchased paidMessages = new();
             PaidMessageCollection paidMessageCollection = new();
             int post_limit = 50;
-            Dictionary<string, string> GetParams = new()
+            Dictionary<string, string> getParams = new()
             {
                 { "limit", post_limit.ToString() },
                 { "order", "publish_date_desc" },
                 { "format", "infinite" },
                 { "user_id", username }
             };
-            string queryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
 
-            Dictionary<string, string> headers = await GetDynamicHeaders("/api2/v2" + endpoint, queryParams, auth);
-
-            HttpClient client = GetHttpClient(config);
-
-            HttpRequestMessage request = new(HttpMethod.Get, $"{Constants.API_URL}{endpoint}{queryParams}");
-
-            foreach (KeyValuePair<string, string> keyValuePair in headers)
-            {
-                request.Headers.Add(keyValuePair.Key, keyValuePair.Value);
-            }
-
-            using var response = await client.SendAsync(request);
-
-            response.EnsureSuccessStatusCode();
-            var body = await response.Content.ReadAsStringAsync();
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
             paidMessages = JsonConvert.DeserializeObject<Purchased>(body, jsonSerializerSettings);
             if (paidMessages != null && paidMessages.hasMore)
             {
-                GetParams["offset"] = paidMessages.list.Count.ToString();
+                getParams["offset"] = paidMessages.list.Count.ToString();
                 while (true)
                 {
-                    string loopqueryParams = "?" + string.Join("&", GetParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
+                    string loopqueryParams = "?" + string.Join("&", getParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
                     Purchased newpaidMessages = new();
                     Dictionary<string, string> loopheaders = await GetDynamicHeaders("/api2/v2" + endpoint, loopqueryParams, auth);
                     HttpClient loopclient = GetHttpClient(config);
@@ -1963,7 +1814,7 @@ public class APIHelper : IAPIHelper
                     {
                         break;
                     }
-                    GetParams["offset"] = Convert.ToString(Convert.ToInt32(GetParams["offset"]) + post_limit);
+                    getParams["offset"] = Convert.ToString(Convert.ToInt32(getParams["offset"]) + post_limit);
                 }
             }
 
@@ -2299,22 +2150,5 @@ public class APIHelper : IAPIHelper
             }
         }
         return null;
-    }
-
-
-    public static bool IsStringOnlyDigits(string input)
-    {
-        return input.All(char.IsDigit); 
-    }
-
-
-    private static HttpClient GetHttpClient(Config? config = null)
-    {
-        var client = new HttpClient();
-        if (config?.Timeout != null && config.Timeout > 0)
-        {
-            client.Timeout = TimeSpan.FromSeconds(config.Timeout.Value);
-        }
-        return client;
     }
 }
