@@ -107,6 +107,14 @@ public class APIHelper : IAPIHelper
         return request;
     }
 
+    private static double ConvertToUnixTimestampWithMicrosecondPrecision(DateTime date)
+    {
+        DateTime origin = new(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+        TimeSpan diff = date.ToUniversalTime() - origin;
+
+        return diff.TotalSeconds;  // This gives the number of seconds. If you need milliseconds, use diff.TotalMilliseconds
+    }
+
     public static bool IsStringOnlyDigits(string input)
     {
         return input.All(char.IsDigit);
@@ -123,6 +131,37 @@ public class APIHelper : IAPIHelper
         return client;
     }
 
+    private void UpdateGetParamsForDateSelection(Config config, ref Dictionary<string, string> getParams, DateTime dt)
+    {
+        UpdateGetParamsForDateSelection(
+            config,
+            ref getParams,
+            $"{ConvertToUnixTimestampWithMicrosecondPrecision(dt):0.000000}");
+    }
+
+    private void UpdateGetParamsForDateSelection(Config config, ref Dictionary<string, string> getParams, string unixTimeStampInMicrosec)
+    {
+        
+        if (config.DownloadOnlySpecificDates)
+        {
+            switch (config.DownloadDateSelection)
+            {
+                case Enumerations.DownloadDateSelection.before:
+                    getParams["beforePublishTime"] = unixTimeStampInMicrosec;
+                    break;
+                case Enumerations.DownloadDateSelection.after:
+                    getParams["order"] = "publish_date_asc";
+                    getParams["afterPublishTime"] = unixTimeStampInMicrosec;
+                    break;
+            }
+        }
+        else
+        {
+            getParams["beforePublishTime"] = unixTimeStampInMicrosec;
+        }
+    }
+
+
 
     public async Task<User?> GetUserInfo(string endpoint, Auth auth)
     {
@@ -136,10 +175,8 @@ public class APIHelper : IAPIHelper
                 { "order", "publish_date_asc" }
             };
 
-            string queryParams = "?" + string.Join("&", getParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
-
             HttpClient client = new();
-            HttpRequestMessage request = await BuildHttpRequestMessage(getParams, queryParams, auth);
+            HttpRequestMessage request = await BuildHttpRequestMessage(getParams, endpoint, auth);
 
             using var response = await client.SendAsync(request);
 
@@ -1346,11 +1383,21 @@ public class APIHelper : IAPIHelper
                 { "format", "infinite" }
             };
 
+            UpdateGetParamsForDateSelection(
+                config,
+                ref getParams,
+                config.CustomDate);
+
             var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, new HttpClient());
             posts = JsonConvert.DeserializeObject<Post>(body, m_JsonSerializerSettings);
             if (posts != null && posts.hasMore)
             {
-                getParams["beforePublishTime"] = posts.tailMarker;
+
+                UpdateGetParamsForDateSelection(
+                    config,
+                    ref getParams,
+                    posts.tailMarker);
+
                 while (true)
                 {
                     Post newposts = new();
@@ -1363,7 +1410,11 @@ public class APIHelper : IAPIHelper
                     {
                         break;
                     }
-                    getParams["beforePublishTime"] = newposts.tailMarker;
+
+                    UpdateGetParamsForDateSelection(
+                        config,
+                        ref getParams,
+                        posts.tailMarker);
                 }
             }
 
