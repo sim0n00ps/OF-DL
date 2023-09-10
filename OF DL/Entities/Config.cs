@@ -47,7 +47,7 @@ namespace OF_DL.Entities
         // This is the specific date used in combination with the above enum.
 
         [JsonConverter(typeof(ShortDateConverter))]
-        public DateTime CustomDate { get; set; } = DateTime.Now;
+        public DateTime? CustomDate { get; set; } = null;
 
     }
 

@@ -140,14 +140,14 @@ public class APIHelper : IAPIHelper
     /// <param name="config"></param>
     /// <param name="getParams"></param>
     /// <param name="dt"></param>
-    private static void UpdateGetParamsForDateSelection(Config config, ref Dictionary<string, string> getParams, DateTime dt)
+    private static void UpdateGetParamsForDateSelection(Config config, ref Dictionary<string, string> getParams, DateTime? dt)
     {
-        if (config.DownloadOnlySpecificDates)
+        if (config.DownloadOnlySpecificDates && dt.HasValue)
         {
             UpdateGetParamsForDateSelection(
                 config,
                 ref getParams,
-                $"{ConvertToUnixTimestampWithMicrosecondPrecision(dt):0.000000}");
+                $"{ConvertToUnixTimestampWithMicrosecondPrecision(dt.Value):0.000000}");
         }
     }
 
