@@ -19,14 +19,15 @@ namespace OF_DL.Helpers;
 
 public class APIHelper : IAPIHelper
 {
-    private readonly JsonSerializerSettings m_JsonSerializerSettings;
-
-    public APIHelper()
+    private static readonly JsonSerializerSettings m_JsonSerializerSettings;
+    private static readonly IDBHelper m_DBHelper;
+    static APIHelper()
     {
         m_JsonSerializerSettings = new()
         {
             MissingMemberHandling = MissingMemberHandling.Ignore
         };
+        m_DBHelper = new DBHelper();
     }
 
 
@@ -563,7 +564,6 @@ public class APIHelper : IAPIHelper
                     }
                 }
 
-                DBHelper dBHelper = new();
                 foreach (Purchased.List purchase in paidposts.list)
                 {
                     if (purchase.responseType == "post" && purchase.media != null && purchase.media.Count > 0)
@@ -579,7 +579,7 @@ public class APIHelper : IAPIHelper
                                 }
                             }
                         }
-                        await dBHelper.AddPost(folder: folder,
+                        await m_DBHelper.AddPost(folder: folder,
                                                post_id: purchase.id,
                                                message_text: purchase.text ?? string.Empty,
                                                price: purchase.price != null ? purchase.price.ToString() : "0",
@@ -610,7 +610,7 @@ public class APIHelper : IAPIHelper
                                 bool has = previewids.Any(cus => cus.Equals(medium.id));
                                 if (!has && medium.canView && medium.source != null && medium.source.source != null && !medium.source.source.Contains("upload"))
                                 {
-                                    await dBHelper.AddMedia(folder: folder,
+                                    await m_DBHelper.AddMedia(folder: folder,
                                                             media_id: medium.id,
                                                             post_id: purchase.id,
                                                             link: medium.source.source,
@@ -629,7 +629,7 @@ public class APIHelper : IAPIHelper
                                 }
                                 else if (!has && medium.canView && medium.files != null && medium.files.drm != null)
                                 {
-                                    await dBHelper.AddMedia(folder, medium.id, purchase.id, medium.files.drm.manifest.dash, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
+                                    await m_DBHelper.AddMedia(folder, medium.id, purchase.id, medium.files.drm.manifest.dash, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
                                     if (!return_urls.ContainsKey(medium.id))
                                     {
                                         return_urls.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{purchase.id}");
@@ -641,7 +641,7 @@ public class APIHelper : IAPIHelper
                             {
                                 if (medium.canView && medium.source != null && medium.source.source != null && !medium.source.source.Contains("upload"))
                                 {
-                                    await dBHelper.AddMedia(folder, medium.id, purchase.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
+                                    await m_DBHelper.AddMedia(folder, medium.id, purchase.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
                                     if (!return_urls.ContainsKey(medium.id))
                                     {
                                         return_urls.Add(medium.id, medium.source.source);
@@ -649,7 +649,7 @@ public class APIHelper : IAPIHelper
                                 }
                                 else if (medium.canView && medium.files != null && medium.files.drm != null)
                                 {
-                                    await dBHelper.AddMedia(folder, medium.id, purchase.id, medium.files.drm.manifest.dash, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
+                                    await m_DBHelper.AddMedia(folder, medium.id, purchase.id, medium.files.drm.manifest.dash, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
                                     if (!return_urls.ContainsKey(medium.id))
                                     {
                                         return_urls.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{purchase.id}");
@@ -688,7 +688,6 @@ public class APIHelper : IAPIHelper
                     }
                 }
 
-                DBHelper dBHelper = new();
                 foreach (Post.List post in posts.list.Where(p => config.SkipAds == false || (!p.rawText.Contains("#ad") && !p.rawText.Contains("/trial/"))))
                 {
                     List<long> postPreviewIds = new();
@@ -705,7 +704,7 @@ public class APIHelper : IAPIHelper
                             }
                         }
                     }
-                    await dBHelper.AddPost(folder, post.id, post.text != null ? post.text : string.Empty, post.price != null ? post.price.ToString() : "0", post.price != null && post.isOpened ? true : false, post.isArchived, post.postedAt);
+                    await m_DBHelper.AddPost(folder, post.id, post.text != null ? post.text : string.Empty, post.price != null ? post.price.ToString() : "0", post.price != null && post.isOpened ? true : false, post.isArchived, post.postedAt);
                     if (post.media != null && post.media.Count > 0)
                     {
                         foreach (Post.Medium medium in post.media)
@@ -733,7 +732,7 @@ public class APIHelper : IAPIHelper
                                 {
                                     if (!return_urls.ContainsKey(medium.id))
                                     {
-                                        await dBHelper.AddMedia(folder, medium.id, post.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), postPreviewIds.Contains((long)medium.id) ? true : false, false, null);
+                                        await m_DBHelper.AddMedia(folder, medium.id, post.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), postPreviewIds.Contains((long)medium.id) ? true : false, false, null);
                                         return_urls.Add(medium.id, medium.source.source);
                                     }
                                 }
@@ -745,7 +744,7 @@ public class APIHelper : IAPIHelper
                                 {
                                     if (!return_urls.ContainsKey(medium.id))
                                     {
-                                        await dBHelper.AddMedia(folder, medium.id, post.id, medium.files.drm.manifest.dash, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), postPreviewIds.Contains((long)medium.id) ? true : false, false, null);
+                                        await m_DBHelper.AddMedia(folder, medium.id, post.id, medium.files.drm.manifest.dash, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), postPreviewIds.Contains((long)medium.id) ? true : false, false, null);
                                         return_urls.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{post.id}");
                                     }
                                 }
@@ -783,7 +782,6 @@ public class APIHelper : IAPIHelper
                     }
                 }
 
-                DBHelper dBHelper = new();
                 foreach (Archived.List archive in archived.list)
                 {
                     List<long> previewids = new();
@@ -800,7 +798,7 @@ public class APIHelper : IAPIHelper
                             }
                         }
                     }
-                    await dBHelper.AddPost(folder, archive.id, archive.text != null ? archive.text : string.Empty, archive.price != null ? archive.price.ToString() : "0", archive.price != null && archive.isOpened ? true : false, archive.isArchived, archive.postedAt);
+                    await m_DBHelper.AddPost(folder, archive.id, archive.text != null ? archive.text : string.Empty, archive.price != null ? archive.price.ToString() : "0", archive.price != null && archive.isOpened ? true : false, archive.isArchived, archive.postedAt);
                     if (archive.media != null && archive.media.Count > 0)
                     {
                         foreach (Archived.Medium medium in archive.media)
@@ -825,7 +823,7 @@ public class APIHelper : IAPIHelper
                             {
                                 if (!return_urls.ContainsKey(medium.id))
                                 {
-                                    await dBHelper.AddMedia(folder, medium.id, archive.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
+                                    await m_DBHelper.AddMedia(folder, medium.id, archive.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
                                     return_urls.Add(medium.id, medium.source.source);
                                 }
                             }
@@ -838,22 +836,21 @@ public class APIHelper : IAPIHelper
                 stories = JsonConvert.DeserializeObject<List<Stories>>(body, m_JsonSerializerSettings);
                 stories = stories.OrderByDescending(x => x.createdAt).ToList();
                     
-                DBHelper dBHelper = new();
                 foreach (Stories story in stories)
                 {
                     if (story.createdAt != null)
                     {
-                        await dBHelper.AddStory(folder, story.id, string.Empty, "0", false, false, story.createdAt);
+                        await m_DBHelper.AddStory(folder, story.id, string.Empty, "0", false, false, story.createdAt);
                     }
                     else
                     {
-                        await dBHelper.AddStory(folder, story.id, string.Empty, "0", false, false, story.media[0].createdAt);
+                        await m_DBHelper.AddStory(folder, story.id, string.Empty, "0", false, false, story.media[0].createdAt);
                     }
                     if (story.media != null && story.media.Count > 0)
                     {
                         foreach (Stories.Medium medium in story.media)
                         {
-                            await dBHelper.AddMedia(folder, medium.id, story.id, medium.files.source.url, null, null, null, "Stories", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), false, false, null);
+                            await m_DBHelper.AddMedia(folder, medium.id, story.id, medium.files.source.url, null, null, null, "Stories", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), false, false, null);
                             if (medium.type == "photo" && !config.DownloadImages)
                             {
                                 continue;
@@ -913,7 +910,7 @@ public class APIHelper : IAPIHelper
                         highlight_ids.Add(list.id.ToString());
                     }
                 }
-                DBHelper dBHelper = new();
+
                 foreach (string highlight_id in highlight_ids)
                 {
                     HighlightMedia highlightMedia = new();
@@ -936,12 +933,12 @@ public class APIHelper : IAPIHelper
                     {
                         foreach (HighlightMedia.Story item in highlightMedia.stories)
                         {
-                            await dBHelper.AddStory(folder, item.id, string.Empty, "0", false, false, item.createdAt);
+                            await m_DBHelper.AddStory(folder, item.id, string.Empty, "0", false, false, item.createdAt);
                             if (item.media.Count > 0 && !item.media[0].files.source.url.Contains("upload"))
                             {
                                 foreach (HighlightMedia.Medium medium in item.media)
                                 {
-                                    await dBHelper.AddMedia(folder, medium.id, item.id, item.media[0].files.source.url, null, null, null, "Stories", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), false, false, null);
+                                    await m_DBHelper.AddMedia(folder, medium.id, item.id, item.media[0].files.source.url, null, null, null, "Stories", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), false, false, null);
                                     if (medium.type == "photo" && !config.DownloadImages)
                                     {
                                         continue;
@@ -991,7 +988,6 @@ public class APIHelper : IAPIHelper
                     }
                 }
 
-                DBHelper dBHelper = new();
                 foreach (Messages.List list in messages.list.Where(p => config.SkipAds == false || (!p.text.Contains("#ad") && !p.text.Contains("/trial/"))))
                 {
                     List<long> messagePreviewIds = new();
@@ -1005,14 +1001,14 @@ public class APIHelper : IAPIHelper
                             }
                         }
                     }
-                    await dBHelper.AddMessage(folder, list.id, list.text != null ? list.text : string.Empty, list.price != null ? list.price.ToString() : "0", list.canPurchaseReason == "opened" ? true : list.canPurchaseReason != "opened" ? false : (bool?)null ?? false, false, list.createdAt.HasValue ? list.createdAt.Value : DateTime.Now, list.fromUser != null && list.fromUser.id != null ? list.fromUser.id.Value : int.MinValue);
+                    await m_DBHelper.AddMessage(folder, list.id, list.text != null ? list.text : string.Empty, list.price != null ? list.price.ToString() : "0", list.canPurchaseReason == "opened" ? true : list.canPurchaseReason != "opened" ? false : (bool?)null ?? false, false, list.createdAt.HasValue ? list.createdAt.Value : DateTime.Now, list.fromUser != null && list.fromUser.id != null ? list.fromUser.id.Value : int.MinValue);
                     if (list.canPurchaseReason != "opened" && list.media != null && list.media.Count > 0)
                     {
                         foreach (Messages.Medium medium in list.media)
                         {
                             if (medium.canView && medium.source.source != null && !medium.source.source.Contains("upload"))
                             {
-                                await dBHelper.AddMedia(folder, medium.id, list.id, medium.source.source, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), messagePreviewIds.Contains(medium.id) ? true : false, false, null);
+                                await m_DBHelper.AddMedia(folder, medium.id, list.id, medium.source.source, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), messagePreviewIds.Contains(medium.id) ? true : false, false, null);
 
                                 if (medium.type == "photo" && !config.DownloadImages)
                                 {
@@ -1037,7 +1033,7 @@ public class APIHelper : IAPIHelper
                             }
                             else if (medium.canView && medium.files != null && medium.files.drm != null)
                             {
-                                await dBHelper.AddMedia(folder, medium.id, list.id, medium.files.drm.manifest.dash, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), messagePreviewIds.Contains(medium.id) ? true : false, false, null);
+                                await m_DBHelper.AddMedia(folder, medium.id, list.id, medium.files.drm.manifest.dash, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), messagePreviewIds.Contains(medium.id) ? true : false, false, null);
                                 if (medium.type == "photo" && !config.DownloadImages)
                                 {
                                     continue;
@@ -1086,16 +1082,15 @@ public class APIHelper : IAPIHelper
                     }
                 }
 
-                DBHelper dBHelper = new();
                 foreach (Purchased.List purchase in paidMessages.list.Where(p => p.responseType == "message").OrderByDescending(p => p.postedAt ?? p.createdAt))
                 {
                     if (purchase.postedAt != null)
                     {
-                        await dBHelper.AddMessage(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price != null ? purchase.price : "0", true, false, purchase.postedAt.Value, purchase.fromUser.id);
+                        await m_DBHelper.AddMessage(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price != null ? purchase.price : "0", true, false, purchase.postedAt.Value, purchase.fromUser.id);
                     }
                     else
                     {
-                        await dBHelper.AddMessage(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price != null ? purchase.price : "0", true, false, purchase.createdAt.Value, purchase.fromUser.id);
+                        await m_DBHelper.AddMessage(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price != null ? purchase.price : "0", true, false, purchase.createdAt.Value, purchase.fromUser.id);
                     }
 
                     if (purchase.media != null && purchase.media.Count > 0)
@@ -1129,7 +1124,7 @@ public class APIHelper : IAPIHelper
                                 bool has = previewids.Any(cus => cus.Equals(medium.id));
                                 if (!has && medium.canView && medium.source != null && medium.source.source != null && !medium.source.source.Contains("upload"))
                                 {
-                                    await dBHelper.AddMedia(folder, medium.id, purchase.id, medium.source.source, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
+                                    await m_DBHelper.AddMedia(folder, medium.id, purchase.id, medium.source.source, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
                                     if (medium.type == "photo" && !config.DownloadImages)
                                     {
                                         continue;
@@ -1153,7 +1148,7 @@ public class APIHelper : IAPIHelper
                                 }
                                 else if (!has && medium.canView && medium.files != null && medium.files.drm != null)
                                 {
-                                    await dBHelper.AddMedia(folder, medium.id, purchase.id, medium.files.drm.manifest.dash, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
+                                    await m_DBHelper.AddMedia(folder, medium.id, purchase.id, medium.files.drm.manifest.dash, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
                                     if (medium.type == "photo" && !config.DownloadImages)
                                     {
                                         continue;
@@ -1180,7 +1175,7 @@ public class APIHelper : IAPIHelper
                             {
                                 if (medium.canView && medium.source != null && medium.source.source != null && !medium.source.source.Contains("upload"))
                                 {
-                                    await dBHelper.AddMedia(folder, medium.id, purchase.id, medium.source.source, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
+                                    await m_DBHelper.AddMedia(folder, medium.id, purchase.id, medium.source.source, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
                                     if (medium.type == "photo" && !config.DownloadImages)
                                     {
                                         continue;
@@ -1204,7 +1199,7 @@ public class APIHelper : IAPIHelper
                                 }
                                 else if (medium.canView && medium.files != null && medium.files.drm != null)
                                 {
-                                    await dBHelper.AddMedia(folder, medium.id, purchase.id, medium.files.drm.manifest.dash, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
+                                    await m_DBHelper.AddMedia(folder, medium.id, purchase.id, medium.files.drm.manifest.dash, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
                                     if (medium.type == "photo" && !config.DownloadImages)
                                     {
                                         continue;
@@ -1286,7 +1281,6 @@ public class APIHelper : IAPIHelper
 
             }
 
-            DBHelper dBHelper = new();
             foreach (Purchased.List purchase in paidPosts.list)
             {
                 if (purchase.responseType == "post" && purchase.media != null && purchase.media.Count > 0)
@@ -1312,7 +1306,7 @@ public class APIHelper : IAPIHelper
                             }
                         }
                     }
-                    await dBHelper.AddPost(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price != null ? purchase.price.ToString() : "0", purchase.price != null && purchase.isOpened ? true : false, purchase.isArchived.HasValue ? purchase.isArchived.Value : false, purchase.createdAt != null ? purchase.createdAt.Value : purchase.postedAt.Value);
+                    await m_DBHelper.AddPost(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price != null ? purchase.price.ToString() : "0", purchase.price != null && purchase.isOpened ? true : false, purchase.isArchived.HasValue ? purchase.isArchived.Value : false, purchase.createdAt != null ? purchase.createdAt.Value : purchase.postedAt.Value);
                     paidPostCollection.PaidPostObjects.Add(purchase);
                     foreach (Purchased.Medium medium in purchase.media)
                     {
@@ -1345,7 +1339,7 @@ public class APIHelper : IAPIHelper
                                 
                                 if (!paidPostCollection.PaidPosts.ContainsKey(medium.id))
                                 {
-                                    await dBHelper.AddMedia(folder, medium.id, purchase.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
+                                    await m_DBHelper.AddMedia(folder, medium.id, purchase.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
                                     paidPostCollection.PaidPosts.Add(medium.id, medium.source.source);
                                     paidPostCollection.PaidPostMedia.Add(medium);
                                 }
@@ -1355,7 +1349,7 @@ public class APIHelper : IAPIHelper
                                 
                                 if (!paidPostCollection.PaidPosts.ContainsKey(medium.id))
                                 {
-                                    await dBHelper.AddMedia(folder, medium.id, purchase.id, medium.files.drm.manifest.dash, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
+                                    await m_DBHelper.AddMedia(folder, medium.id, purchase.id, medium.files.drm.manifest.dash, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
                                     paidPostCollection.PaidPosts.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{purchase.id}");
                                     paidPostCollection.PaidPostMedia.Add(medium);
                                 }
@@ -1368,7 +1362,7 @@ public class APIHelper : IAPIHelper
                             {
                                 if (!paidPostCollection.PaidPosts.ContainsKey(medium.id))
                                 {
-                                    await dBHelper.AddMedia(folder, medium.id, purchase.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
+                                    await m_DBHelper.AddMedia(folder, medium.id, purchase.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
                                     paidPostCollection.PaidPosts.Add(medium.id, medium.source.source);
                                     paidPostCollection.PaidPostMedia.Add(medium);
                                 }
@@ -1377,7 +1371,7 @@ public class APIHelper : IAPIHelper
                             {
                                 if (!paidPostCollection.PaidPosts.ContainsKey(medium.id))
                                 {
-                                    await dBHelper.AddMedia(folder, medium.id, purchase.id, medium.files.drm.manifest.dash, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
+                                    await m_DBHelper.AddMedia(folder, medium.id, purchase.id, medium.files.drm.manifest.dash, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
                                     paidPostCollection.PaidPosts.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{purchase.id}");
                                     paidPostCollection.PaidPostMedia.Add(medium);
                                 }
@@ -1447,11 +1441,10 @@ public class APIHelper : IAPIHelper
                     UpdateGetParamsForDateSelection(
                         config,
                         ref getParams,
-                        posts.tailMarker);
+                        newposts.tailMarker);
                 }
             }
 
-            DBHelper dBHelper = new();
             foreach (Post.List post in posts.list.Where(p => !config.SkipAds || (!p.rawText.Contains("#ad") && !p.rawText.Contains("/trial/"))))
             {
                 List<long> postPreviewIds = new();
@@ -1468,7 +1461,7 @@ public class APIHelper : IAPIHelper
                         }
                     }
                 }
-                await dBHelper.AddPost(folder, post.id, post.text != null ? post.text : string.Empty, post.price != null ? post.price.ToString() : "0", post.price != null && post.isOpened ? true : false, post.isArchived, post.postedAt);
+                await m_DBHelper.AddPost(folder, post.id, post.text != null ? post.text : string.Empty, post.price != null ? post.price.ToString() : "0", post.price != null && post.isOpened ? true : false, post.isArchived, post.postedAt);
                 postCollection.PostObjects.Add(post);
                 if (post.media != null && post.media.Count > 0)
                 {
@@ -1497,7 +1490,7 @@ public class APIHelper : IAPIHelper
                             {
                                 if (!postCollection.Posts.ContainsKey(medium.id))
                                 {
-                                    await dBHelper.AddMedia(folder, medium.id, post.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), postPreviewIds.Contains((long)medium.id) ? true : false, false, null);
+                                    await m_DBHelper.AddMedia(folder, medium.id, post.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), postPreviewIds.Contains((long)medium.id) ? true : false, false, null);
                                     postCollection.Posts.Add(medium.id, medium.source.source);
                                     postCollection.PostMedia.Add(medium);
                                 }
@@ -1510,7 +1503,7 @@ public class APIHelper : IAPIHelper
                             {
                                 if (!postCollection.Posts.ContainsKey(medium.id))
                                 {
-                                    await dBHelper.AddMedia(folder, medium.id, post.id, medium.files.drm.manifest.dash, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), postPreviewIds.Contains((long)medium.id) ? true : false, false, null);
+                                    await m_DBHelper.AddMedia(folder, medium.id, post.id, medium.files.drm.manifest.dash, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), postPreviewIds.Contains((long)medium.id) ? true : false, false, null);
                                     postCollection.Posts.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{post.id}");
                                     postCollection.PostMedia.Add(medium);
                                 }
@@ -1579,11 +1572,10 @@ public class APIHelper : IAPIHelper
                     UpdateGetParamsForDateSelection(
                        config,
                        ref getParams,
-                       archived.tailMarker);
+                       newarchived.tailMarker);
                 }
             }
 
-            DBHelper dBHelper = new();
             foreach (Archived.List archive in archived.list)
             {
                 List<long> previewids = new();
@@ -1600,7 +1592,7 @@ public class APIHelper : IAPIHelper
                         }
                     }
                 }
-                await dBHelper.AddPost(folder, archive.id, archive.text != null ? archive.text : string.Empty, archive.price != null ? archive.price.ToString() : "0", archive.price != null && archive.isOpened ? true : false, archive.isArchived, archive.postedAt);
+                await m_DBHelper.AddPost(folder, archive.id, archive.text != null ? archive.text : string.Empty, archive.price != null ? archive.price.ToString() : "0", archive.price != null && archive.isOpened ? true : false, archive.isArchived, archive.postedAt);
                 archivedCollection.ArchivedPostObjects.Add(archive);
                 if (archive.media != null && archive.media.Count > 0)
                 {
@@ -1626,7 +1618,7 @@ public class APIHelper : IAPIHelper
                         {
                             if (!archivedCollection.ArchivedPosts.ContainsKey(medium.id))
                             {
-                                await dBHelper.AddMedia(folder, medium.id, archive.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
+                                await m_DBHelper.AddMedia(folder, medium.id, archive.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
                                 archivedCollection.ArchivedPosts.Add(medium.id, medium.source.source);
                                 archivedCollection.ArchivedPostMedia.Add(medium);
                             }
@@ -1635,7 +1627,7 @@ public class APIHelper : IAPIHelper
                         {
                             if (!archivedCollection.ArchivedPosts.ContainsKey(medium.id))
                             {
-                                await dBHelper.AddMedia(folder, medium.id, archive.id, medium.files.drm.manifest.dash, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
+                                await m_DBHelper.AddMedia(folder, medium.id, archive.id, medium.files.drm.manifest.dash, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
                                 archivedCollection.ArchivedPosts.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{archive.id}");
                                 archivedCollection.ArchivedPostMedia.Add(medium);
                             }
@@ -1692,7 +1684,6 @@ public class APIHelper : IAPIHelper
                 }
             }
 
-            DBHelper dBHelper = new();
             foreach (Messages.List list in messages.list.Where(m => !config.SkipAds || (!m.text.Contains("#ad") && !m.text.Contains("/trial/"))))
             {
                 List<long> messagePreviewIds = new();
@@ -1706,7 +1697,7 @@ public class APIHelper : IAPIHelper
                         }
                     }
                 }
-                await dBHelper.AddMessage(folder, list.id, list.text != null ? list.text : string.Empty, list.price != null ? list.price.ToString() : "0", list.canPurchaseReason == "opened" ? true : list.canPurchaseReason != "opened" ? false : (bool?)null ?? false, false, list.createdAt.HasValue ? list.createdAt.Value : DateTime.Now, list.fromUser != null && list.fromUser.id != null ? list.fromUser.id.Value : int.MinValue);
+                await m_DBHelper.AddMessage(folder, list.id, list.text != null ? list.text : string.Empty, list.price != null ? list.price.ToString() : "0", list.canPurchaseReason == "opened" ? true : list.canPurchaseReason != "opened" ? false : (bool?)null ?? false, false, list.createdAt.HasValue ? list.createdAt.Value : DateTime.Now, list.fromUser != null && list.fromUser.id != null ? list.fromUser.id.Value : int.MinValue);
                 messageCollection.MessageObjects.Add(list);
                 if (list.canPurchaseReason != "opened" && list.media != null && list.media.Count > 0)
                 {
@@ -1732,7 +1723,7 @@ public class APIHelper : IAPIHelper
                             }
                             if (!messageCollection.Messages.ContainsKey(medium.id))
                             {
-                                await dBHelper.AddMedia(folder, medium.id, list.id, medium.source.source, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), messagePreviewIds.Contains(medium.id) ? true : false, false, null);
+                                await m_DBHelper.AddMedia(folder, medium.id, list.id, medium.source.source, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), messagePreviewIds.Contains(medium.id) ? true : false, false, null);
                                 messageCollection.Messages.Add(medium.id, medium.source.source.ToString());
                                 messageCollection.MessageMedia.Add(medium);
                             }
@@ -1757,7 +1748,7 @@ public class APIHelper : IAPIHelper
                             }
                             if (!messageCollection.Messages.ContainsKey(medium.id))
                             {
-                                await dBHelper.AddMedia(folder, medium.id, list.id, medium.files.drm.manifest.dash, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), messagePreviewIds.Contains(medium.id) ? true : false, false, null);
+                                await m_DBHelper.AddMedia(folder, medium.id, list.id, medium.files.drm.manifest.dash, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), messagePreviewIds.Contains(medium.id) ? true : false, false, null);
                                 messageCollection.Messages.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{list.id}");
                                 messageCollection.MessageMedia.Add(medium);
                             }
@@ -1788,7 +1779,7 @@ public class APIHelper : IAPIHelper
                             }
                             if (!messageCollection.Messages.ContainsKey(medium.id))
                             {
-                                await dBHelper.AddMedia(folder, medium.id, list.id, medium.source.source, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), messagePreviewIds.Contains(medium.id) ? true : false, false, null);
+                                await m_DBHelper.AddMedia(folder, medium.id, list.id, medium.source.source, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), messagePreviewIds.Contains(medium.id) ? true : false, false, null);
                                 messageCollection.Messages.Add(medium.id, medium.source.source.ToString());
                                 messageCollection.MessageMedia.Add(medium);
                             }
@@ -1813,7 +1804,7 @@ public class APIHelper : IAPIHelper
                             }
                             if (!messageCollection.Messages.ContainsKey(medium.id))
                             {
-                                await dBHelper.AddMedia(folder, medium.id, list.id, medium.files.drm.manifest.dash, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), messagePreviewIds.Contains(medium.id) ? true : false, false, null);
+                                await m_DBHelper.AddMedia(folder, medium.id, list.id, medium.files.drm.manifest.dash, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), messagePreviewIds.Contains(medium.id) ? true : false, false, null);
                                 messageCollection.Messages.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{list.id}");
                                 messageCollection.MessageMedia.Add(medium);
                             }
@@ -1886,18 +1877,17 @@ public class APIHelper : IAPIHelper
                 }
             }
 
-            DBHelper dBHelper = new();
             if(paidMessages.list != null && paidMessages.list.Count > 0)
             {
                 foreach (Purchased.List purchase in paidMessages.list.Where(p => p.responseType == "message").OrderByDescending(p => p.postedAt ?? p.createdAt))
                 {
                     if (purchase.postedAt != null)
                     {
-                        await dBHelper.AddMessage(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price != null ? purchase.price : "0", true, false, purchase.postedAt.Value, purchase.fromUser.id);
+                        await m_DBHelper.AddMessage(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price != null ? purchase.price : "0", true, false, purchase.postedAt.Value, purchase.fromUser.id);
                     }
                     else
                     {
-                        await dBHelper.AddMessage(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price != null ? purchase.price : "0", true, false, purchase.createdAt.Value, purchase.fromUser.id);
+                        await m_DBHelper.AddMessage(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price != null ? purchase.price : "0", true, false, purchase.createdAt.Value, purchase.fromUser.id);
                     }
                     paidMessageCollection.PaidMessageObjects.Add(purchase);
                     if (purchase.media != null && purchase.media.Count > 0)
@@ -1949,7 +1939,7 @@ public class APIHelper : IAPIHelper
                                     }
                                     if (!paidMessageCollection.PaidMessages.ContainsKey(medium.id))
                                     {
-                                        await dBHelper.AddMedia(folder, medium.id, purchase.id, medium.source.source, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
+                                        await m_DBHelper.AddMedia(folder, medium.id, purchase.id, medium.source.source, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
                                         paidMessageCollection.PaidMessages.Add(medium.id, medium.source.source);
                                         paidMessageCollection.PaidMessageMedia.Add(medium);
                                     }
@@ -1974,7 +1964,7 @@ public class APIHelper : IAPIHelper
                                     }
                                     if (!paidMessageCollection.PaidMessages.ContainsKey(medium.id))
                                     {
-                                        await dBHelper.AddMedia(folder, medium.id, purchase.id, medium.files.drm.manifest.dash, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
+                                        await m_DBHelper.AddMedia(folder, medium.id, purchase.id, medium.files.drm.manifest.dash, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
                                         paidMessageCollection.PaidMessages.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{purchase.id}");
                                         paidMessageCollection.PaidMessageMedia.Add(medium);
                                     }
@@ -2002,7 +1992,7 @@ public class APIHelper : IAPIHelper
                                     }
                                     if (!paidMessageCollection.PaidMessages.ContainsKey(medium.id))
                                     {
-                                        await dBHelper.AddMedia(folder, medium.id, purchase.id, medium.source.source, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
+                                        await m_DBHelper.AddMedia(folder, medium.id, purchase.id, medium.source.source, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
                                         paidMessageCollection.PaidMessages.Add(medium.id, medium.source.source);
                                         paidMessageCollection.PaidMessageMedia.Add(medium);
                                     }
@@ -2027,7 +2017,7 @@ public class APIHelper : IAPIHelper
                                     }
                                     if (!paidMessageCollection.PaidMessages.ContainsKey(medium.id))
                                     {
-                                        await dBHelper.AddMedia(folder, medium.id, purchase.id, medium.files.drm.manifest.dash, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
+                                        await m_DBHelper.AddMedia(folder, medium.id, purchase.id, medium.files.drm.manifest.dash, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), previewids.Contains(medium.id) ? true : false, false, null);
                                         paidMessageCollection.PaidMessages.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{purchase.id}");
                                         paidMessageCollection.PaidMessageMedia.Add(medium);
                                     }
