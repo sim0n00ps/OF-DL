@@ -1,3 +1,6 @@
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using OF_DL.Enumerations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,5 +37,18 @@ namespace OF_DL.Entities
         public bool FolderPerMessage { get; set; } = false;
         public bool LimitDownloadRate { get; set; } = false;
         public int DownloadLimitInMbPerSec { get; set; } = 4;
+
+        // Indicates if you want to download only on specific dates.
+        public bool DownloadOnlySpecificDates { get; set; } = false;
+
+        // This enum will define if we want data from before or after the CustomDate.
+        [JsonConverter(typeof(StringEnumConverter))]
+        public DownloadDateSelection DownloadDateSelection { get; set; } = DownloadDateSelection.before;
+        // This is the specific date used in combination with the above enum.
+
+        [JsonConverter(typeof(ShortDateConverter))]
+        public DateTime CustomDate { get; set; } = DateTime.Now;
+
     }
+
 }
