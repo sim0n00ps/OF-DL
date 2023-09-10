@@ -131,15 +131,27 @@ public class APIHelper : IAPIHelper
         return client;
     }
 
-    private void UpdateGetParamsForDateSelection(Config config, ref Dictionary<string, string> getParams, DateTime dt)
+
+    /// <summary>
+    /// this one is used during initialization only
+    /// if the config option is not available then no modificatiotns will be done on the getParams
+    /// </summary>
+    /// <param name="config"></param>
+    /// <param name="getParams"></param>
+    /// <param name="dt"></param>
+    private static void UpdateGetParamsForDateSelection(Config config, ref Dictionary<string, string> getParams, DateTime dt)
     {
-        UpdateGetParamsForDateSelection(
-            config,
-            ref getParams,
-            $"{ConvertToUnixTimestampWithMicrosecondPrecision(dt):0.000000}");
+        if (config.DownloadOnlySpecificDates)
+        {
+            UpdateGetParamsForDateSelection(
+                config,
+                ref getParams,
+                $"{ConvertToUnixTimestampWithMicrosecondPrecision(dt):0.000000}");
+        }
     }
 
-    private void UpdateGetParamsForDateSelection(Config config, ref Dictionary<string, string> getParams, string unixTimeStampInMicrosec)
+
+    private static void UpdateGetParamsForDateSelection(Config config, ref Dictionary<string, string> getParams, string unixTimeStampInMicrosec)
     {
         
         if (config.DownloadOnlySpecificDates)
@@ -155,12 +167,11 @@ public class APIHelper : IAPIHelper
                     break;
             }
         }
-        else
+        else //if no
         {
             getParams["beforePublishTime"] = unixTimeStampInMicrosec;
         }
     }
-
 
 
     public async Task<User?> GetUserInfo(string endpoint, Auth auth)
@@ -467,6 +478,11 @@ public class APIHelper : IAPIHelper
                         { "order", "publish_date_desc" },
                         { "format", "infinite" }
                     };
+
+                    UpdateGetParamsForDateSelection(
+                       config,
+                       ref getParams,
+                       config.CustomDate);
                     break;
 
                 case MediaType.Archived:
@@ -478,6 +494,11 @@ public class APIHelper : IAPIHelper
                         { "format", "infinite" },
                         { "label", "archived" }
                     };
+
+                    UpdateGetParamsForDateSelection(
+                       config,
+                       ref getParams,
+                       config.CustomDate);
                     break;
 
                 case MediaType.Stories:
@@ -645,7 +666,10 @@ public class APIHelper : IAPIHelper
                 posts = JsonConvert.DeserializeObject<Post>(body, m_JsonSerializerSettings);
                 if (posts != null && posts.hasMore)
                 {
-                    getParams["beforePublishTime"] = posts.tailMarker;
+                    UpdateGetParamsForDateSelection(
+                       config,
+                       ref getParams,
+                       posts.tailMarker);
                     while (true)
                     {
                         Post newposts = new();
@@ -657,7 +681,10 @@ public class APIHelper : IAPIHelper
                         {
                             break;
                         }
-                        getParams["beforePublishTime"] = newposts.tailMarker;
+                        UpdateGetParamsForDateSelection(
+                           config,
+                           ref getParams,
+                           newposts.tailMarker);
                     }
                 }
 
@@ -733,7 +760,10 @@ public class APIHelper : IAPIHelper
                 archived = JsonConvert.DeserializeObject<Archived>(body, m_JsonSerializerSettings);
                 if (archived != null && archived.hasMore)
                 {
-                    getParams["beforePublishTime"] = archived.tailMarker;
+                    UpdateGetParamsForDateSelection(
+                       config,
+                       ref getParams,
+                       archived.tailMarker);
                     while (true)
                     {
                         Archived newarchived = new();
@@ -746,7 +776,10 @@ public class APIHelper : IAPIHelper
                         {
                             break;
                         }
-                        getParams["beforePublishTime"] = newarchived.tailMarker;
+                        UpdateGetParamsForDateSelection(
+                           config,
+                           ref getParams,
+                           newarchived.tailMarker);
                     }
                 }
 
@@ -1518,11 +1551,19 @@ public class APIHelper : IAPIHelper
                 { "label", "archived" }
             };
 
+            UpdateGetParamsForDateSelection(
+                config,
+                ref getParams,
+                config.CustomDate);
+
             var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
             archived = JsonConvert.DeserializeObject<Archived>(body, m_JsonSerializerSettings);
             if (archived != null && archived.hasMore)
             {
-                getParams["beforePublishTime"] = archived.tailMarker;
+                UpdateGetParamsForDateSelection(
+                   config,
+                   ref getParams,
+                   archived.tailMarker);
                 while (true)
                 {
                     Archived newarchived = new();
@@ -1535,7 +1576,10 @@ public class APIHelper : IAPIHelper
                     {
                         break;
                     }
-                    getParams["beforePublishTime"] = newarchived.tailMarker;
+                    UpdateGetParamsForDateSelection(
+                       config,
+                       ref getParams,
+                       archived.tailMarker);
                 }
             }
 
