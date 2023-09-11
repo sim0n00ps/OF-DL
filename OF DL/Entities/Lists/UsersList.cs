@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -116,8 +116,8 @@ namespace OF_DL.Entities.Lists
 			public string? newPrice { get; set; }
 			public string? regularPrice { get; set; }
 			public string? subscribePrice { get; set; }
-			public int? discountPercent { get; set; }
-			public int? discountPeriod { get; set; }
+			public string? discountPercent { get; set; }
+			public string? discountPeriod { get; set; }
 			public DateTime? subscribeAt { get; set; }
 			public DateTime? expiredAt { get; set; }
 			public object renewedAt { get; set; }
@@ -137,8 +137,8 @@ namespace OF_DL.Entities.Lists
 			public string? newPrice { get; set; }
 			public string? regularPrice { get; set; }
 			public string? subscribePrice { get; set; }
-			public int? discountPercent { get; set; }
-			public int? discountPeriod { get; set; }
+			public string? discountPercent { get; set; }
+			public string? discountPeriod { get; set; }
 			public DateTime? subscribeAt { get; set; }
 			public DateTime? expiredAt { get; set; }
 			public object renewedAt { get; set; }
@@ -148,12 +148,12 @@ namespace OF_DL.Entities.Lists
 			public bool? isMuted { get; set; }
 			public string unsubscribeReason { get; set; }
 			public string duration { get; set; }
-			public int? tipsSumm { get; set; }
-			public int? subscribesSumm { get; set; }
-			public int? messagesSumm { get; set; }
-			public int? postsSumm { get; set; }
-			public int? streamsSumm { get; set; }
-			public int? totalSumm { get; set; }
+			public string? tipsSumm { get; set; }
+			public string? subscribesSumm { get; set; }
+			public string? messagesSumm { get; set; }
+			public string? postsSumm { get; set; }
+			public string? streamsSumm { get; set; }
+			public string? totalSumm { get; set; }
 			public DateTime? lastActivity { get; set; }
 			public int? recommendations { get; set; }
 			public List<object> subscribes { get; set; }
@@ -162,8 +162,8 @@ namespace OF_DL.Entities.Lists
 		public class SubscriptionBundle
 		{
 			public int? id { get; set; }
-			public int? discount { get; set; }
-			public int? duration { get; set; }
+			public string? discount { get; set; }
+			public string? duration { get; set; }
 			public string? price { get; set; }
 			public bool? canBuy { get; set; }
 		}
