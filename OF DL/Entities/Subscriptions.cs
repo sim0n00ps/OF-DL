@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -153,12 +153,12 @@ namespace OF_DL.Entities
             public bool? isMuted { get; set; }
             public string unsubscribeReason { get; set; }
             public string duration { get; set; }
-            public int? tipsSumm { get; set; }
-            public int? subscribesSumm { get; set; }
-            public int? messagesSumm { get; set; }
-            public int? postsSumm { get; set; }
-            public int? streamsSumm { get; set; }
-            public int? totalSumm { get; set; }
+            public string? tipsSumm { get; set; }
+            public string? subscribesSumm { get; set; }
+            public string? messagesSumm { get; set; }
+            public string? postsSumm { get; set; }
+            public string? streamsSumm { get; set; }
+            public string? totalSumm { get; set; }
             public List<Subscribe> subscribes { get; set; }
             public bool? hasActivePaidSubscriptions { get; set; }
         }
