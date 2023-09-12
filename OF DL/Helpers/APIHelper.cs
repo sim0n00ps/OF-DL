@@ -1540,8 +1540,10 @@ public class APIHelper : IAPIHelper
             {
                 { "limit", post_limit.ToString() },
                 { "order", "publish_date_desc" },
+                { "skip_users", "all" },
                 { "format", "infinite" },
-                { "label", "archived" }
+                { "label", "archived" },
+                { "counters", "1" }
             };
 
             UpdateGetParamsForDateSelection(
@@ -1635,6 +1637,8 @@ public class APIHelper : IAPIHelper
                     }
                 }
             }
+
+            return archivedCollection;
         }
         catch (Exception ex)
         {
