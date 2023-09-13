@@ -92,7 +92,7 @@ namespace OF_DL.Helpers
                         {
                             if (propertyValue is DateTime dateTimeValue)
                             {
-                                values.Add(propertyName, dateTimeValue.ToString("yyyy-MM-dd.HH"));
+                                values.Add(propertyName, dateTimeValue.ToString("yyyy-MM-dd"));
                             }
                             else
                             {
