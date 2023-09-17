@@ -1445,8 +1445,12 @@ public class APIHelper : IAPIHelper
                 }
             }
 
-            foreach (Post.List post in posts.list.Where(p => !config.SkipAds || (!p.rawText.Contains("#ad") && !p.rawText.Contains("/trial/"))))
+            foreach (Post.List post in posts.list)
             {
+                if (config.SkipAds && (post.text.Contains("#ad") || post.rawText.Contains("#ad") || (post.text.Contains("/trial/") || post.rawText.Contains("/trial/"))))
+                {
+                    continue;
+                }
                 List<long> postPreviewIds = new();
                 if (post.preview != null && post.preview.Count > 0)
                 {
@@ -1688,8 +1692,12 @@ public class APIHelper : IAPIHelper
                 }
             }
 
-            foreach (Messages.List list in messages.list.Where(m => !config.SkipAds || (!m.text.Contains("#ad") && !m.text.Contains("/trial/"))))
+            foreach (Messages.List list in messages.list)
             {
+                if (config.SkipAds && list.text.Contains("#ad") || list.text.Contains("/trial/"))
+                {
+                    continue;
+                }
                 List<long> messagePreviewIds = new();
                 if (list.previews != null && list.previews.Count > 0)
                 {

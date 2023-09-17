@@ -217,6 +217,29 @@ public class DownloadHelper : IDownloadHelper
         return fileSize;
     }
 
+    public static async Task<DateTime> GetDRMVideoLastModified(string url, Auth auth)
+    {
+        Uri uri = new(url);
+
+        string[] messageUrlParsed = url.Split(',');
+        string mpdURL = messageUrlParsed[0];
+        string policy = messageUrlParsed[1];
+        string signature = messageUrlParsed[2];
+        string kvp = messageUrlParsed[3];
+
+        mpdURL = mpdURL.Replace(".mpd", "_source.mp4");
+
+        using HttpClient client = new();
+        client.DefaultRequestHeaders.Add("Cookie", $"CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {auth.COOKIE}");
+        client.DefaultRequestHeaders.Add("User-Agent", auth.USER_AGENT);
+
+        using HttpResponseMessage response = await client.GetAsync(mpdURL, HttpCompletionOption.ResponseHeadersRead);
+        if (response.IsSuccessStatusCode)
+        {
+            return response.Content.Headers.LastModified.Value.DateTime;
+        }
+        return DateTime.Now;
+    }
 
     /// <summary>
     /// Processes the download and database update of media.
