@@ -240,6 +240,17 @@ public class DownloadHelper : IDownloadHelper
         }
         return DateTime.Now;
     }
+    public static async Task<DateTime> GetMediaLastModified(string url)
+    {
+        using HttpClient client = new();
+
+        using HttpResponseMessage response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+        if (response.IsSuccessStatusCode)
+        {
+            return response.Content.Headers.LastModified.Value.DateTime;
+        }
+        return DateTime.Now;
+    }
 
     /// <summary>
     /// Processes the download and database update of media.

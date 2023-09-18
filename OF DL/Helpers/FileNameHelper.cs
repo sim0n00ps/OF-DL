@@ -21,14 +21,27 @@ namespace OF_DL.Helpers
             {
                 if (propertyName.Contains("media"))
                 {
-                    object fileProperty = GetNestedPropertyValue(obj2, "files.drm");
-                    if(fileProperty != null && propertyName == "mediaCreatedAt")
+                    object drmProperty = null;
+                    object fileProperty = GetNestedPropertyValue(obj2, "files");
+                    if(fileProperty != null)
+                    {
+                        drmProperty = GetNestedPropertyValue(obj2, "files.drm");
+                    }
+                     
+                    if(fileProperty != null && drmProperty != null && propertyName == "mediaCreatedAt")
                     {
                         object mpdurl = GetNestedPropertyValue(obj2, "files.drm.manifest.dash");
                         object policy = GetNestedPropertyValue(obj2, "files.drm.signature.dash.CloudFrontPolicy");
                         object signature = GetNestedPropertyValue(obj2, "files.drm.signature.dash.CloudFrontSignature");
                         object kvp = GetNestedPropertyValue(obj2, "files.drm.signature.dash.CloudFrontKeyPairId");
                         DateTime lastModified = await DownloadHelper.GetDRMVideoLastModified(string.Join(",", mpdurl, policy, signature, kvp) ,Program.Auth);
+                        values.Add(propertyName, lastModified.ToString("yyyy-MM-dd"));
+                        continue;
+                    }
+                    else if((fileProperty == null || drmProperty == null) && propertyName == "mediaCreatedAt")
+                    {
+                        object source = GetNestedPropertyValue(obj2, "source.source");
+                        DateTime lastModified = await DownloadHelper.GetMediaLastModified(source.ToString());
                         values.Add(propertyName, lastModified.ToString("yyyy-MM-dd"));
                         continue;
                     }
