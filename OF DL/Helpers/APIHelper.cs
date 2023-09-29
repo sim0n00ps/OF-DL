@@ -9,6 +9,7 @@ using OF_DL.Entities.Post;
 using OF_DL.Entities.Purchased;
 using OF_DL.Entities.Stories;
 using OF_DL.Enumurations;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Linq;
@@ -147,7 +148,8 @@ public class APIHelper : IAPIHelper
             UpdateGetParamsForDateSelection(
                 config,
                 ref getParams,
-                $"{ConvertToUnixTimestampWithMicrosecondPrecision(dt.Value):0.000000}");
+                ConvertToUnixTimestampWithMicrosecondPrecision(dt.Value).ToString("0.000000", CultureInfo.InvariantCulture)
+            );
         }
     }
 
@@ -1447,7 +1449,7 @@ public class APIHelper : IAPIHelper
 
             foreach (Post.List post in posts.list)
             {
-                if (config.SkipAds && (post.text.Contains("#ad") || post.rawText.Contains("#ad") || (post.text.Contains("/trial/") || post.rawText.Contains("/trial/"))))
+                if ((config.SkipAds && (post.rawText != null || post.text != null)) && ((post.text != null && post.text.Contains("#ad")) || (post.rawText != null && post.rawText.Contains("#ad"))) || (post.text != null && post.text.Contains("/trial/")) || (post.rawText != null && post.rawText.Contains("/trial/")))
                 {
                     continue;
                 }
@@ -1694,7 +1696,7 @@ public class APIHelper : IAPIHelper
 
             foreach (Messages.List list in messages.list)
             {
-                if (config.SkipAds && list.text.Contains("#ad") || list.text.Contains("/trial/"))
+                if (config.SkipAds && list.text != null && (list.text.Contains("#ad") || list.text.Contains("/trial/")))
                 {
                     continue;
                 }
