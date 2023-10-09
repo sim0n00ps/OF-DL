@@ -63,60 +63,33 @@ public class Program
 
             if (ValidateFilePath(Auth.YTDLP_PATH))
             {
-                if (!File.Exists(Auth.YTDLP_PATH))
-                {
-                    AnsiConsole.Markup($"[red]Cannot locate yt-dlp.exe with specified path {Auth.YTDLP_PATH}, please modify auth.json with the correct path, press any key to exit[/]");
-                    Console.ReadKey();
-                    Environment.Exit(0);
-                }
-                else
-                {
-                    AnsiConsole.Markup($"[green]yt-dlp.exe located successfully![/]\n");
-                }
+                AnsiConsole.Markup($"[green]yt-dlp.exe located successfully![/]\n");
             }
             else
             {
-                AnsiConsole.Markup(@$"[red]Specified path {Auth.YTDLP_PATH} does not match the required format, please remove any \ from the path and replace them with / and make sure the path does not have a / at the end, press any key to exit[/]");
+                AnsiConsole.Markup($"[red]Cannot locate yt-dlp.exe; please modify auth.json with the correct path. Press any key to exit.[/]\n");
                 Console.ReadKey();
                 Environment.Exit(0);
             }
-
+                
             if (ValidateFilePath(Auth.FFMPEG_PATH))
             {
-                if (!File.Exists(Auth.FFMPEG_PATH))
-                {
-                    AnsiConsole.Markup($"[red]Cannot locate ffmpeg.exe with specified path {Auth.FFMPEG_PATH}, please modify auth.json with the correct path, press any key to exit[/]");
-                    Console.ReadKey();
-                    Environment.Exit(0);
-                }
-                else
-                {
-                    AnsiConsole.Markup($"[green]ffmpeg.exe located successfully![/]\n");
-                }
-            }
+                AnsiConsole.Markup($"[green]ffmpeg.exe located successfully![/]\n");
+            }   
             else
             {
-                AnsiConsole.Markup(@$"[red]Specified path {Auth.FFMPEG_PATH} does not match the required format, please remove any \ from the path and replace them with / and make sure the path does not have a / at the end, press any key to exit[/]");
+                AnsiConsole.Markup($"[red]Cannot locate ffmpeg.exe; please modify auth.json with the correct path. Press any key to exit.[/]\n");
                 Console.ReadKey();
                 Environment.Exit(0);
             }
 
             if (ValidateFilePath(Auth.MP4DECRYPT_PATH))
             {
-                if (!File.Exists(Auth.MP4DECRYPT_PATH))
-                {
-                    AnsiConsole.Markup($"[red]Cannot locate mp4decrypt.exe with specified path {Auth.MP4DECRYPT_PATH}, please modify auth.json with the correct path, press any key to exit[/]");
-                    Console.ReadKey();
-                    Environment.Exit(0);
-                }
-                else
-                {
-                    AnsiConsole.Markup($"[green]mp4decrypt.exe located successfully![/]\n");
-                }
+                AnsiConsole.Markup($"[green]mp4decrypt.exe located successfully![/]\n");
             }
             else
             {
-                AnsiConsole.Markup(@$"[red]Specified path {Auth.MP4DECRYPT_PATH} does not match the required format, please remove any \ from the path and replace them with / and make sure the path does not have a / at the end, press any key to exit[/]");
+                AnsiConsole.Markup($"[red]Cannot locate mp4decrypt.exe; please modify auth.json with the correct path. Press any key to exit.[/]\n");
                 Console.ReadKey();
                 Environment.Exit(0);
             }
@@ -1171,12 +1144,28 @@ public class Program
 
     static bool ValidateFilePath(string path)
     {
-        // Regular expression pattern to validate file path
-        string pattern = @"^(?:[A-Za-z]:/)?(?:[^/\n]+/)*[^/:*?<>|]+\.[^/:*?<>|]+$";
+        char[] invalidChars = System.IO.Path.GetInvalidPathChars();
+        char[] foundInvalidChars = path.Where(c => invalidChars.Contains(c)).ToArray();
+    
+        if (foundInvalidChars.Any())
+        {
+            AnsiConsole.Markup($"[red]Invalid characters found in path {path}:[/] {string.Join(", ", foundInvalidChars)}\n");
+            return false;
+        }
 
-        // Check if the path matches the pattern and doesn't end with a forward slash
-        bool isMatch = Regex.IsMatch(path, pattern) && !path.EndsWith("/");
+        if (!System.IO.File.Exists(path))
+        {
+            if (System.IO.Directory.Exists(path))
+            {
+                AnsiConsole.Markup($"[red]The provided path {path} improperly points to a directory and not a file.[/]\n");
+            }
+            else
+            {
+                AnsiConsole.Markup($"[red]The provided path {path} does not exist or is not accessible.[/]\n");
+            }
+            return false;
+        }
 
-        return isMatch;
+        return true;
     }
 }
