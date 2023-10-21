@@ -93,7 +93,7 @@ namespace OF_DL.Entities.Archived
             public int? favoritesCount { get; set; }
             public int? mediaCount { get; set; }
             public bool? isMediaReady { get; set; }
-            public List<object> voting { get; set; }
+            public object voting { get; set; }
             public bool? isOpened { get; set; }
             public bool? canToggleFavorite { get; set; }
             public object streamId { get; set; }

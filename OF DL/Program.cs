@@ -1,13 +1,18 @@
 using Newtonsoft.Json;
 using OF_DL.Entities;
 using OF_DL.Entities.Archived;
+using OF_DL.Entities.Highlights;
 using OF_DL.Entities.Messages;
 using OF_DL.Entities.Post;
 using OF_DL.Entities.Purchased;
+using OF_DL.Entities.Stories;
+using OF_DL.Entities.Streams;
 using OF_DL.Enumurations;
 using OF_DL.Helpers;
 using Spectre.Console;
+using System.IO;
 using System.Text.RegularExpressions;
+using static OF_DL.Entities.Lists.UserList;
 
 namespace OF_DL;
 
@@ -174,7 +179,52 @@ public class Program
             Dictionary<string, int> selectedUsers = new();
             KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP = await HandleUserSelection(selectedUsers, users, lists);
 
-            if (hasSelectedUsersKVP.Key && !hasSelectedUsersKVP.Value.ContainsKey("ConfigChanged"))
+            if (hasSelectedUsersKVP.Key && hasSelectedUsersKVP.Value != null && hasSelectedUsersKVP.Value.ContainsKey("SinglePost"))
+            {
+                string postUrl = AnsiConsole.Prompt(
+                        new TextPrompt<string>("[red]Please enter a post URL: [/]")
+                            .ValidationErrorMessage("[red]Please enter a valid post URL[/]")
+                            .Validate(url =>
+                            {
+                                Regex regex = new Regex("https://onlyfans\\.com/[0-9]+/[A-Za-z0-9]+", RegexOptions.IgnoreCase);
+                                if (regex.IsMatch(url))
+                                {
+                                    return ValidationResult.Success();
+                                }
+                                return ValidationResult.Error("[red]Please enter a valid post URL[/]");
+                            }));
+
+                long post_id = Convert.ToInt64(postUrl.Split("/")[3]);
+                string username = postUrl.Split("/")[4];
+
+                if (users.ContainsKey(username))
+                {
+                    string path = "";
+                    if (!string.IsNullOrEmpty(Config.DownloadPath))
+                    {
+                        path = System.IO.Path.Combine(Config.DownloadPath, username);
+                    }
+                    else
+                    {
+                        path = $"__user_data__/sites/OnlyFans/{username}"; // specify the path for the new folder
+                    }
+
+                    if (!Directory.Exists(path)) // check if the folder already exists
+                    {
+                        Directory.CreateDirectory(path); // create the new folder
+                        AnsiConsole.Markup($"[red]Created folder for {username}\n[/]");
+                    }
+                    else
+                    {
+                        AnsiConsole.Markup($"[red]Folder for {username} already created\n[/]");
+                    }
+
+                    await m_DBHelper.CreateDB(path);
+
+                    await DownloadSinglePost(post_id, path, users);
+                }
+            }
+            else if (hasSelectedUsersKVP.Key && !hasSelectedUsersKVP.Value.ContainsKey("ConfigChanged"))
             {
                 //Iterate over each user in the list of users
                 foreach (KeyValuePair<string, int> user in hasSelectedUsersKVP.Value)
@@ -182,6 +232,7 @@ public class Program
                     int paidPostCount = 0;
                     int postCount = 0;
                     int archivedCount = 0;
+                    int streamsCount = 0;
                     int storiesCount = 0;
                     int highlightsCount = 0;
                     int messagesCount = 0;
@@ -232,6 +283,11 @@ public class Program
                         archivedCount = await DownloadArchived(hasSelectedUsersKVP, user, archivedCount, path);
                     }
 
+                    if (Config.DownloadStreams)
+                    {
+                        streamsCount = await DownloadStreams(hasSelectedUsersKVP, user, streamsCount, path);
+                    }
+
                     if (Config.DownloadStories)
                     {
                         storiesCount = await DownloadStories(user, storiesCount, path);
@@ -258,6 +314,7 @@ public class Program
                     .AddItem("Paid Posts", paidPostCount, Color.Red)
                     .AddItem("Posts", postCount, Color.Blue)
                     .AddItem("Archived", archivedCount, Color.Green)
+                    .AddItem("Streams", streamsCount, Color.Purple)
                     .AddItem("Stories", storiesCount, Color.Yellow)
                     .AddItem("Highlights", highlightsCount, Color.Orange1)
                     .AddItem("Messages", messagesCount, Color.LightGreen)
@@ -290,9 +347,17 @@ public class Program
         {
             AnsiConsole.Markup($"[red]Found {paidMessageCollection.PaidMessages.Count} Paid Messages\n[/]");
             paidMessagesCount = paidMessageCollection.PaidMessages.Count;
-            long totalSize = await m_DownloadHelper.CalculateTotalFileSize(paidMessageCollection.PaidMessages.Values.ToList(), Auth);
+            long totalSize = 0;
+            if (Config.ShowScrapeSize)
+            {
+                totalSize = await m_DownloadHelper.CalculateTotalFileSize(paidMessageCollection.PaidMessages.Values.ToList(), Auth);
+            }
+            else
+            {
+                totalSize = paidMessagesCount;
+            }
             await AnsiConsole.Progress()
-            .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
+            .Columns(GetProgressColumns(Config.ShowScrapeSize))
             .StartAsync(async ctx =>
             {
                 // Define tasks
@@ -342,7 +407,8 @@ public class Program
                                 messageMedia: mediaInfo,
                                 fromUser: messageInfo.fromUser,
                                 users: hasSelectedUsersKVP.Value,
-                                config: Config);
+                                config: Config,
+                                showScrapeSize: Config.ShowScrapeSize);
 
                             if (isNew)
                             {
@@ -369,7 +435,8 @@ public class Program
                             messageMedia: mediaInfo,
                             fromUser: messageInfo.fromUser,
                             users: hasSelectedUsersKVP.Value,
-                            config: Config);
+                            config: Config,
+                            Config.ShowScrapeSize);
                         if (isNew)
                         {
                             newPaidMessagesCount++;
@@ -403,9 +470,17 @@ public class Program
         {
             AnsiConsole.Markup($"[red]Found {messages.Messages.Count} Messages\n[/]");
             messagesCount = messages.Messages.Count;
-            long totalSize = await m_DownloadHelper.CalculateTotalFileSize(messages.Messages.Values.ToList(), Auth!);
+            long totalSize = 0;
+            if (Config.ShowScrapeSize)
+            {
+                totalSize = await m_DownloadHelper.CalculateTotalFileSize(messages.Messages.Values.ToList(), Auth);
+            }
+            else
+            {
+                totalSize = messagesCount;
+            }
             await AnsiConsole.Progress()
-            .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
+            .Columns(GetProgressColumns(Config.ShowScrapeSize))
             .StartAsync(async ctx =>
             {
                 // Define tasks
@@ -454,7 +529,8 @@ public class Program
                                 messageMedia: mediaInfo,
                                 fromUser: messageInfo.fromUser,
                                 users: hasSelectedUsersKVP.Value,
-                                config: Config);
+                                config: Config,
+                                showScrapeSize: Config.ShowScrapeSize);
 
 
                             if (isNew)
@@ -482,7 +558,8 @@ public class Program
                             messageMedia: mediaInfo,
                             fromUser: messageInfo.fromUser,
                             users: hasSelectedUsersKVP.Value,
-                            config: Config);
+                            config: Config,
+                            Config.ShowScrapeSize);
 
                         if (isNew)
                         {
@@ -516,9 +593,17 @@ public class Program
         {
             AnsiConsole.Markup($"[red]Found {highlights.Count} Highlights\n[/]");
             highlightsCount = highlights.Count;
-            long totalSize = await m_DownloadHelper.CalculateTotalFileSize(highlights.Values.ToList(), Auth!);
+            long totalSize = 0;
+            if (Config.ShowScrapeSize)
+            {
+                totalSize = await m_DownloadHelper.CalculateTotalFileSize(highlights.Values.ToList(), Auth);
+            }
+            else
+            {
+                totalSize = highlightsCount;
+            }
             await AnsiConsole.Progress()
-            .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
+            .Columns(GetProgressColumns(Config.ShowScrapeSize))
             .StartAsync(async ctx =>
             {
                 // Define tasks
@@ -527,7 +612,7 @@ public class Program
                 task.StartTask();
                 foreach (KeyValuePair<long, string> highlightKVP in highlights)
                 {
-                    bool isNew = await m_DownloadHelper.DownloadStoryMedia(highlightKVP.Value, path, highlightKVP.Key, task, Config!);
+                    bool isNew = await m_DownloadHelper.DownloadStoryMedia(highlightKVP.Value, path, highlightKVP.Key, task, Config!, Config.ShowScrapeSize);
                     if (isNew)
                     {
                         newHighlightsCount++;
@@ -559,9 +644,17 @@ public class Program
         {
             AnsiConsole.Markup($"[red]Found {stories.Count} Stories\n[/]");
             storiesCount = stories.Count;
-            long totalSize = await m_DownloadHelper.CalculateTotalFileSize(stories.Values.ToList(), Auth);
+            long totalSize = 0;
+            if (Config.ShowScrapeSize)
+            {
+                totalSize = await m_DownloadHelper.CalculateTotalFileSize(stories.Values.ToList(), Auth);
+            }
+            else
+            {
+                totalSize = storiesCount;
+            }
             await AnsiConsole.Progress()
-            .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
+            .Columns(GetProgressColumns(Config.ShowScrapeSize))
             .StartAsync(async ctx =>
             {
                 // Define tasks
@@ -570,7 +663,7 @@ public class Program
                 task.StartTask();
                 foreach (KeyValuePair<long, string> storyKVP in stories)
                 {
-                    bool isNew = await m_DownloadHelper.DownloadStoryMedia(storyKVP.Value, path, storyKVP.Key, task, Config!);
+                    bool isNew = await m_DownloadHelper.DownloadStoryMedia(storyKVP.Value, path, storyKVP.Key, task, Config!, Config.ShowScrapeSize);
                     if (isNew)
                     {
                         newStoriesCount++;
@@ -603,9 +696,17 @@ public class Program
         {
             AnsiConsole.Markup($"[red]Found {archived.ArchivedPosts.Count} Archived Posts\n[/]");
             archivedCount = archived.ArchivedPosts.Count;
-            long totalSize = await m_DownloadHelper.CalculateTotalFileSize(archived.ArchivedPosts.Values.ToList(), Auth);
+            long totalSize = 0;
+            if (Config.ShowScrapeSize)
+            {
+                totalSize = await m_DownloadHelper.CalculateTotalFileSize(archived.ArchivedPosts.Values.ToList(), Auth);
+            }
+            else
+            {
+                totalSize = archivedCount;
+            }
             await AnsiConsole.Progress()
-            .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
+            .Columns(GetProgressColumns(Config.ShowScrapeSize))
             .StartAsync(async ctx =>
             {
                 // Define tasks
@@ -654,7 +755,8 @@ public class Program
                                 postMedia: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? mediaInfo : null,
                                 author: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? postInfo.author : null,
                                 users: hasSelectedUsersKVP.Value,
-                                config: Config);
+                                config: Config,
+                                showScrapeSize: Config.ShowScrapeSize);
 
                             if (isNew)
                             {
@@ -681,7 +783,8 @@ public class Program
                             messageMedia: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? mediaInfo : null,
                             author: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? postInfo.author : null,
                             users: hasSelectedUsersKVP.Value,
-                            config: Config);
+                            config: Config,
+                            Config.ShowScrapeSize);
 
                         if (isNew)
                         {
@@ -720,9 +823,17 @@ public class Program
       
         AnsiConsole.Markup($"[red]Found {posts.Posts.Count} Posts\n[/]");
         postCount = posts.Posts.Count;
-        long totalSize = await m_DownloadHelper.CalculateTotalFileSize(posts.Posts.Values.ToList(), Auth!);
+        long totalSize = 0;
+        if (Config.ShowScrapeSize)
+        {
+            totalSize = await m_DownloadHelper.CalculateTotalFileSize(posts.Posts.Values.ToList(), Auth);
+        }
+        else
+        {
+            totalSize = postCount;
+        }
         await AnsiConsole.Progress()
-        .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
+        .Columns(GetProgressColumns(Config.ShowScrapeSize))
         .StartAsync(async ctx =>
         {
             var task = ctx.AddTask($"[red]Downloading {posts.Posts.Count} Posts[/]", autoStart: false);
@@ -773,7 +884,8 @@ public class Program
                         postMedia: mediaInfo,
                         author: postInfo?.author,
                         users: hasSelectedUsersKVP.Value,
-                        config: Config);
+                        config: Config,
+                        showScrapeSize: Config.ShowScrapeSize);
                     if (isNew)
                     {
                         newPostCount++;
@@ -800,7 +912,8 @@ public class Program
                             postMedia: mediaInfo,
                             author: postInfo?.author,
                             users: hasSelectedUsersKVP.Value,
-                            config: Config);
+                            config: Config,
+                            Config.ShowScrapeSize);
                         if (isNew)
                         {
                             newPostCount++;
@@ -838,9 +951,17 @@ public class Program
 
         AnsiConsole.Markup($"[red]Found {purchasedPosts.PaidPosts.Count} Paid Posts\n[/]");
         paidPostCount = purchasedPosts.PaidPosts.Count;
-        long totalSize = await m_DownloadHelper.CalculateTotalFileSize(purchasedPosts.PaidPosts.Values.ToList(), Auth);
+        long totalSize = 0;
+        if (Config.ShowScrapeSize)
+        {
+            totalSize = await m_DownloadHelper.CalculateTotalFileSize(purchasedPosts.PaidPosts.Values.ToList(), Auth);
+        }
+        else
+        {
+            totalSize = paidPostCount;
+        }
         await AnsiConsole.Progress()
-        .Columns(new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn())
+        .Columns(GetProgressColumns(Config.ShowScrapeSize))
         .StartAsync(async ctx =>
         {
             // Define tasks
@@ -892,7 +1013,8 @@ public class Program
                         postMedia: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? mediaInfo : null,
                         fromUser: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo.fromUser : null,
                         users: hasSelectedUsersKVP.Value,
-                        config: Config);
+                        config: Config,
+                        showScrapeSize: Config.ShowScrapeSize);
                     if (isNew)
                     {
                         newPaidPostCount++;
@@ -917,7 +1039,8 @@ public class Program
                         messageMedia: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? mediaInfo : null,
                         fromUser: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo.fromUser : null,
                         users: hasSelectedUsersKVP.Value,
-                        config: Config);
+                        config: Config,
+                        Config.ShowScrapeSize);
                     if (isNew)
                     {
                         newPaidPostCount++;
@@ -935,6 +1058,245 @@ public class Program
         return paidPostCount;
     }
 
+    private static async Task<int> DownloadStreams(KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int streamsCount, string path)
+    {
+        AnsiConsole.Markup($"[red]Getting Streams\n[/]");
+        StreamsCollection streams = await m_ApiHelper.GetStreams($"/users/{user.Value}/posts/streams", path, Auth!, Config!, paid_post_ids);
+        int oldStreamsCount = 0;
+        int newStreamsCount = 0;
+        if (streams == null || streams.Streams.Count <= 0)
+        {
+            AnsiConsole.Markup($"[red]Found 0 Streams\n[/]");
+            return 0;
+        }
+
+        AnsiConsole.Markup($"[red]Found {streams.Streams.Count} Streams\n[/]");
+        streamsCount = streams.Streams.Count;
+        long totalSize = 0;
+        if (Config.ShowScrapeSize)
+        {
+            totalSize = await m_DownloadHelper.CalculateTotalFileSize(streams.Streams.Values.ToList(), Auth);
+        }
+        else
+        {
+            totalSize = streamsCount;
+        }
+        await AnsiConsole.Progress()
+        .Columns(GetProgressColumns(Config.ShowScrapeSize))
+        .StartAsync(async ctx =>
+        {
+            var task = ctx.AddTask($"[red]Downloading {streams.Streams.Count} Streams[/]", autoStart: false);
+            task.MaxValue = totalSize;
+            task.StartTask();
+            foreach (KeyValuePair<long, string> streamKVP in streams.Streams)
+            {
+                bool isNew;
+                if (streamKVP.Value.Contains("cdn3.onlyfans.com/dash/files"))
+                {
+                    string[] messageUrlParsed = streamKVP.Value.Split(',');
+                    string mpdURL = messageUrlParsed[0];
+                    string policy = messageUrlParsed[1];
+                    string signature = messageUrlParsed[2];
+                    string kvp = messageUrlParsed[3];
+                    string mediaId = messageUrlParsed[4];
+                    string postId = messageUrlParsed[5];
+                    string? licenseURL = null;
+                    string? pssh = await m_ApiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp, Auth);
+                    if (pssh == null)
+                    {
+                        continue;
+                    }
+
+                    DateTime lastModified = await m_ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp, Auth);
+                    Dictionary<string, string> drmHeaders = await m_ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine", Auth);
+                    string decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                    Streams.Medium mediaInfo = streams.StreamMedia.FirstOrDefault(m => m.id == streamKVP.Key);
+                    Streams.List streamInfo = streams.StreamObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
+
+                    isNew = await m_DownloadHelper.DownloadStreamsDRMVideo(
+                        ytdlppath: Auth.YTDLP_PATH,
+                        mp4decryptpath: Auth.MP4DECRYPT_PATH,
+                        ffmpegpath: Auth.FFMPEG_PATH,
+                        user_agent: Auth.USER_AGENT,
+                        policy: policy,
+                        signature: signature,
+                        kvp: kvp,
+                        sess: Auth.COOKIE,
+                        url: mpdURL,
+                        decryptionKey: decryptionKey,
+                        folder: path,
+                        lastModified: lastModified,
+                        media_id: streamKVP.Key,
+                        task: task,
+                        filenameFormat: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? Config.PostFileNameFormat : string.Empty,
+                        streamInfo: streamInfo,
+                        streamMedia: mediaInfo,
+                        author: streamInfo?.author,
+                        users: hasSelectedUsersKVP.Value,
+                        config: Config,
+                        showScrapeSize: Config.ShowScrapeSize);
+                    if (isNew)
+                    {
+                        newStreamsCount++;
+                    }
+                    else
+                    {
+                        oldStreamsCount++;
+                    }
+                }
+                else
+                {
+                    try
+                    {
+                        Streams.Medium? mediaInfo = streams.StreamMedia.FirstOrDefault(m => (m?.id == streamKVP.Key) == true);
+                        Streams.List? streamInfo = streams.StreamObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
+
+                        isNew = await m_DownloadHelper.DownloadStreamMedia(
+                            url: streamKVP.Value,
+                            folder: path,
+                            media_id: streamKVP.Key,
+                            task: task,
+                            filenameFormat: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? Config.PostFileNameFormat : string.Empty,
+                            streamInfo: streamInfo,
+                            streamMedia: mediaInfo,
+                            author: streamInfo?.author,
+                            users: hasSelectedUsersKVP.Value,
+                            config: Config,
+                            Config.ShowScrapeSize);
+                        if (isNew)
+                        {
+                            newStreamsCount++;
+                        }
+                        else
+                        {
+                            oldStreamsCount++;
+                        }
+                    }
+                    catch
+                    {
+                        Console.WriteLine("Media was null");
+                    }
+                }
+            }
+            task.StopTask();
+        });
+        AnsiConsole.Markup($"[red]Streams Already Downloaded: {oldStreamsCount} New Streams Downloaded: {newStreamsCount}[/]\n");
+
+        return streamsCount;
+    }
+
+    private static async Task DownloadSinglePost(long post_id, string path, Dictionary<string, int> users)
+    {
+        AnsiConsole.Markup($"[red]Getting Post\n[/]");
+        SinglePostCollection post = await m_ApiHelper.GetPost($"/posts/{post_id.ToString()}", path, Auth!, Config!);
+
+        if(post == null)
+        {
+            AnsiConsole.Markup($"[red]Couldn't find post\n[/]");
+            return;
+        }
+
+        long totalSize = 0;
+        if (Config.ShowScrapeSize)
+        {
+            totalSize = await m_DownloadHelper.CalculateTotalFileSize(post.SinglePosts.Values.ToList(), Auth);
+        }
+        else
+        {
+            totalSize = post.SinglePosts.Count;
+        }
+        bool isNew = false;
+        await AnsiConsole.Progress()
+        .Columns(GetProgressColumns(Config.ShowScrapeSize))
+        .StartAsync(async ctx =>
+        {
+            var task = ctx.AddTask($"[red]Downloading Post[/]", autoStart: false);
+            task.MaxValue = totalSize;
+            task.StartTask();
+            foreach (KeyValuePair<long, string> postKVP in post.SinglePosts)
+            {
+                if (postKVP.Value.Contains("cdn3.onlyfans.com/dash/files"))
+                {
+                    string[] messageUrlParsed = postKVP.Value.Split(',');
+                    string mpdURL = messageUrlParsed[0];
+                    string policy = messageUrlParsed[1];
+                    string signature = messageUrlParsed[2];
+                    string kvp = messageUrlParsed[3];
+                    string mediaId = messageUrlParsed[4];
+                    string postId = messageUrlParsed[5];
+                    string? licenseURL = null;
+                    string? pssh = await m_ApiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp, Auth);
+                    if (pssh == null)
+                    {
+                        continue;
+                    }
+
+                    DateTime lastModified = await m_ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp, Auth);
+                    Dictionary<string, string> drmHeaders = await m_ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine", Auth);
+                    string decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                    SinglePost.Medium mediaInfo = post.SinglePostMedia.FirstOrDefault(m => m.id == postKVP.Key);
+                    SinglePost postInfo = post.SinglePostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
+
+                    isNew = await m_DownloadHelper.DownloadPostDRMVideo(
+                        ytdlppath: Auth.YTDLP_PATH,
+                        mp4decryptpath: Auth.MP4DECRYPT_PATH,
+                        ffmpegpath: Auth.FFMPEG_PATH,
+                        user_agent: Auth.USER_AGENT,
+                        policy: policy,
+                        signature: signature,
+                        kvp: kvp,
+                        sess: Auth.COOKIE,
+                        url: mpdURL,
+                        decryptionKey: decryptionKey,
+                        folder: path,
+                        lastModified: lastModified,
+                        media_id: postKVP.Key,
+                        task: task,
+                        filenameFormat: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? Config.PostFileNameFormat : string.Empty,
+                        postInfo: postInfo,
+                        postMedia: mediaInfo,
+                        author: postInfo?.author,
+                        users: users,
+                        config: Config,
+                        showScrapeSize: Config.ShowScrapeSize);
+                }
+                else
+                {
+                    try
+                    {
+                        SinglePost.Medium? mediaInfo = post.SinglePostMedia.FirstOrDefault(m => (m?.id == postKVP.Key) == true);
+                        SinglePost? postInfo = post.SinglePostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
+
+                        isNew = await m_DownloadHelper.DownloadPostMedia(
+                            url: postKVP.Value,
+                            folder: path,
+                            media_id: postKVP.Key,
+                            task: task,
+                            filenameFormat: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? Config.PostFileNameFormat : string.Empty,
+                            postInfo: postInfo,
+                            postMedia: mediaInfo,
+                            author: postInfo?.author,
+                            users: users,
+                            config: Config,
+                            Config.ShowScrapeSize);
+                    }
+                    catch
+                    {
+                        Console.WriteLine("Media was null");
+                    }
+                }
+            }
+            task.StopTask();
+        });
+        if (isNew)
+        {
+            AnsiConsole.Markup($"[red]Post {post_id} downloaded\n[/]");
+        }
+        else
+        {
+            AnsiConsole.Markup($"[red]Post {post_id} already downloaded\n[/]");
+        }
+    }
     public static async Task<KeyValuePair<bool, Dictionary<string, int>>> HandleUserSelection(Dictionary<string, int> selectedUsers, Dictionary<string, int> users, Dictionary<string, int> lists)
     {
         bool hasSelectedUsers = false;
@@ -1017,6 +1379,8 @@ public class Program
                         }
                     }
                     break;
+                case "[red]Download Single Post[/]":
+                    return new KeyValuePair<bool, Dictionary<string, int>>(true, new Dictionary<string, int> { { "SinglePost", 0 } });
                 case "[red]Edit config.json[/]":
                     while (true)
                     {
@@ -1028,6 +1392,7 @@ public class Program
                             ( "[red]DownloadPaidPosts[/]", Config.DownloadPaidPosts ),
                             ( "[red]DownloadPosts[/]",  Config.DownloadPosts ),
                             ( "[red]DownloadArchived[/]", Config.DownloadArchived ),
+                            ( "[red]DownloadStreams[/]", Config.DownloadStreams),
                             ( "[red]DownloadStories[/]", Config.DownloadStories ),
                             ( "[red]DownloadHighlights[/]", Config.DownloadHighlights ),
                             ( "[red]DownloadMessages[/]", Config.DownloadMessages ),
@@ -1043,12 +1408,13 @@ public class Program
                             ( "[red]FolderPerMessage[/]", Config.FolderPerMessage ),
                             ( "[red]LimitDownloadRate[/]", Config.LimitDownloadRate ),
                             ( "[red]RenameExistingFilesOnCustomFormat[/]", Config.RenameExistingFilesWhenCustomFormatIsSelected ),
-                            ( "[red]DownloadPostsBeforeOrAfterSpecificDate[/]", Config.DownloadOnlySpecificDates )
+                            ( "[red]DownloadPostsBeforeOrAfterSpecificDate[/]", Config.DownloadOnlySpecificDates ),
+                            ( "[red]ShowScrapeSize[/]", Config.ShowScrapeSize)
                         });
 
                         MultiSelectionPrompt<string> multiSelectionPrompt = new MultiSelectionPrompt<string>()
                             .Title("[red]Edit config.json[/]")
-                            .PageSize(18);
+                            .PageSize(20);
 
                         foreach(var choice in choices)
                         {
@@ -1077,6 +1443,7 @@ public class Program
                             DownloadPaidPosts = configOptions.Contains("[red]DownloadPaidPosts[/]"),
                             DownloadPosts = configOptions.Contains("[red]DownloadPosts[/]"),
                             DownloadArchived = configOptions.Contains("[red]DownloadArchived[/]"),
+                            DownloadStreams = configOptions.Contains("[red]DownloadStreams[/]"),
                             DownloadStories = configOptions.Contains("[red]DownloadStories[/]"),
                             DownloadHighlights = configOptions.Contains("[red]DownloadHighlights[/]"),
                             DownloadMessages = configOptions.Contains("[red]DownloadMessages[/]"),
@@ -1092,7 +1459,8 @@ public class Program
                             FolderPerMessage = configOptions.Contains("[red]FolderPerMessage[/]"),
                             LimitDownloadRate = configOptions.Contains("[red]LimitDownloadRate[/]"),
                             RenameExistingFilesWhenCustomFormatIsSelected = configOptions.Contains("[red]RenameExistingFilesOnCustomFormat[/]"),
-                            DownloadOnlySpecificDates = configOptions.Contains("[red]DownloadPostsBeforeOrAfterSpecificDate[/]")
+                            DownloadOnlySpecificDates = configOptions.Contains("[red]DownloadPostsBeforeOrAfterSpecificDate[/]"),
+                            ShowScrapeSize = configOptions.Contains("[red]ShowScrapeSize[/]")
                         };
 
 
@@ -1125,6 +1493,7 @@ public class Program
 				"[red]Select All[/]",
 				"[red]List[/]",
 				"[red]Custom[/]",
+                "[red]Download Single Post[/]",
                 "[red]Edit config.json[/]",
 				"[red]Exit[/]"
 			};
@@ -1135,12 +1504,12 @@ public class Program
 			{
 				"[red]Select All[/]",
 				"[red]Custom[/]",
+                "[red]Download Single Post[/]",
                 "[red]Edit config.json[/]",
                 "[red]Exit[/]"
 			};
         }
     }
-
 
     static bool ValidateFilePath(string path)
     {
@@ -1167,5 +1536,24 @@ public class Program
         }
 
         return true;
+    }
+    static ProgressColumn[] GetProgressColumns(bool showScrapeSize)
+    {
+        List<ProgressColumn> progressColumns;
+        if (showScrapeSize)
+        {
+            progressColumns = new List<ProgressColumn>()
+            {
+                new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn(), new DownloadedColumn(), new RemainingTimeColumn()
+            };
+        }
+        else
+        {
+            progressColumns = new List<ProgressColumn>()
+            {
+                new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn()
+            };
+        }
+        return progressColumns.ToArray();
     }
 }

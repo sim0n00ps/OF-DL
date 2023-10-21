@@ -8,6 +8,7 @@ using OF_DL.Entities.Messages;
 using OF_DL.Entities.Post;
 using OF_DL.Entities.Purchased;
 using OF_DL.Entities.Stories;
+using OF_DL.Entities.Streams;
 using OF_DL.Enumurations;
 using System.Globalization;
 using System.Security.Cryptography;
@@ -1520,6 +1521,237 @@ public class APIHelper : IAPIHelper
             }
 
             return postCollection;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine("\nInner Exception:");
+                Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+            }
+        }
+        return null;
+    }
+    public async Task<SinglePostCollection> GetPost(string endpoint, string folder, Auth auth, Config config)
+    {
+        try
+        {
+            SinglePost singlePost = new();
+            SinglePostCollection singlePostCollection = new();
+            Dictionary<string, string> getParams = new()
+            {
+                { "skip_users", "all" }
+            };
+
+            UpdateGetParamsForDateSelection(
+                config,
+                ref getParams,
+                config.CustomDate);
+
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, new HttpClient());
+            singlePost = JsonConvert.DeserializeObject<SinglePost>(body, m_JsonSerializerSettings);
+
+            if(singlePost != null)
+            {
+                List<long> postPreviewIds = new();
+                if (singlePost.preview != null && singlePost.preview.Count > 0)
+                {
+                    foreach (var id in singlePost.preview)
+                    {
+                        if (id?.ToString() != "poll")
+                        {
+                            if (!postPreviewIds.Contains(Convert.ToInt64(id)))
+                            {
+                                postPreviewIds.Add(Convert.ToInt64(id));
+                            }
+                        }
+                    }
+                }
+                await m_DBHelper.AddPost(folder, singlePost.id, singlePost.text != null ? singlePost.text : string.Empty, singlePost.price != null ? singlePost.price.ToString() : "0", singlePost.price != null && singlePost.isOpened ? true : false, singlePost.isArchived, singlePost.postedAt);
+                singlePostCollection.SinglePostObjects.Add(singlePost);
+                if (singlePost.media != null && singlePost.media.Count > 0)
+                {
+                    foreach (SinglePost.Medium medium in singlePost.media)
+                    {
+                        if (medium.type == "photo" && !config.DownloadImages)
+                        {
+                            continue;
+                        }
+                        if (medium.type == "video" && !config.DownloadVideos)
+                        {
+                            continue;
+                        }
+                        if (medium.type == "gif" && !config.DownloadVideos)
+                        {
+                            continue;
+                        }
+                        if (medium.type == "audio" && !config.DownloadAudios)
+                        {
+                            continue;
+                        }
+                        if (medium.canView && medium.files?.drm == null)
+                        {
+                            if (!medium.source.source.Contains("upload"))
+                            {
+                                if (!singlePostCollection.SinglePosts.ContainsKey(medium.id))
+                                {
+                                    await m_DBHelper.AddMedia(folder, medium.id, singlePost.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), postPreviewIds.Contains((long)medium.id) ? true : false, false, null);
+                                    singlePostCollection.SinglePosts.Add(medium.id, medium.source.source);
+                                    singlePostCollection.SinglePostMedia.Add(medium);
+                                }
+                            }
+                        }
+                        else if (medium.canView && medium.files != null && medium.files.drm != null)
+                        {
+                            if (medium.files != null && medium.files.drm != null)
+                            {
+                                if (!singlePostCollection.SinglePosts.ContainsKey(medium.id))
+                                {
+                                    await m_DBHelper.AddMedia(folder, medium.id, singlePost.id, medium.files.drm.manifest.dash, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), postPreviewIds.Contains((long)medium.id) ? true : false, false, null);
+                                    singlePostCollection.SinglePosts.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{singlePost.id}");
+                                    singlePostCollection.SinglePostMedia.Add(medium);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return singlePostCollection;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine("\nInner Exception:");
+                Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+            }
+        }
+        return null;
+    }
+
+    public async Task<StreamsCollection> GetStreams(string endpoint, string folder, Auth auth, Config config, List<long> paid_post_ids)
+    {
+        try
+        {
+            Streams streams = new();
+            StreamsCollection streamsCollection = new();
+            int post_limit = 50;
+            Dictionary<string, string> getParams = new()
+            {
+                { "limit", post_limit.ToString() },
+                { "order", "publish_date_desc" },
+                { "format", "infinite" }
+            };
+
+            UpdateGetParamsForDateSelection(
+                config,
+                ref getParams,
+                config.CustomDate);
+
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, new HttpClient());
+            streams = JsonConvert.DeserializeObject<Streams>(body, m_JsonSerializerSettings);
+            if (streams != null && streams.hasMore)
+            {
+
+                UpdateGetParamsForDateSelection(
+                    config,
+                    ref getParams,
+                    streams.tailMarker);
+
+                while (true)
+                {
+                    Streams newstreams = new();
+
+                    var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
+                    newstreams = JsonConvert.DeserializeObject<Streams>(loopbody, m_JsonSerializerSettings);
+
+                    streams.list.AddRange(newstreams.list);
+                    if (!newstreams.hasMore)
+                    {
+                        break;
+                    }
+
+                    UpdateGetParamsForDateSelection(
+                        config,
+                        ref getParams,
+                        newstreams.tailMarker);
+                }
+            }
+
+            foreach (Streams.List stream in streams.list)
+            {
+                List<long> streamPreviewIds = new();
+                if (stream.preview != null && stream.preview.Count > 0)
+                {
+                    foreach (var id in stream.preview)
+                    {
+                        if (id?.ToString() != "poll")
+                        {
+                            if (!streamPreviewIds.Contains(Convert.ToInt64(id)))
+                            {
+                                streamPreviewIds.Add(Convert.ToInt64(id));
+                            }
+                        }
+                    }
+                }
+                await m_DBHelper.AddPost(folder, stream.id, stream.text != null ? stream.text : string.Empty, stream.price != null ? stream.price.ToString() : "0", stream.price != null && stream.isOpened ? true : false, stream.isArchived, stream.postedAt);
+                streamsCollection.StreamObjects.Add(stream);
+                if (stream.media != null && stream.media.Count > 0)
+                {
+                    foreach (Streams.Medium medium in stream.media)
+                    {
+                        if (medium.type == "photo" && !config.DownloadImages)
+                        {
+                            continue;
+                        }
+                        if (medium.type == "video" && !config.DownloadVideos)
+                        {
+                            continue;
+                        }
+                        if (medium.type == "gif" && !config.DownloadVideos)
+                        {
+                            continue;
+                        }
+                        if (medium.type == "audio" && !config.DownloadAudios)
+                        {
+                            continue;
+                        }
+                        if (medium.canView && medium.files?.drm == null)
+                        {
+                            bool has = paid_post_ids.Any(cus => cus.Equals(medium.id));
+                            if (!has && !medium.source.source.Contains("upload"))
+                            {
+                                if (!streamsCollection.Streams.ContainsKey(medium.id))
+                                {
+                                    await m_DBHelper.AddMedia(folder, medium.id, stream.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), streamPreviewIds.Contains((long)medium.id) ? true : false, false, null);
+                                    streamsCollection.Streams.Add(medium.id, medium.source.source);
+                                    streamsCollection.StreamMedia.Add(medium);
+                                }
+                            }
+                        }
+                        else if (medium.canView && medium.files != null && medium.files.drm != null)
+                        {
+                            bool has = paid_post_ids.Any(cus => cus.Equals(medium.id));
+                            if (!has && medium.files != null && medium.files.drm != null)
+                            {
+                                if (!streamsCollection.Streams.ContainsKey(medium.id))
+                                {
+                                    await m_DBHelper.AddMedia(folder, medium.id, stream.id, medium.files.drm.manifest.dash, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), streamPreviewIds.Contains((long)medium.id) ? true : false, false, null);
+                                    streamsCollection.Streams.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{stream.id}");
+                                    streamsCollection.StreamMedia.Add(medium);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return streamsCollection;
         }
         catch (Exception ex)
         {

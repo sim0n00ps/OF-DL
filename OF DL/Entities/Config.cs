@@ -15,6 +15,7 @@ namespace OF_DL.Entities
         public bool DownloadPaidPosts { get; set; }
         public bool DownloadPosts { get; set; }
         public bool DownloadArchived { get; set; }
+        public bool DownloadStreams { get; set; }
         public bool DownloadStories { get; set; }
         public bool DownloadHighlights { get; set; }
         public bool DownloadMessages { get; set; }
@@ -49,6 +50,7 @@ namespace OF_DL.Entities
         [JsonConverter(typeof(ShortDateConverter))]
         public DateTime? CustomDate { get; set; } = null;
 
+        public bool ShowScrapeSize { get; set; } = true;
     }
 
 }

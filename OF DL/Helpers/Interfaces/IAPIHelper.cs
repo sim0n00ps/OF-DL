@@ -3,6 +3,7 @@ using OF_DL.Entities.Archived;
 using OF_DL.Entities.Messages;
 using OF_DL.Entities.Post;
 using OF_DL.Entities.Purchased;
+using OF_DL.Entities.Streams;
 using OF_DL.Enumurations;
 
 namespace OF_DL.Helpers
@@ -18,6 +19,8 @@ namespace OF_DL.Helpers
         Task<Dictionary<long, string>> GetMedia(MediaType mediatype, string endpoint, string? username, string folder, Auth auth, Config config, List<long> paid_post_ids);
         Task<PaidPostCollection> GetPaidPosts(string endpoint, string folder, string username, Auth auth, Config config, List<long> paid_post_ids);
         Task<PostCollection> GetPosts(string endpoint, string folder, Auth auth, Config config, List<long> paid_post_ids);
+        Task<SinglePostCollection> GetPost(string endpoint, string folder, Auth auth, Config config);
+        Task<StreamsCollection> GetStreams(string endpoint, string folder, Auth auth, Config config, List<long> paid_post_ids);
         Task<ArchivedCollection> GetArchived(string endpoint, string folder, Auth auth, Config config);
         Task<MessageCollection> GetMessages(string endpoint, string folder, Auth auth, Config config);
         Task<PaidMessageCollection> GetPaidMessages(string endpoint, string folder, string username, Auth auth, Config config);
