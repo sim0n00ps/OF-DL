@@ -1493,13 +1493,28 @@ public class APIHelper : IAPIHelper
                         if (medium.canView && medium.files?.drm == null)
                         {
                             bool has = paid_post_ids.Any(cus => cus.Equals(medium.id));
-                            if (!has && !medium.source.source.Contains("upload"))
+                            if(medium.source.source != null)
                             {
-                                if (!postCollection.Posts.ContainsKey(medium.id))
+                                if (!has && !medium.source.source.Contains("upload"))
                                 {
-                                    await m_DBHelper.AddMedia(folder, medium.id, post.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), postPreviewIds.Contains((long)medium.id) ? true : false, false, null);
-                                    postCollection.Posts.Add(medium.id, medium.source.source);
-                                    postCollection.PostMedia.Add(medium);
+                                    if (!postCollection.Posts.ContainsKey(medium.id))
+                                    {
+                                        await m_DBHelper.AddMedia(folder, medium.id, post.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), postPreviewIds.Contains((long)medium.id) ? true : false, false, null);
+                                        postCollection.Posts.Add(medium.id, medium.source.source);
+                                        postCollection.PostMedia.Add(medium);
+                                    }
+                                }
+                            }
+                            else if(medium.preview != null && medium.source.source == null)
+                            {
+                                if (!has && !medium.preview.Contains("upload"))
+                                {
+                                    if (!postCollection.Posts.ContainsKey(medium.id))
+                                    {
+                                        await m_DBHelper.AddMedia(folder, medium.id, post.id, medium.preview, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), postPreviewIds.Contains((long)medium.id) ? true : false, false, null);
+                                        postCollection.Posts.Add(medium.id, medium.preview);
+                                        postCollection.PostMedia.Add(medium);
+                                    }
                                 }
                             }
                         }
@@ -1593,13 +1608,28 @@ public class APIHelper : IAPIHelper
                         }
                         if (medium.canView && medium.files?.drm == null)
                         {
-                            if (!medium.source.source.Contains("upload"))
+                            if(medium.source.source != null)
                             {
-                                if (!singlePostCollection.SinglePosts.ContainsKey(medium.id))
+                                if (!medium.source.source.Contains("upload"))
                                 {
-                                    await m_DBHelper.AddMedia(folder, medium.id, singlePost.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), postPreviewIds.Contains((long)medium.id) ? true : false, false, null);
-                                    singlePostCollection.SinglePosts.Add(medium.id, medium.source.source);
-                                    singlePostCollection.SinglePostMedia.Add(medium);
+                                    if (!singlePostCollection.SinglePosts.ContainsKey(medium.id))
+                                    {
+                                        await m_DBHelper.AddMedia(folder, medium.id, singlePost.id, medium.source.source, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), postPreviewIds.Contains((long)medium.id) ? true : false, false, null);
+                                        singlePostCollection.SinglePosts.Add(medium.id, medium.source.source);
+                                        singlePostCollection.SinglePostMedia.Add(medium);
+                                    }
+                                }
+                            }
+                            else if(medium.preview != null && medium.source.source == null)
+                            {
+                                if (!medium.preview.Contains("upload"))
+                                {
+                                    if (!singlePostCollection.SinglePosts.ContainsKey(medium.id))
+                                    {
+                                        await m_DBHelper.AddMedia(folder, medium.id, singlePost.id, medium.preview, null, null, null, "Posts", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), postPreviewIds.Contains((long)medium.id) ? true : false, false, null);
+                                        singlePostCollection.SinglePosts.Add(medium.id, medium.preview);
+                                        singlePostCollection.SinglePostMedia.Add(medium);
+                                    }
                                 }
                             }
                         }

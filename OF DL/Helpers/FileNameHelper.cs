@@ -41,9 +41,23 @@ namespace OF_DL.Helpers
                     else if((fileProperty == null || drmProperty == null) && propertyName == "mediaCreatedAt")
                     {
                         object source = GetNestedPropertyValue(obj2, "source.source");
-                        DateTime lastModified = await DownloadHelper.GetMediaLastModified(source.ToString());
-                        values.Add(propertyName, lastModified.ToString("yyyy-MM-dd"));
-                        continue;
+                        if(source != null)
+                        {
+                            DateTime lastModified = await DownloadHelper.GetMediaLastModified(source.ToString());
+                            values.Add(propertyName, lastModified.ToString("yyyy-MM-dd"));
+                            continue;
+                        }
+                        else
+                        {
+                            object preview = GetNestedPropertyValue(obj2, "preview");
+                            if(preview != null)
+                            {
+                                DateTime lastModified = await DownloadHelper.GetMediaLastModified(preview.ToString());
+                                values.Add(propertyName, lastModified.ToString("yyyy-MM-dd"));
+                                continue;
+                            }
+                        }
+                        
                     }
                     PropertyInfo? property = Array.Find(properties2, p => p.Name.Equals(propertyName.Replace("media", ""), StringComparison.OrdinalIgnoreCase));
                     if (property != null)
