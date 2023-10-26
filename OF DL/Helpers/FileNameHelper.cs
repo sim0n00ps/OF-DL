@@ -104,7 +104,7 @@ namespace OF_DL.Helpers
                                     {
                                         Uri uri = new(nestedPropertyValue.ToString());
                                         string filename = System.IO.Path.GetFileName(uri.LocalPath);
-                                        values.Add(propertyName, filename.Split(".")[0] + "_source.mp4");
+                                        values.Add(propertyName, filename.Split(".")[0] + "_source");
                                     }
                                 }
                             }
