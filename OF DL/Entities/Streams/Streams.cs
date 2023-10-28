@@ -81,7 +81,7 @@ namespace OF_DL.Entities.Streams
             public List<object> linkedUsers { get; set; }
             public List<object> linkedPosts { get; set; }
             public string tipsAmount { get; set; }
-            public int tipsAmountRaw { get; set; }
+            public string tipsAmountRaw { get; set; }
             public List<Medium> media { get; set; }
             public bool canViewMedia { get; set; }
             public List<object> preview { get; set; }
