@@ -9,6 +9,7 @@ using OF_DL.Enumerations;
 using OF_DL.Utils;
 using Org.BouncyCastle.Asn1.Tsp;
 using Org.BouncyCastle.Asn1.X509;
+using Serilog;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
@@ -985,11 +986,12 @@ public class DownloadHelper : IDownloadHelper
         catch (Exception ex)
         {
             Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
             if (ex.InnerException != null)
             {
                 Console.WriteLine("\nInner Exception:");
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
         }
         return false;
@@ -1067,11 +1069,12 @@ public class DownloadHelper : IDownloadHelper
         catch (Exception ex)
         {
             Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
             if (ex.InnerException != null)
             {
                 Console.WriteLine("\nInner Exception:");
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
         }
         return false;
@@ -1149,11 +1152,12 @@ public class DownloadHelper : IDownloadHelper
         catch (Exception ex)
         {
             Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
             if (ex.InnerException != null)
             {
                 Console.WriteLine("\nInner Exception:");
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
         }
         return false;
@@ -1229,11 +1233,12 @@ public class DownloadHelper : IDownloadHelper
         catch (Exception ex)
         {
             Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
             if (ex.InnerException != null)
             {
                 Console.WriteLine("\nInner Exception:");
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
         }
         return false;
@@ -1309,11 +1314,12 @@ public class DownloadHelper : IDownloadHelper
         catch (Exception ex)
         {
             Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
             if (ex.InnerException != null)
             {
                 Console.WriteLine("\nInner Exception:");
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
         }
         return false;
@@ -1391,11 +1397,12 @@ public class DownloadHelper : IDownloadHelper
         catch (Exception ex)
         {
             Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
             if (ex.InnerException != null)
             {
                 Console.WriteLine("\nInner Exception:");
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
         }
         return false;
@@ -1465,11 +1472,12 @@ public class DownloadHelper : IDownloadHelper
         catch (Exception ex)
         {
             Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
             if (ex.InnerException != null)
             {
                 Console.WriteLine("\nInner Exception:");
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
         }
         return false;

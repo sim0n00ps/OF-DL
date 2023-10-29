@@ -9,6 +9,7 @@ using OF_DL.Entities.Stories;
 using OF_DL.Entities.Streams;
 using OF_DL.Enumurations;
 using OF_DL.Helpers;
+using Serilog;
 using Spectre.Console;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -38,6 +39,11 @@ public class Program
 	{
 		try
         {
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .WriteTo.File("logs/OFDL.txt", rollingInterval: RollingInterval.Day)
+                .CreateLogger();
+
             bool clientIdBlobMissing = false;
             bool devicePrivateKey = false;
             AnsiConsole.Write(new FigletText("Welcome to OF-DL").Color(Color.Red));
@@ -50,6 +56,7 @@ public class Program
             else
             {
                 AnsiConsole.Markup("[red]auth.json does not exist, please make sure it exists in the folder where you are running the program from[/]");
+                Log.Error("auth.json does not exist");
                 Console.ReadKey();
                 Environment.Exit(0);
             }
@@ -62,6 +69,7 @@ public class Program
             else
             {
                 AnsiConsole.Markup("[red]config.json does not exist, please make sure it exists in the folder where you are running the program from[/]");
+                Log.Error("config.json does not exist");
                 Console.ReadKey();
                 Environment.Exit(0);
             }
@@ -73,6 +81,7 @@ public class Program
             else
             {
                 AnsiConsole.Markup($"[red]Cannot locate yt-dlp.exe; please modify auth.json with the correct path. Press any key to exit.[/]\n");
+                Log.Error($"Cannot locate yt-dlp.exe with path {Auth.YTDLP_PATH}");
                 Console.ReadKey();
                 Environment.Exit(0);
             }
@@ -84,6 +93,7 @@ public class Program
             else
             {
                 AnsiConsole.Markup($"[red]Cannot locate ffmpeg.exe; please modify auth.json with the correct path. Press any key to exit.[/]\n");
+                Log.Error($"Cannot locate ffmpeg.exe with path {Auth.FFMPEG_PATH}");
                 Console.ReadKey();
                 Environment.Exit(0);
             }
@@ -95,6 +105,7 @@ public class Program
             else
             {
                 AnsiConsole.Markup($"[red]Cannot locate mp4decrypt.exe; please modify auth.json with the correct path. Press any key to exit.[/]\n");
+                Log.Error($"Cannot locate mp4decrypt.exe with path {Auth.MP4DECRYPT_PATH}");
                 Console.ReadKey();
                 Environment.Exit(0);
             }
@@ -102,6 +113,7 @@ public class Program
             if (!File.Exists("cdm/devices/chrome_1610/device_client_id_blob"))
             {
                 AnsiConsole.Markup("[yellow]WARNING No device_client_id_blob found, you will not be able to download DRM protected videos without this[/]\n");
+                Log.Error("device_client_id_blob is missing");
                 clientIdBlobMissing = true;
             }
             else
@@ -112,6 +124,7 @@ public class Program
             if (!File.Exists("cdm/devices/chrome_1610/device_private_key"))
             {
                 AnsiConsole.Markup("[yellow]WARNING No device_private_key found, you will not be able to download DRM protected videos without this[/]\n");
+                Log.Error("device_private_key is missing");
                 devicePrivateKey = true;
             }
             else
@@ -129,6 +142,7 @@ public class Program
             if (validate.name == null && validate.username == null)
             {
                 AnsiConsole.Markup($"[red]Auth failed, please check the values in auth.json are correct, press any key to exit[/]");
+                Log.Error("Auth failed");
                 Console.ReadKey();
                 return;
             }
@@ -140,12 +154,13 @@ public class Program
         catch (Exception ex)
 		{
 			Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
-			if (ex.InnerException != null)
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+            if (ex.InnerException != null)
 			{
 				Console.WriteLine("\nInner Exception:");
 				Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
-			}
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+            }
 		}
 	}
 

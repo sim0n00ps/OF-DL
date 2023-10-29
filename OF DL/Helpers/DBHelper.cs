@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using OF_DL.Enumurations;
 using System.IO;
 using Microsoft.Data.Sqlite;
+using Serilog;
 
 namespace OF_DL.Helpers
 {
@@ -72,11 +73,12 @@ namespace OF_DL.Helpers
             catch (Exception ex)
             {
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+                Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
                 if (ex.InnerException != null)
                 {
                     Console.WriteLine("\nInner Exception:");
                     Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                    Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
                 }
             }
         }
@@ -108,11 +110,12 @@ namespace OF_DL.Helpers
             catch (Exception ex)
             {
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+                Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
                 if (ex.InnerException != null)
                 {
                     Console.WriteLine("\nInner Exception:");
                     Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                    Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
                 }
             }
         }
@@ -143,11 +146,12 @@ namespace OF_DL.Helpers
             catch (Exception ex)
             {
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+                Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
                 if (ex.InnerException != null)
                 {
                     Console.WriteLine("\nInner Exception:");
                     Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                    Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
                 }
             }
         }
@@ -178,11 +182,12 @@ namespace OF_DL.Helpers
             catch (Exception ex)
             {
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+                Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
                 if (ex.InnerException != null)
                 {
                     Console.WriteLine("\nInner Exception:");
                     Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                    Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
                 }
             }
         }
@@ -206,11 +211,12 @@ namespace OF_DL.Helpers
             catch (Exception ex)
             {
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+                Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
                 if (ex.InnerException != null)
                 {
                     Console.WriteLine("\nInner Exception:");
                     Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                    Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
                 }
             }
         }
@@ -232,11 +238,12 @@ namespace OF_DL.Helpers
             catch (Exception ex)
             {
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+                Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
                 if (ex.InnerException != null)
                 {
                     Console.WriteLine("\nInner Exception:");
                     Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                    Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
                 }
             }
             return false;

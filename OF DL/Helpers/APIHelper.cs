@@ -10,6 +10,7 @@ using OF_DL.Entities.Purchased;
 using OF_DL.Entities.Stories;
 using OF_DL.Entities.Streams;
 using OF_DL.Enumurations;
+using Serilog;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
@@ -208,11 +209,12 @@ public class APIHelper : IAPIHelper
         catch (Exception ex)
         {
             Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
             if (ex.InnerException != null)
             {
                 Console.WriteLine("\nInner Exception:");
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
         }
         return null;
@@ -269,11 +271,12 @@ public class APIHelper : IAPIHelper
         catch (Exception ex)
         {
             Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
             if (ex.InnerException != null)
             {
                 Console.WriteLine("\nInner Exception:");
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
         }
         return null;
@@ -361,11 +364,12 @@ public class APIHelper : IAPIHelper
         catch (Exception ex)
         {
             Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
             if (ex.InnerException != null)
             {
                 Console.WriteLine("\nInner Exception:");
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
         }
         return null;
@@ -418,11 +422,12 @@ public class APIHelper : IAPIHelper
         catch (Exception ex)
         {
             Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
             if (ex.InnerException != null)
             {
                 Console.WriteLine("\nInner Exception:");
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
         }
         return null;
@@ -1235,11 +1240,12 @@ public class APIHelper : IAPIHelper
         catch (Exception ex)
         {
             Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
             if (ex.InnerException != null)
             {
                 Console.WriteLine("\nInner Exception:");
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
         }
         return null;
@@ -1388,11 +1394,12 @@ public class APIHelper : IAPIHelper
         catch (Exception ex)
         {
             Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
             if (ex.InnerException != null)
             {
                 Console.WriteLine("\nInner Exception:");
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
         }
         return null;
@@ -1540,11 +1547,12 @@ public class APIHelper : IAPIHelper
         catch (Exception ex)
         {
             Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
             if (ex.InnerException != null)
             {
                 Console.WriteLine("\nInner Exception:");
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
         }
         return null;
@@ -1654,11 +1662,12 @@ public class APIHelper : IAPIHelper
         catch (Exception ex)
         {
             Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
             if (ex.InnerException != null)
             {
                 Console.WriteLine("\nInner Exception:");
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
         }
         return null;
@@ -1786,11 +1795,12 @@ public class APIHelper : IAPIHelper
         catch (Exception ex)
         {
             Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
             if (ex.InnerException != null)
             {
                 Console.WriteLine("\nInner Exception:");
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
         }
         return null;
@@ -1911,11 +1921,12 @@ public class APIHelper : IAPIHelper
         catch (Exception ex)
         {
             Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
             if (ex.InnerException != null)
             {
                 Console.WriteLine("\nInner Exception:");
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
         }
         return null;
@@ -2094,11 +2105,12 @@ public class APIHelper : IAPIHelper
         catch (Exception ex)
         {
             Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
             if (ex.InnerException != null)
             {
                 Console.WriteLine("\nInner Exception:");
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
         }
         return null;
@@ -2309,11 +2321,12 @@ public class APIHelper : IAPIHelper
         catch (Exception ex)
         {
             Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
             if (ex.InnerException != null)
             {
                 Console.WriteLine("\nInner Exception:");
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
         }
         return null;
@@ -2347,11 +2360,12 @@ public class APIHelper : IAPIHelper
         catch (Exception ex)
         {
             Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
             if (ex.InnerException != null)
             {
                 Console.WriteLine("\nInner Exception:");
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
         }
         return null;
@@ -2379,11 +2393,12 @@ public class APIHelper : IAPIHelper
         catch (Exception ex)
         {
             Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
             if (ex.InnerException != null)
             {
                 Console.WriteLine("\nInner Exception:");
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
         }
         return DateTime.Now;
@@ -2447,11 +2462,12 @@ public class APIHelper : IAPIHelper
         catch (Exception ex)
         {
             Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
             if (ex.InnerException != null)
             {
                 Console.WriteLine("\nInner Exception:");
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
         }
         return null;
@@ -2478,11 +2494,12 @@ public class APIHelper : IAPIHelper
         catch (Exception ex)
         {
             Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
             if (ex.InnerException != null)
             {
                 Console.WriteLine("\nInner Exception:");
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
         }
         return null;
