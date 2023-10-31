@@ -46,7 +46,7 @@ namespace OF_DL.Entities.Streams
         public class List
         {
             public string responseType { get; set; }
-            public int id { get; set; }
+            public long id { get; set; }
             public DateTime postedAt { get; set; }
             public string postedAtPrecise { get; set; }
             public object expiredAt { get; set; }
