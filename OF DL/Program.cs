@@ -26,6 +26,8 @@ public class Program
     private static readonly IAPIHelper m_ApiHelper;
     private static readonly IDBHelper m_DBHelper;
     private static readonly IDownloadHelper m_DownloadHelper;
+    private static bool clientIdBlobMissing = false;
+    private static bool devicePrivateKeyMissing = false;
 
 
     static Program()
@@ -44,8 +46,7 @@ public class Program
                 .WriteTo.File("logs/OFDL.txt", rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
-            bool clientIdBlobMissing = false;
-            bool devicePrivateKey = false;
+            
             AnsiConsole.Write(new FigletText("Welcome to OF-DL").Color(Color.Red));
 
             if (File.Exists("auth.json"))
@@ -112,8 +113,6 @@ public class Program
 
             if (!File.Exists("cdm/devices/chrome_1610/device_client_id_blob"))
             {
-                AnsiConsole.Markup("[yellow]WARNING No device_client_id_blob found, you will not be able to download DRM protected videos without this[/]\n");
-                Log.Error("device_client_id_blob is missing");
                 clientIdBlobMissing = true;
             }
             else
@@ -123,18 +122,16 @@ public class Program
 
             if (!File.Exists("cdm/devices/chrome_1610/device_private_key"))
             {
-                AnsiConsole.Markup("[yellow]WARNING No device_private_key found, you will not be able to download DRM protected videos without this[/]\n");
-                Log.Error("device_private_key is missing");
-                devicePrivateKey = true;
+                devicePrivateKeyMissing = true;
             }
             else
             {
                 AnsiConsole.Markup($"[green]device_private_key located successfully![/]\n");
             }
 
-            if (clientIdBlobMissing || devicePrivateKey)
+            if (clientIdBlobMissing || devicePrivateKeyMissing)
             {
-                AnsiConsole.Markup("[yellow]A tutorial to get these 2 files can be found here: https://forum.videohelp.com/threads/408031-Dumping-Your-own-L3-CDM-with-Android-Studio\n[/]");
+                AnsiConsole.Markup("[yellow]device_client_id_blob and/or device_private_key missing, https://cdrm-project.com/ will be used instead for DRM protected videos\n[/]");
             }
 
             //Check if auth is valid
@@ -397,7 +394,16 @@ public class Program
                         {
                             DateTime lastModified = await m_ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp, Auth);
                             Dictionary<string, string> drmHeaders = await m_ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/message/{messageId}", "?type=widevine", Auth);
-                            string decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh, Auth);
+                            string decryptionKey;
+                            if (clientIdBlobMissing || devicePrivateKeyMissing)
+                            {
+                                decryptionKey = await m_ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh, Auth);
+                            }
+                            else
+                            {
+                                decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh, Auth);
+                            }
+                            
 
                             Purchased.Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
                             Purchased.List? messageInfo = paidMessageCollection.PaidMessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
@@ -520,7 +526,15 @@ public class Program
                         {
                             DateTime lastModified = await m_ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp, Auth);
                             Dictionary<string, string> drmHeaders = await m_ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/message/{messageId}", "?type=widevine", Auth);
-                            string decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh, Auth);
+                            string decryptionKey;
+                            if (clientIdBlobMissing || devicePrivateKeyMissing)
+                            {
+                                decryptionKey = await m_ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh, Auth);
+                            }
+                            else
+                            {
+                                decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh, Auth);
+                            }
                             Messages.Medium? mediaInfo = messages.MessageMedia.FirstOrDefault(m => m.id == messageKVP.Key);
                             Messages.List? messageInfo = messages.MessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
@@ -746,7 +760,15 @@ public class Program
                         {
                             DateTime lastModified = await m_ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp, Auth);
                             Dictionary<string, string> drmHeaders = await m_ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine", Auth);
-                            string decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                            string decryptionKey;
+                            if (clientIdBlobMissing || devicePrivateKeyMissing)
+                            {
+                                decryptionKey = await m_ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                            }
+                            else
+                            {
+                                decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                            }
                             Archived.Medium? mediaInfo = archived.ArchivedPostMedia.FirstOrDefault(m => m.id == archivedKVP.Key);
                             Archived.List? postInfo = archived.ArchivedPostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
@@ -875,7 +897,15 @@ public class Program
 
                     DateTime lastModified = await m_ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp, Auth);
                     Dictionary<string, string> drmHeaders = await m_ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine", Auth);
-                    string decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                    string decryptionKey;
+                    if (clientIdBlobMissing || devicePrivateKeyMissing)
+                    {
+                        decryptionKey = await m_ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                    }
+                    else
+                    {
+                        decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                    }
                     Post.Medium mediaInfo = posts.PostMedia.FirstOrDefault(m => m.id == postKVP.Key);
                     Post.List postInfo = posts.PostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
@@ -1004,7 +1034,15 @@ public class Program
 
                     DateTime lastModified = await m_ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp, Auth);
                     Dictionary<string, string> drmHeaders = await m_ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine", Auth);
-                    string decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                    string decryptionKey;
+                    if (clientIdBlobMissing || devicePrivateKeyMissing)
+                    {
+                        decryptionKey = await m_ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                    }
+                    else
+                    {
+                        decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                    }
                     Purchased.Medium? mediaInfo = purchasedPosts.PaidPostMedia.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
                     Purchased.List? postInfo = purchasedPosts.PaidPostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
@@ -1124,7 +1162,15 @@ public class Program
 
                     DateTime lastModified = await m_ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp, Auth);
                     Dictionary<string, string> drmHeaders = await m_ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine", Auth);
-                    string decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                    string decryptionKey;
+                    if (clientIdBlobMissing || devicePrivateKeyMissing)
+                    {
+                        decryptionKey = await m_ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                    }
+                    else
+                    {
+                        decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                    }
                     Streams.Medium mediaInfo = streams.StreamMedia.FirstOrDefault(m => m.id == streamKVP.Key);
                     Streams.List streamInfo = streams.StreamObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
@@ -1248,7 +1294,15 @@ public class Program
 
                     DateTime lastModified = await m_ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp, Auth);
                     Dictionary<string, string> drmHeaders = await m_ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine", Auth);
-                    string decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                    string decryptionKey;
+                    if (clientIdBlobMissing || devicePrivateKeyMissing)
+                    {
+                        decryptionKey = await m_ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                    }
+                    else
+                    {
+                        decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                    }
                     SinglePost.Medium mediaInfo = post.SinglePostMedia.FirstOrDefault(m => m.id == postKVP.Key);
                     SinglePost postInfo = post.SinglePostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 

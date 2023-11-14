@@ -2429,7 +2429,7 @@ public class APIHelper : IAPIHelper
                     sb.AppendFormat("{0}: {1}\\n", header.Key, header.Value);
                 }
             }
-            sb.Remove(sb.Length - 2, 2); // remove the last \\n
+            sb.Remove(sb.Length - 2, 2);
             sb.Append("\",\n");
             sb.AppendFormat("  \"pssh\": \"{0}\",\n", pssh);
             sb.AppendFormat("  \"buildInfo\": \"{0}\",\n", buildInfo);
