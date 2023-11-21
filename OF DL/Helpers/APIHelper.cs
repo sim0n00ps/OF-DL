@@ -1457,9 +1457,17 @@ public class APIHelper : IAPIHelper
 
             foreach (Post.List post in posts.list)
             {
-                if ((config.SkipAds && (post.rawText != null || post.text != null)) && ((post.text != null && post.text.Contains("#ad")) || (post.rawText != null && post.rawText.Contains("#ad"))) || (post.text != null && post.text.Contains("/trial/")) || (post.rawText != null && post.rawText.Contains("/trial/")))
+                if (config.SkipAds)
                 {
-                    continue;
+                    if(post.rawText != null && (post.rawText.Contains("#ad") || post.rawText.Contains("/trial/")))
+                    {
+                        continue;
+                    }
+
+                    if (post.text != null && (post.text.Contains("#ad") || post.text.Contains("/trial/")))
+                    {
+                        continue;
+                    }
                 }
                 List<long> postPreviewIds = new();
                 if (post.preview != null && post.preview.Count > 0)
@@ -1969,9 +1977,12 @@ public class APIHelper : IAPIHelper
 
             foreach (Messages.List list in messages.list)
             {
-                if (config.SkipAds && list.text != null && (list.text.Contains("#ad") || list.text.Contains("/trial/")))
+                if (config.SkipAds)
                 {
-                    continue;
+                    if (list.text != null && (list.text.Contains("#ad") || list.text.Contains("/trial/")))
+                    {
+                        continue;
+                    }
                 }
                 List<long> messagePreviewIds = new();
                 if (list.previews != null && list.previews.Count > 0)
