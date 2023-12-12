@@ -51,7 +51,8 @@ public class APIHelper : IAPIHelper
             root = JsonConvert.DeserializeObject<DynamicRules>(body);
         }
 
-        long timestamp = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
+        DateTimeOffset dto = (DateTimeOffset)DateTime.UtcNow;
+        long timestamp = dto.ToUnixTimeMilliseconds();
 
         string input = $"{root.static_param}\n{timestamp}\n{path + queryParams}\n{auth.USER_ID}";
         byte[] inputBytes = Encoding.UTF8.GetBytes(input);
