@@ -68,12 +68,12 @@ public class APIHelper : IAPIHelper
             checksum += test.Sum();
         }
         checksum += root.checksum_constant.Value;
-        string sign = $"{root.start}:{hashString}:{checksum.ToString("X").ToLower()}:{root.end}";
+        string sign = $"{root.prefix}:{hashString}:{checksum.ToString("X").ToLower()}:{root.suffix}";
 
         Dictionary<string, string> headers = new()
         {
             { "accept", "application/json, text/plain" },
-            { "app-token", root.app_token },
+            { "app-token", root.AppToken },
             { "cookie", auth!.COOKIE! },
             { "sign", sign },
             { "time", timestamp.ToString() },
