@@ -12,6 +12,7 @@ using OF_DL.Entities.Streams;
 using OF_DL.Enumurations;
 using Serilog;
 using System.Globalization;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Linq;
@@ -572,7 +573,7 @@ public class APIHelper : IAPIHelper
                     }
                 }
 
-                foreach (Purchased.List purchase in paidposts.list)
+                foreach (Purchased.List purchase in paidposts.list.Reverse<Purchased.List>())
                 {
                     if (purchase.responseType == "post" && purchase.media != null && purchase.media.Count > 0)
                     {
@@ -696,7 +697,7 @@ public class APIHelper : IAPIHelper
                     }
                 }
 
-                foreach (Post.List post in posts.list.Where(p => config.SkipAds == false || (!p.rawText.Contains("#ad") && !p.rawText.Contains("/trial/"))))
+                foreach (Post.List post in posts.list.Reverse<Post.List>().Where(p => config.SkipAds == false || (!p.rawText.Contains("#ad") && !p.rawText.Contains("/trial/"))))
                 {
                     List<long> postPreviewIds = new();
                     if (post.preview != null && post.preview.Count > 0)
@@ -790,7 +791,7 @@ public class APIHelper : IAPIHelper
                     }
                 }
 
-                foreach (Archived.List archive in archived.list)
+                foreach (Archived.List archive in archived.list.Reverse<Archived.List>())
                 {
                     List<long> previewids = new();
                     if (archive.preview != null)
@@ -842,7 +843,7 @@ public class APIHelper : IAPIHelper
             else if (isStories)
             {
                 stories = JsonConvert.DeserializeObject<List<Stories>>(body, m_JsonSerializerSettings);
-                stories = stories.OrderByDescending(x => x.createdAt).ToList();
+                stories = stories.OrderBy(x => x.createdAt).ToList();
                     
                 foreach (Stories story in stories)
                 {
@@ -911,7 +912,7 @@ public class APIHelper : IAPIHelper
                         getParams["offset"] = offset.ToString();
                     }
                 }
-                foreach (Highlights.List list in highlights.list)
+                foreach (Highlights.List list in highlights.list.Reverse<Highlights.List>())
                 {
                     if (!highlight_ids.Contains(list.id.ToString()))
                     {
@@ -996,7 +997,7 @@ public class APIHelper : IAPIHelper
                     }
                 }
 
-                foreach (Messages.List list in messages.list.Where(p => config.SkipAds == false || (!p.text.Contains("#ad") && !p.text.Contains("/trial/"))))
+                foreach (Messages.List list in messages.list.Reverse<Messages.List>().Where(p => config.SkipAds == false || (!p.text.Contains("#ad") && !p.text.Contains("/trial/"))))
                 {
                     List<long> messagePreviewIds = new();
                     if (list.previews != null && list.previews.Count > 0)
@@ -1090,7 +1091,7 @@ public class APIHelper : IAPIHelper
                     }
                 }
 
-                foreach (Purchased.List purchase in paidMessages.list.Where(p => p.responseType == "message").OrderByDescending(p => p.postedAt ?? p.createdAt))
+                foreach (Purchased.List purchase in paidMessages.list.Reverse<Purchased.List>().Where(p => p.responseType == "message").OrderByDescending(p => p.postedAt ?? p.createdAt))
                 {
                     if (purchase.postedAt != null)
                     {
@@ -1290,7 +1291,7 @@ public class APIHelper : IAPIHelper
 
             }
 
-            foreach (Purchased.List purchase in paidPosts.list)
+            foreach (Purchased.List purchase in paidPosts.list.Reverse<Purchased.List>())
             {
                 if (purchase.responseType == "post" && purchase.media != null && purchase.media.Count > 0)
                 {
@@ -1455,7 +1456,7 @@ public class APIHelper : IAPIHelper
                 }
             }
 
-            foreach (Post.List post in posts.list)
+            foreach (Post.List post in posts.list.Reverse<Post.List>())
             {
                 if (config.SkipAds)
                 {
@@ -1730,7 +1731,7 @@ public class APIHelper : IAPIHelper
                 }
             }
 
-            foreach (Streams.List stream in streams.list)
+            foreach (Streams.List stream in streams.list.Reverse<Streams.List>())
             {
                 List<long> streamPreviewIds = new();
                 if (stream.preview != null && stream.preview.Count > 0)
@@ -1864,7 +1865,7 @@ public class APIHelper : IAPIHelper
                 }
             }
 
-            foreach (Archived.List archive in archived.list)
+            foreach (Archived.List archive in archived.list.Reverse<Archived.List>())
             {
                 List<long> previewids = new();
                 if (archive.preview != null)
@@ -1975,7 +1976,7 @@ public class APIHelper : IAPIHelper
                 }
             }
 
-            foreach (Messages.List list in messages.list)
+            foreach (Messages.List list in messages.list.Reverse<Messages.List>())
             {
                 if (config.SkipAds)
                 {
@@ -2178,7 +2179,7 @@ public class APIHelper : IAPIHelper
 
             if(paidMessages.list != null && paidMessages.list.Count > 0)
             {
-                foreach (Purchased.List purchase in paidMessages.list.Where(p => p.responseType == "message").OrderByDescending(p => p.postedAt ?? p.createdAt))
+                foreach (Purchased.List purchase in paidMessages.list.Reverse<Purchased.List>().Where(p => p.responseType == "message").OrderByDescending(p => p.postedAt ?? p.createdAt))
                 {
                     if (purchase.postedAt != null)
                     {
