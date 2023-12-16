@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
@@ -150,6 +150,11 @@ namespace WidevineClient
         public static string Version()
         {
             return System.Reflection.Assembly.GetCallingAssembly().GetName().Version.ToString();
+        }
+
+        public static string? RemoveInvalidFileNameChars(string? fileName)
+        {
+            return string.IsNullOrEmpty(fileName) ? fileName : string.Concat(fileName.Split(Path.GetInvalidFileNameChars()));
         }
     }
 }
