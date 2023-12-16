@@ -120,6 +120,21 @@ namespace OF_DL.Helpers
                         values.Add(propertyName, users.FirstOrDefault(u => u.Value == Convert.ToInt32(nestedPropertyValue.ToString())).Key);
                     }
                 }
+                else if (propertyName.Contains("text", StringComparison.OrdinalIgnoreCase))
+                {
+                    PropertyInfo property = Array.Find(properties1, p => p.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase));
+                    if (property != null)
+                    {
+                        object propertyValue = property.GetValue(obj1);
+                        if (propertyValue != null)
+                        {
+                            var str = propertyValue.ToString();
+                            if (str.Length > 100) // todo: add length limit to config
+                                str = str.Substring(0, 100);
+                            values.Add(propertyName, str);
+                        }
+                    }
+                }
                 else
                 {
                     PropertyInfo property = Array.Find(properties1, p => p.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase));
@@ -162,7 +177,7 @@ namespace OF_DL.Helpers
                 fileFormat = fileFormat.Replace(placeholder, kvp.Value);
             }
 
-            return $"{fileFormat}";
+            return WidevineClient.Utils.RemoveInvalidFileNameChars($"{fileFormat}");
         }
     }
 }

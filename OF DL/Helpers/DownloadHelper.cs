@@ -169,7 +169,7 @@ public class DownloadHelper : IDownloadHelper
         properties.AddRange(matches.Select(match => match.Groups[1].Value));
 
         Dictionary<string, string> values = await fileNameHelper.GetFilename(postInfo, postMedia, author, properties, users);
-        return WidevineClient.Utils.RemoveInvalidFileNameChars(await fileNameHelper.BuildFilename(filenameFormat, values));
+        return await fileNameHelper.BuildFilename(filenameFormat, values);
     }
 
 
