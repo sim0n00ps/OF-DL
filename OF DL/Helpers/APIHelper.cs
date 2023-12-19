@@ -713,7 +713,7 @@ public class APIHelper : IAPIHelper
                             }
                         }
                     }
-                    await m_DBHelper.AddPost(folder, post.id, post.text != null ? post.text : string.Empty, post.price != null ? post.price.ToString() : "0", post.price != null && post.isOpened ? true : false, post.isArchived, post.postedAt);
+                    await m_DBHelper.AddPost(folder, post.id, post.rawText != null ? post.rawText : string.Empty, post.price != null ? post.price.ToString() : "0", post.price != null && post.isOpened ? true : false, post.isArchived, post.postedAt);
                     if (post.media != null && post.media.Count > 0)
                     {
                         foreach (Post.Medium medium in post.media)
@@ -1484,7 +1484,7 @@ public class APIHelper : IAPIHelper
                         }
                     }
                 }
-                await m_DBHelper.AddPost(folder, post.id, post.text != null ? post.text : string.Empty, post.price != null ? post.price.ToString() : "0", post.price != null && post.isOpened ? true : false, post.isArchived, post.postedAt);
+                await m_DBHelper.AddPost(folder, post.id, post.rawText != null ? post.rawText : string.Empty, post.price != null ? post.price.ToString() : "0", post.price != null && post.isOpened ? true : false, post.isArchived, post.postedAt);
                 postCollection.PostObjects.Add(post);
                 if (post.media != null && post.media.Count > 0)
                 {
