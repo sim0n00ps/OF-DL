@@ -74,18 +74,6 @@ public class Program
                 Console.ReadKey();
                 Environment.Exit(0);
             }
-
-            if (ValidateFilePath(Auth.YTDLP_PATH))
-            {
-                AnsiConsole.Markup($"[green]yt-dlp.exe located successfully![/]\n");
-            }
-            else
-            {
-                AnsiConsole.Markup($"[red]Cannot locate yt-dlp.exe; please modify auth.json with the correct path. Press any key to exit.[/]\n");
-                Log.Error($"Cannot locate yt-dlp.exe with path {Auth.YTDLP_PATH}");
-                Console.ReadKey();
-                Environment.Exit(0);
-            }
                 
             if (ValidateFilePath(Auth.FFMPEG_PATH))
             {
@@ -95,18 +83,6 @@ public class Program
             {
                 AnsiConsole.Markup($"[red]Cannot locate ffmpeg.exe; please modify auth.json with the correct path. Press any key to exit.[/]\n");
                 Log.Error($"Cannot locate ffmpeg.exe with path {Auth.FFMPEG_PATH}");
-                Console.ReadKey();
-                Environment.Exit(0);
-            }
-
-            if (ValidateFilePath(Auth.MP4DECRYPT_PATH))
-            {
-                AnsiConsole.Markup($"[green]mp4decrypt.exe located successfully![/]\n");
-            }
-            else
-            {
-                AnsiConsole.Markup($"[red]Cannot locate mp4decrypt.exe; please modify auth.json with the correct path. Press any key to exit.[/]\n");
-                Log.Error($"Cannot locate mp4decrypt.exe with path {Auth.MP4DECRYPT_PATH}");
                 Console.ReadKey();
                 Environment.Exit(0);
             }
@@ -409,8 +385,6 @@ public class Program
                             Purchased.List? messageInfo = paidMessageCollection.PaidMessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
                             isNew = await m_DownloadHelper.DownloadPurchasedMessageDRMVideo(
-                                ytdlppath: Auth.YTDLP_PATH,
-                                mp4decryptpath: Auth.MP4DECRYPT_PATH,
                                 ffmpegpath: Auth.FFMPEG_PATH,
                                 user_agent: Auth.USER_AGENT,
                                 policy: policy,
@@ -539,8 +513,6 @@ public class Program
                             Messages.List? messageInfo = messages.MessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
                             isNew = await m_DownloadHelper.DownloadMessageDRMVideo(
-                                ytdlppath: Auth.YTDLP_PATH,
-                                mp4decryptpath: Auth.MP4DECRYPT_PATH,
                                 ffmpegpath: Auth.FFMPEG_PATH,
                                 user_agent: Auth.USER_AGENT,
                                 policy: policy,
@@ -773,8 +745,6 @@ public class Program
                             Archived.List? postInfo = archived.ArchivedPostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
                             isNew = await m_DownloadHelper.DownloadArchivedPostDRMVideo(
-                                ytdlppath: Auth.YTDLP_PATH,
-                                mp4decryptpath: Auth.MP4DECRYPT_PATH,
                                 ffmpegpath: Auth.FFMPEG_PATH,
                                 user_agent: Auth.USER_AGENT,
                                 policy: policy,
@@ -910,8 +880,6 @@ public class Program
                     Post.List postInfo = posts.PostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
                     isNew = await m_DownloadHelper.DownloadPostDRMVideo(
-                        ytdlppath: Auth.YTDLP_PATH,
-                        mp4decryptpath: Auth.MP4DECRYPT_PATH,
                         ffmpegpath: Auth.FFMPEG_PATH,
                         user_agent: Auth.USER_AGENT,
                         policy: policy,
@@ -1047,8 +1015,6 @@ public class Program
                     Purchased.List? postInfo = purchasedPosts.PaidPostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
                     isNew = await m_DownloadHelper.DownloadPurchasedPostDRMVideo(
-                        ytdlppath: Auth.YTDLP_PATH,
-                        mp4decryptpath: Auth.MP4DECRYPT_PATH,
                         ffmpegpath: Auth.FFMPEG_PATH,
                         user_agent: Auth.USER_AGENT,
                         policy: policy,
@@ -1175,8 +1141,6 @@ public class Program
                     Streams.List streamInfo = streams.StreamObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
                     isNew = await m_DownloadHelper.DownloadStreamsDRMVideo(
-                        ytdlppath: Auth.YTDLP_PATH,
-                        mp4decryptpath: Auth.MP4DECRYPT_PATH,
                         ffmpegpath: Auth.FFMPEG_PATH,
                         user_agent: Auth.USER_AGENT,
                         policy: policy,
@@ -1307,8 +1271,6 @@ public class Program
                     SinglePost postInfo = post.SinglePostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
                     isNew = await m_DownloadHelper.DownloadPostDRMVideo(
-                        ytdlppath: Auth.YTDLP_PATH,
-                        mp4decryptpath: Auth.MP4DECRYPT_PATH,
                         ffmpegpath: Auth.FFMPEG_PATH,
                         user_agent: Auth.USER_AGENT,
                         policy: policy,
