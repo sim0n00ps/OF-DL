@@ -11,12 +11,10 @@ This app is written in .NET 7.0 so you will need to have the .NET runtime instal
 4. Head to https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2015-2017-2019-and-2022 and download the C++ Redistributable Packages, run the installer. If you already have this installed then you can skip this step.
 
 Next you need to download yt-dlp, ffmpeg and mp4decrypt in order to download DRM protected videos.
-1. Download `yt-dlp.exe` from the latest release which you can find here https://github.com/yt-dlp/yt-dlp/releases.
-2. Download ffmpeg from https://www.gyan.dev/ffmpeg/builds/ you need to download the `ffmpeg-release-essentials.zip`, unzip that file and ffmpeg.exe should be in the extracted folder.
-3. Download the binaries from https://www.bento4.com/downloads/ extract the zip file and within the `bin` folder you should find `mp4decrypt.exe`.
-4. Open the auth.json file in Notepad/Wordpad/Notepad++/VS Code
+1. Download ffmpeg from https://www.gyan.dev/ffmpeg/builds/ you need to download the `ffmpeg-release-essentials.zip`, unzip that file and ffmpeg.exe should be in the extracted folder.
+2. Open the auth.json file in Notepad/Wordpad/Notepad++/VS Code
 
-I would recommend copying all 3 of the .exe files somewhere safe where you can then add the path of each file to `auth.json` file. You can do this easily by holding `shift` when right clicking on the .exe file which should give you the option to `copy as path`, this will include `\` so you will need to replace them with `/`. In the auth.json file the lines should look something like this `"YTDLP_PATH": "C:/yt-dlp.exe"`, `"FFMPEG_PATH": "C:/ffmpeg.exe"` and `"MP4DECRYPT_PATH": "C:/mp4decrypt.exe"`
+I would recommend copying ffmpeg somewhere safe where you can then add the path to `auth.json` file. You can do this easily by holding `shift` when right clicking on the .exe file which should give you the option to `copy as path`, this will include `\` so you will need to replace them with `/`. In the auth.json file the lines should look something like this `"FFMPEG_PATH": "C:/ffmpeg.exe"`
 
 Finally you will need to get 2 files, device_client_id_blob and device_private_key. These are used to get the decryption keys needed for downloading DRM videos. You can find a tutorial on how to do this here https://forum.videohelp.com/threads/408031-Dumping-Your-own-L3-CDM-with-Android-Studio, you need to place device_client_id_blob and device_private_key files in `cdm/devices/chrome_1610/`.
 I have also made some batch scripts to run the commands included in the guide linked above https://github.com/sim0n00ps/L3-Dumping that can save you some time and makes the process a little simpler.
@@ -47,20 +45,16 @@ You should have something like this:
 
 `"COOKIE": "auth_id=123456789; sess=k3s9tnzdc8vt2h47ljxpmwqy5r;"` - Make sure you set auth_id to the same value as `user-id` and that you set your `sess` to your actual `sess` value, everytime you log out of Onlyfans this value will change so make sure to update it after every login.
 
-`"YTDLP_PATH": "C:/yt-dlp.exe"` - Make sure this is set to your location of yt-dlp.exe 
-
 `"FFMPEG_PATH": "C:/ffmpeg.exe"` - Make sure this is set to your location of ffmpeg.exe 
-
-`"MP4DECRYPT_PATH": "C:/mp4decrypt.exe"` - Make sure this is set to your location of mp4decrypt.exe 
 
 
 After you have filled out the auth.json file you can double click on the OF DL.exe to run the program.
 You should see something like this:
 ![image](https://user-images.githubusercontent.com/132307467/235548153-107f3f44-aa00-4946-8432-458329142007.png)
 
-First of all the paths you entered for yt-dlp, ffmpeg and mp4decrypt are checked to see if they are valid. You will a see a green message if the path is valid and a red message if the path is not valid.
+First of all, the path you entered for FFMPEG is checked to see if it is valid. You will a see a green message if the path is valid and a red message if the path is not valid.
 
-If the auth.json has been filled out correctly and yt-dlp, ffmpeg and mp4decrypt have been located, you should see a message in green text `Logged In successfully as {Your Username} {Your User Id}`.
+If the auth.json has been filled out correctly and ffmpeg has been located, you should see a message in green text `Logged In successfully as {Your Username} {Your User Id}`.
 However if the auth.json has been filled out but cannot log in successfully with the credentials provided then a message in red text will appear `Auth failed, please check the values in auth.json are correct, press any key to exit`. This means you need to go back and fill in the auth.json file again.
 
 If you're logged in successfully then you will be greeted with a selection prompt. To navigate the menu the can use the &#8593; & &#8595; arrows and press `enter` to choose that option.
