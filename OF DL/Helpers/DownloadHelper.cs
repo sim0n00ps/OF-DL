@@ -596,18 +596,12 @@ public class DownloadHelper : IDownloadHelper
             CreateNoWindow = true
         };
 
-        DateTimeOffset dto = DateTimeOffset.UtcNow;
-        Console.WriteLine("Start: " + dto.ToUnixTimeMilliseconds());
-
         Process ffmpegProcess = new()
         {
             StartInfo = ffmpegStartInfo
         };
         ffmpegProcess.Start();
         ffmpegProcess.WaitForExit();
-
-        dto = DateTimeOffset.UtcNow;
-        Console.WriteLine("Start: " + dto.ToUnixTimeMilliseconds());
 
         if (File.Exists(tempFilename))
         {
