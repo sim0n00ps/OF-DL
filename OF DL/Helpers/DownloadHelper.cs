@@ -17,6 +17,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -766,7 +767,7 @@ public class DownloadHelper : IDownloadHelper
     }
 
     #endregion
-    public async Task DownloadAvatarHeader(string? avatarUrl, string? headerUrl, string folder)
+    public async Task DownloadAvatarHeader(string? avatarUrl, string? headerUrl, string folder, string username)
     {
         try
         {
@@ -785,9 +786,10 @@ public class DownloadHelper : IDownloadHelper
                     Directory.CreateDirectory(folder + avatarpath); // create the new folder
                 }
 
+                List<string> avatarMD5Hashes = WidevineClient.Utils.CalculateFolderMD5(folder + avatarpath);
+
                 Uri uri = new(avatarUrl);
-                string filename = System.IO.Path.GetFileName(uri.LocalPath);
-                string destinationPath = $"{folder}{avatarpath}/{filename}";
+                string destinationPath = $"{folder}{avatarpath}/";
 
                 var client = new HttpClient();
 
@@ -799,12 +801,24 @@ public class DownloadHelper : IDownloadHelper
                 };
                 using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
                 response.EnsureSuccessStatusCode();
-                var body = await response.Content.ReadAsStreamAsync();
-                using (FileStream fileStream = File.Create(destinationPath))
+
+                using var memoryStream = new MemoryStream();
+                await response.Content.CopyToAsync(memoryStream);
+                memoryStream.Seek(0, SeekOrigin.Begin);
+
+                MD5 md5 = MD5.Create();
+                byte[] hash = md5.ComputeHash(memoryStream);
+                memoryStream.Seek(0, SeekOrigin.Begin);
+                if (!avatarMD5Hashes.Contains(BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant()))
                 {
-                    await body.CopyToAsync(fileStream);
+                    destinationPath = destinationPath + string.Format("{0} {1}.jpg", username, response.Content.Headers.LastModified.HasValue ? response.Content.Headers.LastModified.Value.LocalDateTime.ToString("dd-MM-yyyy") : DateTime.Now.ToString("dd-MM-yyyy"));
+
+                    using (FileStream fileStream = File.Create(destinationPath))
+                    {
+                        await memoryStream.CopyToAsync(fileStream);
+                    }
+                    File.SetLastWriteTime(destinationPath, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
                 }
-                File.SetLastWriteTime(destinationPath, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
             }
 
             if (!string.IsNullOrEmpty(headerUrl))
@@ -814,6 +828,8 @@ public class DownloadHelper : IDownloadHelper
                 {
                     Directory.CreateDirectory(folder + headerpath); // create the new folder
                 }
+
+                List<string> headerMD5Hashes = WidevineClient.Utils.CalculateFolderMD5(folder + headerpath);
 
                 Uri uri = new(headerUrl);
                 string filename = System.IO.Path.GetFileName(uri.LocalPath);
@@ -829,12 +845,25 @@ public class DownloadHelper : IDownloadHelper
                 };
                 using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
                 response.EnsureSuccessStatusCode();
-                var body = await response.Content.ReadAsStreamAsync();
-                using (FileStream fileStream = File.Create(destinationPath))
+
+                using var memoryStream = new MemoryStream();
+                await response.Content.CopyToAsync(memoryStream);
+                memoryStream.Seek(0, SeekOrigin.Begin);
+
+                MD5 md5 = MD5.Create();
+                byte[] hash = md5.ComputeHash(memoryStream);
+                memoryStream.Seek(0, SeekOrigin.Begin);
+                if (!headerMD5Hashes.Contains(BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant()))
                 {
-                    await body.CopyToAsync(fileStream);
+                    destinationPath = destinationPath + string.Format("{0} {1}.jpg", username, response.Content.Headers.LastModified.HasValue ? response.Content.Headers.LastModified.Value.LocalDateTime.ToString("dd-MM-yyyy") : DateTime.Now.ToString("dd-MM-yyyy"));
+
+                    using (FileStream fileStream = File.Create(destinationPath))
+                    {
+                        await memoryStream.CopyToAsync(fileStream);
+                    }
+                    File.SetLastWriteTime(destinationPath, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
                 }
-                File.SetLastWriteTime(destinationPath, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
+                
             }
         }
         catch (Exception ex)

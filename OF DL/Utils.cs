@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -155,6 +156,34 @@ namespace WidevineClient
         public static string? RemoveInvalidFileNameChars(string? fileName)
         {
             return string.IsNullOrEmpty(fileName) ? fileName : string.Concat(fileName.Split(Path.GetInvalidFileNameChars()));
+        }
+
+        public static List<string> CalculateFolderMD5(string folder)
+        {
+            List<string> md5Hashes = new List<string>();
+            if (Directory.Exists(folder))
+            {
+                string[] files = Directory.GetFiles(folder);
+
+                foreach (string file in files)
+                {
+                    md5Hashes.Add(CalculateMD5(file));
+                }
+            }
+
+            return md5Hashes;
+        }
+
+        public static string CalculateMD5(string filePath)
+        {
+            using (var md5 = MD5.Create())
+            {
+                using (var stream = File.OpenRead(filePath))
+                {
+                    byte[] hash = md5.ComputeHash(stream);
+                    return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+                }
+            }
         }
     }
 }

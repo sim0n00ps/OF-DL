@@ -163,6 +163,7 @@ public class Program
                     }
                 }
             }
+            await m_DBHelper.CreateUsersDB(users);
             Dictionary<string, int> lists = await m_ApiHelper.GetLists("/lists", Auth);
             Dictionary<string, int> selectedUsers = new();
             KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP = await HandleUserSelection(selectedUsers, users, lists);
@@ -237,6 +238,8 @@ public class Program
                         path = $"__user_data__/sites/OnlyFans/{user.Key}"; // specify the path for the new folder
                     }
 
+                    await m_DBHelper.CheckUsername(user, path);
+
                     if (!Directory.Exists(path)) // check if the folder already exists
                     {
                         Directory.CreateDirectory(path); // create the new folder
@@ -253,7 +256,7 @@ public class Program
 
                     if (Config.DownloadAvatarHeaderPhoto)
                     {
-                        await m_DownloadHelper.DownloadAvatarHeader(user_info.avatar, user_info.header, path);
+                        await m_DownloadHelper.DownloadAvatarHeader(user_info.avatar, user_info.header, path, user.Key);
                     }
 
                     if (Config.DownloadPaidPosts)

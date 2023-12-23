@@ -69,6 +69,8 @@ namespace OF_DL.Helpers
                 {
                     await cmd.ExecuteNonQueryAsync();
                 }
+
+                connection.Close();
             }
             catch (Exception ex)
             {
@@ -83,6 +85,106 @@ namespace OF_DL.Helpers
             }
         }
 
+        public async Task CreateUsersDB(Dictionary<string, int> users)
+        {
+            try
+            {
+                using SqliteConnection connection = new($"Data Source={Directory.GetCurrentDirectory()}/users.db");
+
+                connection.Open();
+
+                using (SqliteCommand cmd = new("CREATE TABLE IF NOT EXISTS users (id INTEGER NOT NULL, user_id INTEGER NOT NULL, username VARCHAR NOT NULL, PRIMARY KEY(id), UNIQUE(username));", connection))
+                {
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                foreach (KeyValuePair<string, int> user in users)
+                {
+                    using (SqliteCommand checkCmd = new($"SELECT user_id, username FROM users WHERE user_id = @userId;", connection))
+                    {
+                        checkCmd.Parameters.AddWithValue("@userId", user.Value);
+                        using (var reader = await checkCmd.ExecuteReaderAsync())
+                        {
+                            if (!reader.Read())
+                            {
+                                using (SqliteCommand insertCmd = new($"INSERT INTO users (user_id, username) VALUES (@userId, @username);", connection))
+                                {
+                                    insertCmd.Parameters.AddWithValue("@userId", user.Value);
+                                    insertCmd.Parameters.AddWithValue("@username", user.Key);
+                                    await insertCmd.ExecuteNonQueryAsync();
+                                }
+                            }
+                        }
+                    }
+                }
+
+                connection.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+                Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine("\nInner Exception:");
+                    Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                    Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                }
+            }
+        }
+
+        public async Task CheckUsername(KeyValuePair<string, int> user, string path)
+        {
+            try
+            {
+                using SqliteConnection connection = new($"Data Source={Directory.GetCurrentDirectory()}/users.db");
+
+                connection.Open();
+
+                using (SqliteCommand checkCmd = new($"SELECT user_id, username FROM users WHERE user_id = @userId;", connection))
+                {
+                    checkCmd.Parameters.AddWithValue("@userId", user.Value);
+                    using (var reader = await checkCmd.ExecuteReaderAsync())
+                    {
+                        if (reader.Read())
+                        {
+                            long storedUserId = reader.GetInt64(0);
+                            string storedUsername = reader.GetString(1);
+
+                            if (storedUsername != user.Key)
+                            {
+                                using (SqliteCommand updateCmd = new($"UPDATE users SET username = @newUsername WHERE user_id = @userId;", connection))
+                                {
+                                    updateCmd.Parameters.AddWithValue("@newUsername", user.Key);
+                                    updateCmd.Parameters.AddWithValue("@userId", user.Value);
+                                    await updateCmd.ExecuteNonQueryAsync();
+                                }
+
+                                string oldPath = path.Replace(path.Split("/")[^1], storedUsername);
+
+                                if (Directory.Exists(oldPath))
+                                {
+                                    Directory.Move(path.Replace(path.Split("/")[^1], storedUsername), path);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                connection.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+                Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine("\nInner Exception:");
+                    Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                    Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                }
+            }
+        }
 
         public async Task AddMessage(string folder, long post_id, string message_text, string price, bool is_paid, bool is_archived, DateTime created_at, int user_id)
         {
