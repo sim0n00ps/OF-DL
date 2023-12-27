@@ -1443,12 +1443,13 @@ public class Program
                             ( "[red]LimitDownloadRate[/]", Config.LimitDownloadRate ),
                             ( "[red]RenameExistingFilesOnCustomFormat[/]", Config.RenameExistingFilesWhenCustomFormatIsSelected ),
                             ( "[red]DownloadPostsBeforeOrAfterSpecificDate[/]", Config.DownloadOnlySpecificDates ),
-                            ( "[red]ShowScrapeSize[/]", Config.ShowScrapeSize)
+                            ( "[red]ShowScrapeSize[/]", Config.ShowScrapeSize),
+                            ( "[red]DownloadPostsIncrementally[/]", Config.DownloadPostsIncrementally)
                         });
 
                         MultiSelectionPrompt<string> multiSelectionPrompt = new MultiSelectionPrompt<string>()
                             .Title("[red]Edit config.json[/]")
-                            .PageSize(20);
+                            .PageSize(24);
 
                         foreach(var choice in choices)
                         {
@@ -1494,7 +1495,8 @@ public class Program
                             LimitDownloadRate = configOptions.Contains("[red]LimitDownloadRate[/]"),
                             RenameExistingFilesWhenCustomFormatIsSelected = configOptions.Contains("[red]RenameExistingFilesOnCustomFormat[/]"),
                             DownloadOnlySpecificDates = configOptions.Contains("[red]DownloadPostsBeforeOrAfterSpecificDate[/]"),
-                            ShowScrapeSize = configOptions.Contains("[red]ShowScrapeSize[/]")
+                            ShowScrapeSize = configOptions.Contains("[red]ShowScrapeSize[/]"),
+                            DownloadPostsIncrementally = configOptions.Contains("[red]DownloadPostsIncrementally[/]")
                         };
 
 
