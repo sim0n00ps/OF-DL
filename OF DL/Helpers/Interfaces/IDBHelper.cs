@@ -12,5 +12,6 @@ namespace OF_DL.Helpers
         Task CheckUsername(KeyValuePair<string, int> user, string path);
         Task<long> GetStoredFileSize(string folder, long media_id);
         Task UpdateMedia(string folder, long media_id, string directory, string filename, long size, bool downloaded, DateTime created_at);
+        Task<DateTime?> GetMostRecentPostDate(string folder);
     }
 }

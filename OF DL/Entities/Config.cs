@@ -51,6 +51,8 @@ namespace OF_DL.Entities
         public DateTime? CustomDate { get; set; } = null;
 
         public bool ShowScrapeSize { get; set; } = true;
+
+        public bool DownloadPostsIncrementally { get; set; } = false;
     }
 
 }
