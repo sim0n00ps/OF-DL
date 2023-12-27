@@ -386,5 +386,36 @@ namespace OF_DL.Helpers
             }
             return size;
         }
+
+        public async Task<DateTime?> GetMostRecentPostDate(string folder)
+        {
+            DateTime? mostRecentDate = null;
+            using (SqliteConnection connection = new($"Data Source={folder}/Metadata/user_data.db"))
+            {
+                connection.Open();
+                using SqliteCommand cmd = new(@"
+                    SELECT
+	                    MIN(created_at) AS created_at
+                    FROM  (
+		                    SELECT MAX(P.created_at) AS created_at
+		                    FROM   posts AS P
+		                    LEFT OUTER JOIN medias AS m
+				                    ON P.post_id = m.post_id
+			                       AND m.downloaded = 1
+	                        UNION
+		                    SELECT MIN(P.created_at) AS created_at
+		                    FROM   posts AS P
+		                    INNER JOIN medias AS m
+				                    ON P.post_id = m.post_id
+		                    WHERE m.downloaded = 0 
+	                      )", connection);
+                var scalarValue = await cmd.ExecuteScalarAsync();
+                if(scalarValue != null && scalarValue != DBNull.Value)
+                {
+                    mostRecentDate = Convert.ToDateTime(scalarValue);
+                }
+            }
+            return mostRecentDate;
+        }
     }
 }
