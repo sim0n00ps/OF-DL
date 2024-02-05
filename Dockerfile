@@ -10,10 +10,14 @@ WORKDIR "/src"
 RUN dotnet publish -c Release -o out
 
 
-FROM mcr.microsoft.com/dotnet/runtime:7.0
+FROM mcr.microsoft.com/dotnet/runtime:7.0-jammy
 
 # Install dependencies
-RUN apt update -y && apt install -y ffmpeg
+RUN apt-get update
+RUN apt-get install -y software-properties-common
+RUN add-apt-repository -y ppa:ubuntuhandbook1/ffmpeg6
+RUN apt-get update
+RUN apt-get install -y ffmpeg
 
 # Copy release and entrypoint script
 COPY --from=build /src/out /app
