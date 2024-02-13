@@ -38,7 +38,7 @@ public class DownloadHelper : IDownloadHelper
 
     #region common
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <param name="path"></param>
     /// <param name="url"></param>
@@ -392,7 +392,7 @@ public class DownloadHelper : IDownloadHelper
             if (fullPathWithTheServerFileName != fullPathWithTheNewFileName)
             {
                 finalPath = fullPathWithTheNewFileName;
-                //rename. 
+                //rename.
                 try
                 {
                     File.Move(fullPathWithTheServerFileName, fullPathWithTheNewFileName);
@@ -421,7 +421,7 @@ public class DownloadHelper : IDownloadHelper
         }
         // Handle the case where the file has been downloaded in the past with a custom filename.
         //but it has downloaded outsite of this application so it doesn't exist in the database
-        // this is a bit improbable but we should check for that. 
+        // this is a bit improbable but we should check for that.
         else if (File.Exists(fullPathWithTheNewFileName))
         {
             fileSizeInBytes = GetLocalFileSize(fullPathWithTheNewFileName);
@@ -436,7 +436,7 @@ public class DownloadHelper : IDownloadHelper
             }
             status = false;
         }
-        else //file doesn't exist and we should download it. 
+        else //file doesn't exist and we should download it.
         {
             lastModified = await DownloadFile(url, fullPathWithTheNewFileName, task, config, showScrapeSize);
             fileSizeInBytes = GetLocalFileSize(fullPathWithTheNewFileName);
@@ -444,7 +444,7 @@ public class DownloadHelper : IDownloadHelper
         }
 
         //finaly check which filename we should use. Custom or the server one.
-        //if a custom is used, then the servefilename will be different from the resolved filename. 
+        //if a custom is used, then the servefilename will be different from the resolved filename.
         string finalName = serverFilename == resolvedFilename ? serverFilename : resolvedFilename;
         await m_DBHelper.UpdateMedia(folder, media_id, folder + path, finalName + extension, fileSizeInBytes, true, lastModified);
         return status;
@@ -594,7 +594,10 @@ public class DownloadHelper : IDownloadHelper
         {
             FileName = ffmpegpath,
             Arguments = $"-cenc_decryption_key {decKey} -headers \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess}\r\nOrigin: https://onlyfans.com\r\nReferer: https://onlyfans.com\r\nUser-Agent: {user_agent}\r\n\r\n\" -i \"{url}\" -codec copy \"{tempFilename}\"",
-            CreateNoWindow = true
+            CreateNoWindow = true,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
         };
 
         Process ffmpegProcess = new()
@@ -863,7 +866,7 @@ public class DownloadHelper : IDownloadHelper
                     }
                     File.SetLastWriteTime(destinationPath, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
                 }
-                
+
             }
         }
         catch (Exception ex)
