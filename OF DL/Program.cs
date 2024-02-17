@@ -46,7 +46,7 @@ public class Program
                 .WriteTo.File("logs/OFDL.txt", rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
-            
+
             AnsiConsole.Write(new FigletText("Welcome to OF-DL").Color(Color.Red));
 
             if (File.Exists("auth.json"))
@@ -74,15 +74,50 @@ public class Program
                 Console.ReadKey();
                 Environment.Exit(0);
             }
-                
-            if (ValidateFilePath(Auth.FFMPEG_PATH))
+
+            var ffmpegFound = false;
+            if (!string.IsNullOrEmpty(Config!.FFmpegPath) && ValidateFilePath(Config.FFmpegPath))
             {
-                AnsiConsole.Markup($"[green]ffmpeg.exe located successfully![/]\n");
-            }   
+                // FFmpeg path is set in config.json and is valid
+                ffmpegFound = true;
+            }
+            else if (!string.IsNullOrEmpty(Auth!.FFMPEG_PATH) && ValidateFilePath(Auth!.FFMPEG_PATH))
+            {
+                // FFmpeg path is set in auth.json and is valid (config.json takes precedence and auth.json is only available for backward compatibility)
+                ffmpegFound = true;
+                Config.FFmpegPath = Auth.FFMPEG_PATH;
+            }
+            else if (string.IsNullOrEmpty(Config!.FFmpegPath))
+            {
+                // FFmpeg path is not set in config.json, so we will try to locate it in the PATH or current directory
+                var ffmpegPath = GetFullPath("ffmpeg");
+                if (ffmpegPath != null)
+                {
+                    // FFmpeg is found in the PATH or current directory
+                    ffmpegFound = true;
+                    Config.FFmpegPath = ffmpegPath;
+                }
+                else
+                {
+                    // FFmpeg is not found in the PATH or current directory, so we will try to locate the windows executable
+                    ffmpegPath = GetFullPath("ffmpeg.exe");
+                    if (ffmpegPath != null)
+                    {
+                        // FFmpeg windows executable is found in the PATH or current directory
+                        ffmpegFound = true;
+                        Config.FFmpegPath = ffmpegPath;
+                    }
+                }
+            }
+
+            if (ffmpegFound)
+            {
+                AnsiConsole.Markup($"[green]FFmpeg located successfully ({Config.FFmpegPath})\n[/]");
+            }
             else
             {
-                AnsiConsole.Markup($"[red]Cannot locate ffmpeg.exe; please modify auth.json with the correct path. Press any key to exit.[/]\n");
-                Log.Error($"Cannot locate ffmpeg.exe with path {Auth.FFMPEG_PATH}");
+                AnsiConsole.Markup("[red]Cannot locate ffmpeg; please modify config.json with the correct path. Press any key to exit.[/]");
+                Log.Error($"Cannot locate ffmpeg with path: {Config.FFmpegPath}");
                 Console.ReadKey();
                 Environment.Exit(0);
             }
@@ -382,13 +417,12 @@ public class Program
                             {
                                 decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh, Auth);
                             }
-                            
+
 
                             Purchased.Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
                             Purchased.List? messageInfo = paidMessageCollection.PaidMessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
                             isNew = await m_DownloadHelper.DownloadPurchasedMessageDRMVideo(
-                                ffmpegpath: Auth.FFMPEG_PATH,
                                 user_agent: Auth.USER_AGENT,
                                 policy: policy,
                                 signature: signature,
@@ -516,7 +550,6 @@ public class Program
                             Messages.List? messageInfo = messages.MessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
                             isNew = await m_DownloadHelper.DownloadMessageDRMVideo(
-                                ffmpegpath: Auth.FFMPEG_PATH,
                                 user_agent: Auth.USER_AGENT,
                                 policy: policy,
                                 signature: signature,
@@ -748,7 +781,6 @@ public class Program
                             Archived.List? postInfo = archived.ArchivedPostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
                             isNew = await m_DownloadHelper.DownloadArchivedPostDRMVideo(
-                                ffmpegpath: Auth.FFMPEG_PATH,
                                 user_agent: Auth.USER_AGENT,
                                 policy: policy,
                                 signature: signature,
@@ -830,7 +862,7 @@ public class Program
             AnsiConsole.Markup($"[red]Found 0 Posts\n[/]");
             return 0;
         }
-      
+
         AnsiConsole.Markup($"[red]Found {posts.Posts.Count} Posts\n[/]");
         postCount = posts.Posts.Count;
         long totalSize = 0;
@@ -883,7 +915,6 @@ public class Program
                     Post.List postInfo = posts.PostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
                     isNew = await m_DownloadHelper.DownloadPostDRMVideo(
-                        ffmpegpath: Auth.FFMPEG_PATH,
                         user_agent: Auth.USER_AGENT,
                         policy: policy,
                         signature: signature,
@@ -1018,7 +1049,6 @@ public class Program
                     Purchased.List? postInfo = purchasedPosts.PaidPostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
                     isNew = await m_DownloadHelper.DownloadPurchasedPostDRMVideo(
-                        ffmpegpath: Auth.FFMPEG_PATH,
                         user_agent: Auth.USER_AGENT,
                         policy: policy,
                         signature: signature,
@@ -1144,7 +1174,6 @@ public class Program
                     Streams.List streamInfo = streams.StreamObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
                     isNew = await m_DownloadHelper.DownloadStreamsDRMVideo(
-                        ffmpegpath: Auth.FFMPEG_PATH,
                         user_agent: Auth.USER_AGENT,
                         policy: policy,
                         signature: signature,
@@ -1274,7 +1303,6 @@ public class Program
                     SinglePost postInfo = post.SinglePostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
                     isNew = await m_DownloadHelper.DownloadPostDRMVideo(
-                        ffmpegpath: Auth.FFMPEG_PATH,
                         user_agent: Auth.USER_AGENT,
                         policy: policy,
                         signature: signature,
@@ -1344,7 +1372,7 @@ public class Program
                     .Title("[red]Select Accounts to Scrape | Select All = All Accounts | List = Download content from users on List | Custom = Specific Account(s)[/]")
                     .AddChoices(mainMenuOptions)
             );
-				
+
             switch (mainMenuSelection)
             {
                 case "[red]Select All[/]":
@@ -1551,7 +1579,7 @@ public class Program
     {
         char[] invalidChars = System.IO.Path.GetInvalidPathChars();
         char[] foundInvalidChars = path.Where(c => invalidChars.Contains(c)).ToArray();
-    
+
         if (foundInvalidChars.Any())
         {
             AnsiConsole.Markup($"[red]Invalid characters found in path {path}:[/] {string.Join(", ", foundInvalidChars)}\n");
@@ -1591,5 +1619,24 @@ public class Program
             };
         }
         return progressColumns.ToArray();
+    }
+
+    public static string? GetFullPath(string filename)
+    {
+        if (File.Exists(filename))
+        {
+            return Path.GetFullPath(filename);
+        }
+
+        var pathEnv = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+        foreach (var path in pathEnv.Split(Path.PathSeparator))
+        {
+            var fullPath = Path.Combine(path, filename);
+            if (File.Exists(fullPath))
+            {
+                return fullPath;
+            }
+        }
+        return null;
     }
 }

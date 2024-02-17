@@ -8,8 +8,7 @@ if [ ! -f /config/auth.json ]; then
 		  "USER_ID": "",
 		  "USER_AGENT": "",
 		  "X_BC": "",
-		  "COOKIE": "",
-		  "FFMPEG_PATH": "/usr/bin/ffmpeg"
+		  "COOKIE": ""
 		}
 	EOF
 fi
@@ -48,7 +47,8 @@ if [ ! -f /config/config.json ]; then
 		  "DownloadDateSelection": "after",
 		  "CustomDate": "",
 		  "ShowScrapeSize": false,
-		  "DownloadPostsIncrementally": false
+		  "DownloadPostsIncrementally": false,
+		  "FFmpegPath": "/usr/bin/ffmpeg"
 		}
 	EOF
 fi
