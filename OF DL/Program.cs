@@ -81,13 +81,13 @@ public class Program
                 // FFmpeg path is set in config.json and is valid
                 ffmpegFound = true;
             }
-            else if (!string.IsNullOrEmpty(Auth!.FFMPEG_PATH) && ValidateFilePath(Auth!.FFMPEG_PATH))
+            else if (!string.IsNullOrEmpty(Auth!.FFMPEG_PATH) && ValidateFilePath(Auth.FFMPEG_PATH))
             {
                 // FFmpeg path is set in auth.json and is valid (config.json takes precedence and auth.json is only available for backward compatibility)
                 ffmpegFound = true;
                 Config.FFmpegPath = Auth.FFMPEG_PATH;
             }
-            else if (string.IsNullOrEmpty(Config!.FFmpegPath))
+            else if (string.IsNullOrEmpty(Config.FFmpegPath))
             {
                 // FFmpeg path is not set in config.json, so we will try to locate it in the PATH or current directory
                 var ffmpegPath = GetFullPath("ffmpeg");
