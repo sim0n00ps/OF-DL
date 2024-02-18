@@ -76,6 +76,7 @@ public class Program
             }
 
             var ffmpegFound = false;
+            var pathAutoDetected = false;
             if (!string.IsNullOrEmpty(Config!.FFmpegPath) && ValidateFilePath(Config.FFmpegPath))
             {
                 // FFmpeg path is set in config.json and is valid
@@ -95,6 +96,7 @@ public class Program
                 {
                     // FFmpeg is found in the PATH or current directory
                     ffmpegFound = true;
+                    pathAutoDetected = true;
                     Config.FFmpegPath = ffmpegPath;
                 }
                 else
@@ -105,6 +107,7 @@ public class Program
                     {
                         // FFmpeg windows executable is found in the PATH or current directory
                         ffmpegFound = true;
+                        pathAutoDetected = true;
                         Config.FFmpegPath = ffmpegPath;
                     }
                 }
@@ -112,12 +115,19 @@ public class Program
 
             if (ffmpegFound)
             {
-                AnsiConsole.Markup($"[green]FFmpeg located successfully ({Config.FFmpegPath})\n[/]");
+                if (pathAutoDetected)
+                {
+                    AnsiConsole.Markup($"[green]FFmpeg located successfully. Path auto-detected: {Config.FFmpegPath}\n[/]");
+                }
+                else
+                {
+                    AnsiConsole.Markup($"[green]FFmpeg located successfully\n[/]");
+                }
             }
             else
             {
-                AnsiConsole.Markup("[red]Cannot locate ffmpeg; please modify config.json with the correct path. Press any key to exit.[/]");
-                Log.Error($"Cannot locate ffmpeg with path: {Config.FFmpegPath}");
+                AnsiConsole.Markup("[red]Cannot locate FFmpeg; please modify config.json with the correct path. Press any key to exit.[/]");
+                Log.Error($"Cannot locate FFmpeg with path: {Config.FFmpegPath}");
                 Console.ReadKey();
                 Environment.Exit(0);
             }
