@@ -211,7 +211,10 @@ public class Program
             await m_DBHelper.CreateUsersDB(users);
             Dictionary<string, int> lists = await m_ApiHelper.GetLists("/lists", Auth);
             Dictionary<string, int> selectedUsers = new();
-            KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP = await HandleUserSelection(selectedUsers, users, lists);
+            KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP =
+                Config.NonInteractiveMode
+                    ? new KeyValuePair<bool, Dictionary<string, int>>(true, users)
+                    : await HandleUserSelection(selectedUsers, users, lists);
 
             if (hasSelectedUsersKVP.Key && hasSelectedUsersKVP.Value != null && hasSelectedUsersKVP.Value.ContainsKey("SinglePost"))
             {
@@ -369,7 +372,7 @@ public class Program
             {
                 break;
             }
-        } while (true);
+        } while (!Config.NonInteractiveMode);
     }
 
     private static async Task<int> DownloadPaidMessages(KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int paidMessagesCount, string path)
@@ -1482,7 +1485,8 @@ public class Program
                             ( "[red]RenameExistingFilesOnCustomFormat[/]", Config.RenameExistingFilesWhenCustomFormatIsSelected ),
                             ( "[red]DownloadPostsBeforeOrAfterSpecificDate[/]", Config.DownloadOnlySpecificDates ),
                             ( "[red]ShowScrapeSize[/]", Config.ShowScrapeSize),
-                            ( "[red]DownloadPostsIncrementally[/]", Config.DownloadPostsIncrementally)
+                            ( "[red]DownloadPostsIncrementally[/]", Config.DownloadPostsIncrementally),
+                            ( "[red]NonInteractiveMode[/]", Config.NonInteractiveMode)
                         });
 
                         MultiSelectionPrompt<string> multiSelectionPrompt = new MultiSelectionPrompt<string>()
@@ -1512,6 +1516,7 @@ public class Program
                             DownloadDateSelection = Config.DownloadDateSelection,
                             CustomDate = Config.CustomDate,
                             Timeout = Config.Timeout,
+                            FFmpegPath = Config.FFmpegPath,
                             DownloadAvatarHeaderPhoto = configOptions.Contains("[red]DownloadAvatarHeaderPhoto[/]"),
                             DownloadPaidPosts = configOptions.Contains("[red]DownloadPaidPosts[/]"),
                             DownloadPosts = configOptions.Contains("[red]DownloadPosts[/]"),
@@ -1534,7 +1539,8 @@ public class Program
                             RenameExistingFilesWhenCustomFormatIsSelected = configOptions.Contains("[red]RenameExistingFilesOnCustomFormat[/]"),
                             DownloadOnlySpecificDates = configOptions.Contains("[red]DownloadPostsBeforeOrAfterSpecificDate[/]"),
                             ShowScrapeSize = configOptions.Contains("[red]ShowScrapeSize[/]"),
-                            DownloadPostsIncrementally = configOptions.Contains("[red]DownloadPostsIncrementally[/]")
+                            DownloadPostsIncrementally = configOptions.Contains("[red]DownloadPostsIncrementally[/]"),
+                            NonInteractiveMode = configOptions.Contains("[red]NonInteractiveMode[/]")
                         };
 
 

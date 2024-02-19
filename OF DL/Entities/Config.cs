@@ -53,6 +53,7 @@ namespace OF_DL.Entities
         public bool ShowScrapeSize { get; set; } = true;
 
         public bool DownloadPostsIncrementally { get; set; } = false;
+        public bool NonInteractiveMode { get; set; } = false;
         public string? FFmpegPath { get; set; } = string.Empty;
     }
 

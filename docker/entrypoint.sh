@@ -48,6 +48,7 @@ if [ ! -f /config/config.json ]; then
 		  "CustomDate": "",
 		  "ShowScrapeSize": false,
 		  "DownloadPostsIncrementally": false,
+		  "NonInteractiveMode": false,
 		  "FFmpegPath": "/usr/bin/ffmpeg"
 		}
 	EOF
