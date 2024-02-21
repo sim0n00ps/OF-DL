@@ -97,7 +97,7 @@ public class Program
                     // FFmpeg is found in the PATH or current directory
                     ffmpegFound = true;
                     pathAutoDetected = true;
-                    Config.FFmpegPath = ffmpegPath;
+                    Config.FFmpegPath = ffmpegPath.Replace(@"\", @"/");
                 }
                 else
                 {
@@ -108,7 +108,7 @@ public class Program
                         // FFmpeg windows executable is found in the PATH or current directory
                         ffmpegFound = true;
                         pathAutoDetected = true;
-                        Config.FFmpegPath = ffmpegPath;
+                        Config.FFmpegPath = ffmpegPath.Replace(@"\", @"/");
                     }
                 }
             }

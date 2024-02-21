@@ -590,15 +590,32 @@ public class DownloadHelper : IDownloadHelper
 
         string tempFilename = $"{folder}{path}/{filename}_source.mp4";
 
-        ProcessStartInfo ffmpegStartInfo = new()
+        //Need to do this as on Windows having the extra flags set to true/false cause the program to hang
+        ProcessStartInfo ffmpegStartInfo;
+
+        PlatformID platform = Environment.OSVersion.Platform;
+
+        if(platform == PlatformID.Win32NT || platform == PlatformID.Win32S || platform == PlatformID.Win32Windows || platform == PlatformID.WinCE)
         {
-            FileName = config.FFmpegPath,
-            Arguments = $"-cenc_decryption_key {decKey} -headers \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess}\r\nOrigin: https://onlyfans.com\r\nReferer: https://onlyfans.com\r\nUser-Agent: {user_agent}\r\n\r\n\" -i \"{url}\" -codec copy \"{tempFilename}\"",
-            CreateNoWindow = true,
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true
-        };
+            ffmpegStartInfo = new()
+            {
+                FileName = config.FFmpegPath,
+                Arguments = $"-cenc_decryption_key {decKey} -headers \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess}\r\nOrigin: https://onlyfans.com\r\nReferer: https://onlyfans.com\r\nUser-Agent: {user_agent}\r\n\r\n\" -i \"{url}\" -codec copy \"{tempFilename}\"",
+                CreateNoWindow = true
+            };
+        }
+        else
+        {
+            ffmpegStartInfo = new()
+            {
+                FileName = config.FFmpegPath,
+                Arguments = $"-cenc_decryption_key {decKey} -headers \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess}\r\nOrigin: https://onlyfans.com\r\nReferer: https://onlyfans.com\r\nUser-Agent: {user_agent}\r\n\r\n\" -i \"{url}\" -codec copy \"{tempFilename}\"",
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+        }
 
         Process ffmpegProcess = new()
         {
