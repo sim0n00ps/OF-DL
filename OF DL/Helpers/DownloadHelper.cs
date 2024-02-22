@@ -596,7 +596,7 @@ public class DownloadHelper : IDownloadHelper
             Arguments = $"-cenc_decryption_key {decKey} -headers \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess}\r\nOrigin: https://onlyfans.com\r\nReferer: https://onlyfans.com\r\nUser-Agent: {user_agent}\r\n\r\n\" -i \"{url}\" -codec copy \"{tempFilename}\"",
             CreateNoWindow = true,
             UseShellExecute = false,
-            RedirectStandardOutput = true,
+            RedirectStandardOutput = false,
             RedirectStandardError = true
         };
 
@@ -605,7 +605,14 @@ public class DownloadHelper : IDownloadHelper
             StartInfo = ffmpegStartInfo
         };
         ffmpegProcess.Start();
+        var ffmpegErrors = ffmpegProcess.StandardError.ReadToEnd();
         ffmpegProcess.WaitForExit();
+
+        if (ffmpegProcess.ExitCode != 0)
+        {
+            Console.WriteLine("\nFFmpeg failed to download {0}", url);
+            Log.Error(ffmpegErrors);
+        }
 
         if (File.Exists(tempFilename))
         {
