@@ -12,6 +12,7 @@ using OF_DL.Helpers;
 using Serilog;
 using Spectre.Console;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using static OF_DL.Entities.Lists.UserList;
 
@@ -97,7 +98,7 @@ public class Program
                     // FFmpeg is found in the PATH or current directory
                     ffmpegFound = true;
                     pathAutoDetected = true;
-                    Config.FFmpegPath = ffmpegPath.Replace(@"\", @"/");
+                    Config.FFmpegPath = ffmpegPath;
                 }
                 else
                 {
@@ -108,7 +109,7 @@ public class Program
                         // FFmpeg windows executable is found in the PATH or current directory
                         ffmpegFound = true;
                         pathAutoDetected = true;
-                        Config.FFmpegPath = ffmpegPath.Replace(@"\", @"/");
+                        Config.FFmpegPath = ffmpegPath;
                     }
                 }
             }
@@ -122,6 +123,12 @@ public class Program
                 else
                 {
                     AnsiConsole.Markup($"[green]FFmpeg located successfully\n[/]");
+                }
+
+                // Escape backslashes in the path for Windows
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Config.FFmpegPath!.Contains(@":\") && !Config.FFmpegPath.Contains(@":\\"))
+                {
+                    Config.FFmpegPath = Config.FFmpegPath.Replace(@"\", @"\\");
                 }
             }
             else
