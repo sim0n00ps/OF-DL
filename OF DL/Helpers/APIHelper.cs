@@ -37,8 +37,7 @@ public class APIHelper : IAPIHelper
 
     public async Task<Dictionary<string, string>> GetDynamicHeaders(string path, string queryParams, Auth auth)
     {
-        
-        DynamicRules? root = new();
+        DynamicRules? root;
         var client = new HttpClient();
         var request = new HttpRequestMessage
         {
@@ -55,27 +54,18 @@ public class APIHelper : IAPIHelper
         DateTimeOffset dto = (DateTimeOffset)DateTime.UtcNow;
         long timestamp = dto.ToUnixTimeMilliseconds();
 
-        string input = $"{root.static_param}\n{timestamp}\n{path + queryParams}\n{auth.USER_ID}";
+        string input = $"{root!.StaticParam}\n{timestamp}\n{path + queryParams}\n{auth.USER_ID}";
         byte[] inputBytes = Encoding.UTF8.GetBytes(input);
         byte[] hashBytes = SHA1.HashData(inputBytes);
         string hashString = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
 
-        int checksum = 0;
-        foreach (int number in root.checksum_indexes)
-        {
-            List<int> test = new()
-            {
-            hashString[number]
-        };
-            checksum += test.Sum();
-        }
-        checksum += root.checksum_constant.Value;
-        string sign = $"{root.start}:{hashString}:{checksum.ToString("X").ToLower()}:{root.end}";
+        var checksum = root.ChecksumIndexes.Aggregate(0, (current, number) => current + hashString[number]) + root.ChecksumConstant!.Value;
+        var sign = $"{root.Prefix}:{hashString}:{checksum.ToString("X").ToLower()}:{root.Suffix}";
 
         Dictionary<string, string> headers = new()
         {
             { "accept", "application/json, text/plain" },
-            { "app-token", root.app_token },
+            { "app-token", root.AppToken! },
             { "cookie", auth!.COOKIE! },
             { "sign", sign },
             { "time", timestamp.ToString() },
