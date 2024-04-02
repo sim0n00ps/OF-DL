@@ -1,11 +1,6 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using OF_DL.Enumerations;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OF_DL.Entities
 {
@@ -24,6 +19,7 @@ namespace OF_DL.Entities
         public bool DownloadVideos { get; set; }
         public bool DownloadAudios { get; set; }
         public bool IncludeExpiredSubscriptions { get; set; }
+        public bool IncludeRestrictedSubscriptions { get; set; }
         public bool SkipAds { get; set; } = false;
         public string? DownloadPath { get; set; } = string.Empty;
         public string? PaidPostFileNameFormat { get; set; } = string.Empty;
