@@ -29,6 +29,7 @@ if [ ! -f /config/config.json ]; then
 		  "DownloadVideos": true,
 		  "DownloadAudios": true,
 		  "IncludeExpiredSubscriptions": true,
+		  "IncludeRestrictedSubscriptions": true,
 		  "SkipAds": false,
 		  "DownloadPath": "/data/",
 		  "PaidPostFileNameFormat": "",

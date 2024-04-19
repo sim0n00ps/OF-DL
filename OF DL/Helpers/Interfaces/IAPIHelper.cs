@@ -26,7 +26,7 @@ namespace OF_DL.Helpers
         Task<PaidMessageCollection> GetPaidMessages(string endpoint, string folder, string username, Auth auth, Config config);
         Task<User> GetUserInfo(string endpoint, Auth auth);
         Task<Dictionary<string, string>> GetDynamicHeaders(string path, string queryParam, Auth auth);
-        Task<Dictionary<string, int>> GetActiveSubscriptions(string endpoint, Auth auth);
-        Task<Dictionary<string, int>> GetExpiredSubscriptions(string endpoint, Auth auth);
+        Task<Dictionary<string, int>> GetActiveSubscriptions(string endpoint, Auth auth, bool includeRestrictedSubscriptions);
+        Task<Dictionary<string, int>> GetExpiredSubscriptions(string endpoint, Auth auth, bool includeRestrictedSubscriptions);
     }
 }

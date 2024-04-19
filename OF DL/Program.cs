@@ -1,20 +1,16 @@
 using Newtonsoft.Json;
 using OF_DL.Entities;
 using OF_DL.Entities.Archived;
-using OF_DL.Entities.Highlights;
 using OF_DL.Entities.Messages;
 using OF_DL.Entities.Post;
 using OF_DL.Entities.Purchased;
-using OF_DL.Entities.Stories;
 using OF_DL.Entities.Streams;
 using OF_DL.Enumurations;
 using OF_DL.Helpers;
 using Serilog;
 using Spectre.Console;
-using System.IO;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
-using static OF_DL.Entities.Lists.UserList;
 
 namespace OF_DL;
 
@@ -32,15 +28,15 @@ public class Program
 
 
     static Program()
-	{
+    {
         m_ApiHelper = new APIHelper();
         m_DBHelper = new DBHelper();
         m_DownloadHelper = new DownloadHelper();
     }
 
-	public async static Task Main()
-	{
-		try
+    public async static Task Main()
+    {
+        try
         {
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
@@ -57,7 +53,8 @@ public class Program
             }
             else
             {
-                AnsiConsole.Markup("[red]auth.json does not exist, please make sure it exists in the folder where you are running the program from[/]");
+                File.WriteAllText("auth.json", JsonConvert.SerializeObject(new Auth()));
+                AnsiConsole.Markup("[red]auth.json does not exist, a default file has been created in the folder you are running the program from[/]");
                 Log.Error("auth.json does not exist");
                 Console.ReadKey();
                 Environment.Exit(0);
@@ -70,7 +67,8 @@ public class Program
             }
             else
             {
-                AnsiConsole.Markup("[red]config.json does not exist, please make sure it exists in the folder where you are running the program from[/]");
+                File.WriteAllText("config.json", JsonConvert.SerializeObject(new Config()));
+                AnsiConsole.Markup("[red]config.json does not exist, a default file has been created in the folder you are running the program from[/]");
                 Log.Error("config.json does not exist");
                 Console.ReadKey();
                 Environment.Exit(0);
@@ -177,17 +175,17 @@ public class Program
             await DownloadAllData();
         }
         catch (Exception ex)
-		{
-			Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+        {
+            Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
             Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
             if (ex.InnerException != null)
-			{
-				Console.WriteLine("\nInner Exception:");
-				Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+            {
+                Console.WriteLine("\nInner Exception:");
+                Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
                 Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
-		}
-	}
+        }
+    }
 
 
     private static async Task DownloadAllData()
@@ -196,7 +194,7 @@ public class Program
         {
             DateTime startTime = DateTime.Now;
             Dictionary<string, int> users = new();
-            Dictionary<string, int> activeSubs = await m_ApiHelper.GetActiveSubscriptions("/subscriptions/subscribes", Auth);
+            Dictionary<string, int> activeSubs = await m_ApiHelper.GetActiveSubscriptions("/subscriptions/subscribes", Auth, Config.IncludeRestrictedSubscriptions);
             foreach (KeyValuePair<string, int> activeSub in activeSubs)
             {
                 if (!users.ContainsKey(activeSub.Key))
@@ -206,7 +204,7 @@ public class Program
             }
             if (Config!.IncludeExpiredSubscriptions)
             {
-                Dictionary<string, int> expiredSubs = await m_ApiHelper.GetExpiredSubscriptions("/subscriptions/subscribes", Auth);
+                Dictionary<string, int> expiredSubs = await m_ApiHelper.GetExpiredSubscriptions("/subscriptions/subscribes", Auth, Config.IncludeRestrictedSubscriptions);
                 foreach (KeyValuePair<string, int> expiredSub in expiredSubs)
                 {
                     if (!users.ContainsKey(expiredSub.Key))
@@ -1267,7 +1265,7 @@ public class Program
         AnsiConsole.Markup($"[red]Getting Post\n[/]");
         SinglePostCollection post = await m_ApiHelper.GetPost($"/posts/{post_id.ToString()}", path, Auth!, Config!);
 
-        if(post == null)
+        if (post == null)
         {
             AnsiConsole.Markup($"[red]Couldn't find post\n[/]");
             return;
@@ -1467,7 +1465,7 @@ public class Program
                     while (true)
                     {
                         var choices = new List<(string choice, bool isSelected)>();
-                        choices.AddRange(new []
+                        choices.AddRange(new[]
                         {
                             ( "[red]Go Back[/]", false ),
                             ( "[red]DownloadAvatarHeaderPhoto[/]", Config.DownloadAvatarHeaderPhoto),
@@ -1483,6 +1481,7 @@ public class Program
                             ( "[red]DownloadVideos[/]", Config.DownloadVideos ),
                             ( "[red]DownloadAudios[/]", Config.DownloadAudios ),
                             ( "[red]IncludeExpiredSubscriptions[/]", Config.IncludeExpiredSubscriptions ),
+                            ( "[red]IncludeRestrictedSubscriptions[/]", Config.IncludeRestrictedSubscriptions ),
                             ( "[red]SkipAds[/]", Config.SkipAds ),
                             ( "[red]FolderPerPaidPost[/]", Config.FolderPerPaidPost ),
                             ( "[red]FolderPerPost[/]", Config.FolderPerPost ),
@@ -1500,14 +1499,14 @@ public class Program
                             .Title("[red]Edit config.json[/]")
                             .PageSize(24);
 
-                        foreach(var choice in choices)
+                        foreach (var choice in choices)
                         {
                             multiSelectionPrompt.AddChoices(choice.choice, (selectionItem) => { if (choice.isSelected) selectionItem.Select(); });
                         }
 
                         var configOptions = AnsiConsole.Prompt(multiSelectionPrompt);
 
-                        if(configOptions.Contains("[red]Go Back[/]"))
+                        if (configOptions.Contains("[red]Go Back[/]"))
                         {
                             break;
                         }
@@ -1537,6 +1536,7 @@ public class Program
                             DownloadVideos = configOptions.Contains("[red]DownloadVideos[/]"),
                             DownloadAudios = configOptions.Contains("[red]DownloadAudios[/]"),
                             IncludeExpiredSubscriptions = configOptions.Contains("[red]IncludeExpiredSubscriptions[/]"),
+                            IncludeRestrictedSubscriptions = configOptions.Contains("[red]IncludeRestrictedSubscriptions[/]"),
                             SkipAds = configOptions.Contains("[red]SkipAds[/]"),
                             FolderPerPaidPost = configOptions.Contains("[red]FolderPerPaidPost[/]"),
                             FolderPerPost = configOptions.Contains("[red]FolderPerPost[/]"),
@@ -1576,25 +1576,25 @@ public class Program
         if (lists.Count > 0)
         {
             return new List<string>
-			{
-				"[red]Select All[/]",
-				"[red]List[/]",
-				"[red]Custom[/]",
+            {
+                "[red]Select All[/]",
+                "[red]List[/]",
+                "[red]Custom[/]",
                 "[red]Download Single Post[/]",
                 "[red]Edit config.json[/]",
-				"[red]Exit[/]"
-			};
+                "[red]Exit[/]"
+            };
         }
         else
         {
             return new List<string>
-			{
-				"[red]Select All[/]",
-				"[red]Custom[/]",
+            {
+                "[red]Select All[/]",
+                "[red]Custom[/]",
                 "[red]Download Single Post[/]",
                 "[red]Edit config.json[/]",
                 "[red]Exit[/]"
-			};
+            };
         }
     }
 
