@@ -50,6 +50,8 @@ namespace OF_DL.Entities
 
         public bool DownloadPostsIncrementally { get; set; } = false;
         public bool NonInteractiveMode { get; set; } = false;
+
+        public string NonInteractiveModeListName { get; set; } = string.Empty;
         public string? FFmpegPath { get; set; } = string.Empty;
     }
 

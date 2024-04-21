@@ -220,10 +220,27 @@ public class Program
             await m_DBHelper.CreateUsersDB(users);
             Dictionary<string, int> lists = await m_ApiHelper.GetLists("/lists", Auth);
             Dictionary<string, int> selectedUsers = new();
-            KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP =
-                Config.NonInteractiveMode
-                    ? new KeyValuePair<bool, Dictionary<string, int>>(true, users)
-                    : await HandleUserSelection(selectedUsers, users, lists);
+            KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP;
+            if (Config.NonInteractiveMode && string.IsNullOrEmpty(Config.NonInteractiveModeListName))
+            {
+                hasSelectedUsersKVP = new KeyValuePair<bool, Dictionary<string, int>>(true, users);
+            }
+            else if (Config.NonInteractiveMode && !string.IsNullOrEmpty(Config.NonInteractiveModeListName))
+            {
+                List<string> listUsernames = new();
+                int listId = lists[Config.NonInteractiveModeListName];
+                List<string> usernames = await m_ApiHelper.GetListUsers($"/lists/{listId}/users", Auth);
+                foreach (string user in usernames)
+                {
+                    listUsernames.Add(user);
+                }
+                selectedUsers = users.Where(x => listUsernames.Contains($"{x.Key}")).Distinct().ToDictionary(x => x.Key, x => x.Value);
+                hasSelectedUsersKVP = new KeyValuePair<bool, Dictionary<string, int>>(true, selectedUsers);
+            }
+            else
+            {
+                hasSelectedUsersKVP = await HandleUserSelection(selectedUsers, users, lists);
+            }
 
             if (hasSelectedUsersKVP.Key && hasSelectedUsersKVP.Value != null && hasSelectedUsersKVP.Value.ContainsKey("SinglePost"))
             {
@@ -1527,6 +1544,7 @@ public class Program
                             CustomDate = Config.CustomDate,
                             Timeout = Config.Timeout,
                             FFmpegPath = Config.FFmpegPath,
+                            NonInteractiveModeListName = Config.NonInteractiveModeListName,
                             DownloadAvatarHeaderPhoto = configOptions.Contains("[red]DownloadAvatarHeaderPhoto[/]"),
                             DownloadPaidPosts = configOptions.Contains("[red]DownloadPaidPosts[/]"),
                             DownloadPosts = configOptions.Contains("[red]DownloadPosts[/]"),
