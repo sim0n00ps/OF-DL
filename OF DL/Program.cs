@@ -164,7 +164,11 @@ public class Program
             Entities.User validate = await m_ApiHelper.GetUserInfo($"/users/me", Auth);
             if (validate.name == null && validate.username == null)
             {
-                AnsiConsole.Markup($"[red]Auth failed, please check the values in auth.json are correct, press any key to exit[/]");
+                AnsiConsole.MarkupLine($"[red]Auth failed, please check the values in auth.json are correct.[/]\n");
+                AnsiConsole.MarkupLine($"[red]If you have previously been able to auth successfully, the most likely cause of this is that your browser has updated, which will change the values of the USER_AGENT string. The version change to this string is usually very minor and easy to overlook, but even a slight difference will cause an authentication failure.[/]\n");
+                AnsiConsole.MarkupLine($"[red]If you are struggling to authenticate, you may want to try the browser extension which is documented here:[/]\n");
+                AnsiConsole.MarkupLine($"[link]https://of-dl.gitbook.io/of-dl/auth#browser-extension[/]\n");
+                AnsiConsole.Markup($"[red]Press any key to exit[/]");
                 Log.Error("Auth failed");
                 Console.ReadKey();
                 return;
