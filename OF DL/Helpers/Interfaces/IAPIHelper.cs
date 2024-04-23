@@ -1,3 +1,4 @@
+using Newtonsoft.Json.Linq;
 using OF_DL.Entities;
 using OF_DL.Entities.Archived;
 using OF_DL.Entities.Messages;
@@ -24,7 +25,10 @@ namespace OF_DL.Helpers
         Task<ArchivedCollection> GetArchived(string endpoint, string folder, Auth auth, Config config);
         Task<MessageCollection> GetMessages(string endpoint, string folder, Auth auth, Config config);
         Task<PaidMessageCollection> GetPaidMessages(string endpoint, string folder, string username, Auth auth, Config config);
+        Task<Dictionary<string, int>> GetPurchasedTabUsers(string endpoint, Auth auth, Entities.Config config, Dictionary<string, int> users);
+        Task<List<PurchasedTabCollection>> GetPurchasedTab(string endpoint, string folder, Auth auth, Entities.Config config, Dictionary<string, int> users);
         Task<User> GetUserInfo(string endpoint, Auth auth);
+        Task<JObject> GetUserInfoById(string endpoint, Auth auth);
         Task<Dictionary<string, string>> GetDynamicHeaders(string path, string queryParam, Auth auth);
         Task<Dictionary<string, int>> GetActiveSubscriptions(string endpoint, Auth auth, bool includeRestrictedSubscriptions);
         Task<Dictionary<string, int>> GetExpiredSubscriptions(string endpoint, Auth auth, bool includeRestrictedSubscriptions);

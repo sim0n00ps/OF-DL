@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,6 +40,11 @@ namespace OF_DL.Entities.Purchased
             public int id { get; set; }
             public string _view { get; set; }
         }
+        public class Author
+        {
+            public int id { get; set; }
+            public string _view { get; set; }
+        }
 
         public class Hls
         {
@@ -77,6 +82,7 @@ namespace OF_DL.Entities.Purchased
             public bool? isCouplePeopleMedia { get; set; }
             public object queueId { get; set; }
             public FromUser fromUser { get; set; }
+            public Author author { get; set; }
             public bool? isFromQueue { get; set; }
             public bool? canUnsendQueue { get; set; }
             public int? unsendSecondsQueue { get; set; }
