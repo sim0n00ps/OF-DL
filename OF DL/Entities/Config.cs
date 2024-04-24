@@ -52,6 +52,7 @@ namespace OF_DL.Entities
         public bool NonInteractiveMode { get; set; } = false;
 
         public string NonInteractiveModeListName { get; set; } = string.Empty;
+        public bool NonInteractiveModePurchasedTab { get; set; } = false;
         public string? FFmpegPath { get; set; } = string.Empty;
     }
 

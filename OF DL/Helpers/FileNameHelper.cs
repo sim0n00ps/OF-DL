@@ -9,7 +9,7 @@ namespace OF_DL.Helpers
 {
     public class FileNameHelper : IFileNameHelper
     {
-        public async Task<Dictionary<string, string>> GetFilename(object obj1, object obj2, object obj3, List<string> selectedProperties, Dictionary<string, int> users = null)
+        public async Task<Dictionary<string, string>> GetFilename(object obj1, object obj2, object obj3, List<string> selectedProperties, string username, Dictionary<string, int> users = null)
         {
             Dictionary<string, string> values = new();
             Type type1 = obj1.GetType();
@@ -113,11 +113,18 @@ namespace OF_DL.Helpers
                 }
                 else if (propertyName.Contains("username"))
                 {
-                    string propertyPath = "id";
-                    object nestedPropertyValue = GetNestedPropertyValue(obj3, propertyPath);
-                    if (nestedPropertyValue != null)
+                    if(!string.IsNullOrEmpty(username))
                     {
-                        values.Add(propertyName, users.FirstOrDefault(u => u.Value == Convert.ToInt32(nestedPropertyValue.ToString())).Key);
+                        values.Add(propertyName, username);
+                    }
+                    else
+                    {
+                        string propertyPath = "id";
+                        object nestedPropertyValue = GetNestedPropertyValue(obj3, propertyPath);
+                        if (nestedPropertyValue != null)
+                        {
+                            values.Add(propertyName, users.FirstOrDefault(u => u.Value == Convert.ToInt32(nestedPropertyValue.ToString())).Key);
+                        }
                     }
                 }
                 else if (propertyName.Contains("text", StringComparison.OrdinalIgnoreCase))

@@ -222,7 +222,11 @@ public class Program
             Dictionary<string, int> lists = await m_ApiHelper.GetLists("/lists", Auth);
             Dictionary<string, int> selectedUsers = new();
             KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP;
-            if (Config.NonInteractiveMode && string.IsNullOrEmpty(Config.NonInteractiveModeListName))
+            if(Config.NonInteractiveMode && Config.NonInteractiveModePurchasedTab)
+            {
+                hasSelectedUsersKVP = new KeyValuePair<bool, Dictionary<string, int>>(true, new Dictionary<string, int> { { "PurchasedTab", 0 } });
+            }
+            else if (Config.NonInteractiveMode && string.IsNullOrEmpty(Config.NonInteractiveModeListName))
             {
                 hasSelectedUsersKVP = new KeyValuePair<bool, Dictionary<string, int>>(true, users);
             }
@@ -1837,12 +1841,13 @@ public class Program
                             ( "[red]DownloadPostsBeforeOrAfterSpecificDate[/]", Config.DownloadOnlySpecificDates ),
                             ( "[red]ShowScrapeSize[/]", Config.ShowScrapeSize),
                             ( "[red]DownloadPostsIncrementally[/]", Config.DownloadPostsIncrementally),
-                            ( "[red]NonInteractiveMode[/]", Config.NonInteractiveMode)
+                            ( "[red]NonInteractiveMode[/]", Config.NonInteractiveMode),
+                            ( "[red]NonInteractiveModePurchasedTab[/]", Config.NonInteractiveModePurchasedTab)
                         });
 
                         MultiSelectionPrompt<string> multiSelectionPrompt = new MultiSelectionPrompt<string>()
                             .Title("[red]Edit config.json[/]")
-                            .PageSize(24);
+                            .PageSize(25);
 
                         foreach (var choice in choices)
                         {
@@ -1893,7 +1898,8 @@ public class Program
                             DownloadOnlySpecificDates = configOptions.Contains("[red]DownloadPostsBeforeOrAfterSpecificDate[/]"),
                             ShowScrapeSize = configOptions.Contains("[red]ShowScrapeSize[/]"),
                             DownloadPostsIncrementally = configOptions.Contains("[red]DownloadPostsIncrementally[/]"),
-                            NonInteractiveMode = configOptions.Contains("[red]NonInteractiveMode[/]")
+                            NonInteractiveMode = configOptions.Contains("[red]NonInteractiveMode[/]"),
+                            NonInteractiveModePurchasedTab = configOptions.Contains("[red]NonInteractiveModePurchasedTab[/]")
                         };
 
 
