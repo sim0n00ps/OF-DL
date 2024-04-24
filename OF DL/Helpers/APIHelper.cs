@@ -1835,37 +1835,77 @@ public class APIHelper : IAPIHelper
                 {
                     if (purchase.fromUser != null)
                     {
-                        JObject user = await GetUserInfoById($"/users/list?x[]={purchase.fromUser.id}", auth);
-                        if (!string.IsNullOrEmpty(user[purchase.fromUser.id.ToString()]["username"].ToString()))
+                        if (users.Values.Contains(purchase.fromUser.id))
                         {
-                            if (!purchasedTabUsers.ContainsKey(user[purchase.fromUser.id.ToString()]["username"].ToString()) && users.ContainsKey(user[purchase.fromUser.id.ToString()]["username"].ToString()))
+                            if (!string.IsNullOrEmpty(users.FirstOrDefault(x => x.Value == purchase.fromUser.id).Key))
                             {
-                                purchasedTabUsers.Add(user[purchase.fromUser.id.ToString()]["username"].ToString(), purchase.fromUser.id);
+                                if (!purchasedTabUsers.ContainsKey(users.FirstOrDefault(x => x.Value == purchase.fromUser.id).Key))
+                                {
+                                    purchasedTabUsers.Add(users.FirstOrDefault(x => x.Value == purchase.fromUser.id).Key, purchase.fromUser.id);
+                                }
+                            }
+                            else
+                            {
+                                if (!purchasedTabUsers.ContainsKey($"Deleted User - {purchase.fromUser.id}"))
+                                {
+                                    purchasedTabUsers.Add($"Deleted User - {purchase.fromUser.id}", purchase.fromUser.id);
+                                }
                             }
                         }
                         else
                         {
-                            if (!purchasedTabUsers.ContainsKey($"Deleted User - {purchase.fromUser.id}"))
+                            JObject user = await GetUserInfoById($"/users/list?x[]={purchase.fromUser.id}", auth);
+                            if (!string.IsNullOrEmpty(user[purchase.fromUser.id.ToString()]["username"].ToString()))
                             {
-                                purchasedTabUsers.Add($"Deleted User - {purchase.fromUser.id}", purchase.fromUser.id);
+                                if (!purchasedTabUsers.ContainsKey(user[purchase.fromUser.id.ToString()]["username"].ToString()))
+                                {
+                                    purchasedTabUsers.Add(user[purchase.fromUser.id.ToString()]["username"].ToString(), purchase.fromUser.id);
+                                }
+                            }
+                            else
+                            {
+                                if (!purchasedTabUsers.ContainsKey($"Deleted User - {purchase.fromUser.id}"))
+                                {
+                                    purchasedTabUsers.Add($"Deleted User - {purchase.fromUser.id}", purchase.fromUser.id);
+                                }
                             }
                         }
                     }
                     else if (purchase.author != null)
                     {
-                        JObject user = await GetUserInfoById($"/users/list?x[]={purchase.author.id}", auth);
-                        if (!string.IsNullOrEmpty(user[purchase.author.id.ToString()]["username"].ToString()))
+                        if (users.Values.Contains(purchase.author.id))
                         {
-                            if (!string.IsNullOrEmpty(user[purchase.author.id.ToString()]["username"].ToString()))
+                            if (!string.IsNullOrEmpty(users.FirstOrDefault(x => x.Value == purchase.author.id).Key))
                             {
-                                purchasedTabUsers.Add(user[purchase.author.id.ToString()]["username"].ToString(), purchase.author.id);
+                                if (!purchasedTabUsers.ContainsKey(users.FirstOrDefault(x => x.Value == purchase.author.id).Key) && users.ContainsKey(users.FirstOrDefault(x => x.Value == purchase.author.id).Key))
+                                {
+                                    purchasedTabUsers.Add(users.FirstOrDefault(x => x.Value == purchase.author.id).Key, purchase.author.id);
+                                }
+                            }
+                            else
+                            {
+                                if (!purchasedTabUsers.ContainsKey($"Deleted User - {purchase.author.id}"))
+                                {
+                                    purchasedTabUsers.Add($"Deleted User - {purchase.author.id}", purchase.author.id);
+                                }
                             }
                         }
                         else
                         {
-                            if (!purchasedTabUsers.ContainsKey($"Deleted User - {purchase.author.id}"))
+                            JObject user = await GetUserInfoById($"/users/list?x[]={purchase.author.id}", auth);
+                            if (!string.IsNullOrEmpty(user[purchase.author.id.ToString()]["username"].ToString()))
                             {
-                                purchasedTabUsers.Add($"Deleted User - {purchase.author.id}", purchase.author.id);
+                                if (!purchasedTabUsers.ContainsKey(user[purchase.author.id.ToString()]["username"].ToString()) && users.ContainsKey(user[purchase.author.id.ToString()]["username"].ToString()))
+                                {
+                                    purchasedTabUsers.Add(user[purchase.author.id.ToString()]["username"].ToString(), purchase.author.id);
+                                }
+                            }
+                            else
+                            {
+                                if (!purchasedTabUsers.ContainsKey($"Deleted User - {purchase.author.id}"))
+                                {
+                                    purchasedTabUsers.Add($"Deleted User - {purchase.author.id}", purchase.author.id);
+                                }
                             }
                         }
                     }
