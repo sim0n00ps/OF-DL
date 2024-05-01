@@ -13,7 +13,11 @@ Please refer to https://of-dl.gitbook.io/of-dl/ for instuctions on:
 # Video Tutorial
 
 
-https://github.com/sim0n00ps/OF-DL/assets/132307467/77a6d3ec-b02e-441b-9252-ffc09fb6b823
+
+
+https://github.com/sim0n00ps/OF-DL/assets/132307467/95fbb3cb-adcb-4fe5-995d-a39a5b224ff1
+
+
 
 
 
