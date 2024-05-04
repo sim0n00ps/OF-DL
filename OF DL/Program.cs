@@ -50,7 +50,17 @@ public class Program
             if (File.Exists("auth.json"))
             {
                 AnsiConsole.Markup("[green]auth.json located successfully!\n[/]");
-                Auth = JsonConvert.DeserializeObject<Auth>(File.ReadAllText("auth.json"));
+                try
+                {
+                    Auth = JsonConvert.DeserializeObject<Auth>(File.ReadAllText("auth.json"));
+                }
+                catch (Exception e)
+                {
+                    AnsiConsole.MarkupLine("[red]auth.json is not valid, check your JSON syntax! Press any key to exit.[/");
+                    Log.Error("auth.json processing failed.");
+                    Console.ReadKey();
+                    Environment.Exit(0);
+                }
             }
             else
             {
@@ -64,7 +74,17 @@ public class Program
             if (File.Exists("config.json"))
             {
                 AnsiConsole.Markup("[green]config.json located successfully!\n[/]");
-                Config = JsonConvert.DeserializeObject<Config>(File.ReadAllText("config.json"));
+                try
+                {
+                    Config = JsonConvert.DeserializeObject<Config>(File.ReadAllText("config.json"));
+                }
+                catch (Exception e)
+                {
+                    AnsiConsole.MarkupLine("[red]config.json is not valid, check your JSON syntax! Press any key to exit.[/]");
+                    Log.Error("config.json processing failed.");
+                    Console.ReadKey();
+                    Environment.Exit(0);
+                }
             }
             else
             {
