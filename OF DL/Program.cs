@@ -35,7 +35,7 @@ public class Program
         m_DownloadHelper = new DownloadHelper();
     }
 
-    public async static Task Main()
+    public async static Task Main(string[] args)
     {
         try
         {
@@ -222,6 +222,13 @@ public class Program
                 return;
             }
 
+            if (args is not null && args.Length > 0)
+            {
+                const string NON_INTERACTIVE_ARG = "--non-interactive";
+
+                if (args.Any(a => NON_INTERACTIVE_ARG.Equals(NON_INTERACTIVE_ARG, StringComparison.OrdinalIgnoreCase)))
+                    Config.NonInteractiveMode = true;
+            }
 
             AnsiConsole.Markup($"[green]Logged In successfully as {validate.name} {validate.username}\n[/]");
             await DownloadAllData();
