@@ -47,6 +47,25 @@ public class Program
 
             AnsiConsole.Write(new FigletText("Welcome to OF-DL").Color(Color.Red));
 
+            var os = Environment.OSVersion;
+            if (os.Platform == PlatformID.Win32NT)
+            {
+                // check if this is windows 10+
+                if (os.Version.Major < 10)
+                {
+                    Console.Write("This appears to be running on an older version of Windows which is not supported.\n\n");
+                    Console.Write("OF-DL requires Windows 10 or higher when being run on Windows. Your reported version is: {0}\n\n", os.VersionString);
+                    Console.Write("Press any key to continue.\n");
+                    Log.Error("Windows version prior to 10.x: {0}", os.VersionString);
+                    Console.ReadKey();
+                    Environment.Exit(0);
+                }
+                else
+                {
+                    Console.Write("Valid version of Windows found.\n");
+                }
+            }
+
             if (File.Exists("auth.json"))
             {
                 AnsiConsole.Markup("[green]auth.json located successfully!\n[/]");
