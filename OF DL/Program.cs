@@ -56,7 +56,11 @@ public class Program
                 }
                 catch (Exception e)
                 {
-                    AnsiConsole.MarkupLine("[red]auth.json is not valid, check your JSON syntax! Press any key to exit.[/");
+                    Console.WriteLine(e);
+                    AnsiConsole.MarkupLine($"\n[red]auth.json is not valid, check your JSON syntax![/]\n");
+                    AnsiConsole.MarkupLine($"[red]If you are struggling with this file, you may want to try the browser extension which is documented here:[/]\n");
+                    AnsiConsole.MarkupLine($"[link]https://of-dl.gitbook.io/of-dl/auth#browser-extension[/]\n");
+                    AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
                     Log.Error("auth.json processing failed.");
                     Console.ReadKey();
                     Environment.Exit(0);
@@ -80,7 +84,11 @@ public class Program
                 }
                 catch (Exception e)
                 {
-                    AnsiConsole.MarkupLine("[red]config.json is not valid, check your JSON syntax! Press any key to exit.[/]");
+                    Console.WriteLine(e);
+                    AnsiConsole.MarkupLine($"\n[red]config.json is not valid, check your JSON syntax![/]\n");
+                    AnsiConsole.MarkupLine($"[red]If you are struggling to get the JSON syntax correct, it is safe to paste this file's contents into a JSON validator like the one located here:[/]\n");
+                    AnsiConsole.MarkupLine($"[link]https://jsonlint.com/[/]\n");
+                    AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
                     Log.Error("config.json processing failed.");
                     Console.ReadKey();
                     Environment.Exit(0);
