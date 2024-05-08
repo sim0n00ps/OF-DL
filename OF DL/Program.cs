@@ -57,12 +57,15 @@ public class Program
                     Console.Write("OF-DL requires Windows 10 or higher when being run on Windows. Your reported version is: {0}\n\n", os.VersionString);
                     Console.Write("Press any key to continue.\n");
                     Log.Error("Windows version prior to 10.x: {0}", os.VersionString);
-                    Console.ReadKey();
-                    Environment.Exit(1);
+                    if (!Config.NonInteractiveMode)
+                    {
+                        Console.ReadKey();
+                        Environment.Exit(1);
+                    }
                 }
                 else
                 {
-                    Console.Write("Valid version of Windows found.\n");
+                    AnsiConsole.Markup("[green]Valid version of Windows found.\n[/]");
                 }
             }
 
@@ -81,8 +84,11 @@ public class Program
                     AnsiConsole.MarkupLine($"[link]https://of-dl.gitbook.io/of-dl/auth#browser-extension[/]\n");
                     AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
                     Log.Error("auth.json processing failed.");
-                    Console.ReadKey();
-                    Environment.Exit(2);
+                    if (!Config.NonInteractiveMode)
+                    {
+                        Console.ReadKey();
+                        Environment.Exit(2);
+                    }
                 }
             }
             else
@@ -90,8 +96,11 @@ public class Program
                 File.WriteAllText("auth.json", JsonConvert.SerializeObject(new Auth()));
                 AnsiConsole.Markup("[red]auth.json does not exist, a default file has been created in the folder you are running the program from[/]");
                 Log.Error("auth.json does not exist");
-                Console.ReadKey();
-                Environment.Exit(2);
+                if (!Config.NonInteractiveMode)
+                {
+                    Console.ReadKey();
+                    Environment.Exit(2);
+                }
             }
 
             if (File.Exists("config.json"))
@@ -109,8 +118,11 @@ public class Program
                     AnsiConsole.MarkupLine($"[link]https://jsonlint.com/[/]\n");
                     AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
                     Log.Error("config.json processing failed.");
-                    Console.ReadKey();
-                    Environment.Exit(3);
+                    if (!Config.NonInteractiveMode)
+                    {
+                        Console.ReadKey();
+                        Environment.Exit(3);
+                    }
                 }
             }
             else
@@ -118,8 +130,11 @@ public class Program
                 File.WriteAllText("config.json", JsonConvert.SerializeObject(new Config()));
                 AnsiConsole.Markup("[red]config.json does not exist, a default file has been created in the folder you are running the program from[/]");
                 Log.Error("config.json does not exist");
-                Console.ReadKey();
-                Environment.Exit(3);
+                if (!Config.NonInteractiveMode)
+                {
+                    Console.ReadKey();
+                    Environment.Exit(3);
+                }
             }
 
             var ffmpegFound = false;
@@ -181,8 +196,11 @@ public class Program
             {
                 AnsiConsole.Markup("[red]Cannot locate FFmpeg; please modify config.json with the correct path. Press any key to exit.[/]");
                 Log.Error($"Cannot locate FFmpeg with path: {Config.FFmpegPath}");
-                Console.ReadKey();
-                Environment.Exit(4);
+                if (!Config.NonInteractiveMode)
+                {
+                    Console.ReadKey();
+                    Environment.Exit(4);
+                }
             }
 
             if (!File.Exists("cdm/devices/chrome_1610/device_client_id_blob"))
@@ -244,8 +262,11 @@ public class Program
                 Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
             Console.WriteLine("\nPress any key to exit.");
-            Console.ReadKey();
-            Environment.Exit(5);
+            if (!Config.NonInteractiveMode)
+            {
+                Console.ReadKey();
+                Environment.Exit(5);
+            }
         }
     }
 
