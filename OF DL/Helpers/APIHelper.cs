@@ -2351,65 +2351,58 @@ public class APIHelper : IAPIHelper
             string proxy = "";
             bool cache = true;
 
-            StringBuilder sb = new();
-            sb.Append("{\n");
-            sb.AppendFormat("  \"license\": \"{0}\",\n", licenceURL);
-            sb.Append("  \"headers\": \"");
-            foreach (KeyValuePair<string, string> header in drmHeaders)
-            {
-                if (header.Key == "time" || header.Key == "user-id")
-                {
-                    sb.AppendFormat("{0}: '{1}'\\n", header.Key, header.Value);
-                }
-                else
-                {
-                    sb.AppendFormat("{0}: {1}\\n", header.Key, header.Value);
-                }
-            }
-            sb.Remove(sb.Length - 2, 2);
-            sb.Append("\",\n");
-            sb.AppendFormat("  \"pssh\": \"{0}\",\n", pssh);
-            sb.AppendFormat("  \"buildInfo\": \"{0}\",\n", buildInfo);
-            sb.AppendFormat("  \"proxy\": \"{0}\",\n", proxy);
-            sb.AppendFormat("  \"cache\": {0}\n", cache.ToString().ToLower());
-            sb.Append('}');
-            string json = sb.ToString();
-            HttpClient client = new();
-
-            HttpRequestMessage request = new(HttpMethod.Post, "https://cdrm-project.com/wv")
-            {
-                Content = new StringContent(json)
-            };
-
-            using var response = await client.SendAsync(request);
-
-            response.EnsureSuccessStatusCode();
-            var body = await response.Content.ReadAsStringAsync();
-            var htmlDoc = new HtmlDocument();
-            htmlDoc.LoadHtml(body);
-
-            // Find the <li> element containing the Decryption Key using XPath
-            HtmlNode dcElement = htmlDoc.DocumentNode.SelectSingleNode("//li");
-
-            // Get the text value of the <li> element
-            dcValue = dcElement.InnerText;
-
-            return dcValue;
-        }
-        catch (Exception ex)
+        StringBuilder sb = new();
+        sb.Append("{\n");
+        sb.AppendFormat("  \"License URL\": \"{0}\",\n", licenceURL);         
+        sb.Append("  \"Headers\": \"{");
+        foreach (KeyValuePair<string, string> header in drmHeaders)
         {
-            Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-            if (ex.InnerException != null)
+            if (header.Key == "time" || header.Key == "user-id")
             {
-                Console.WriteLine("\nInner Exception:");
-                Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
-                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                sb.AppendFormat("\\\"{0}\\\": \\\"{1}\\\",", header.Key, header.Value);
+            }
+            else
+            {
+                sb.AppendFormat("\\\"{0}\\\": \\\"{1}\\\",", header.Key, header.Value);
             }
         }
-        return null;
-    }
+        sb.Remove(sb.Length - 1, 1);
+        sb.Append("}\",\n");
+        sb.AppendFormat("  \"PSSH\": \"{0}\"\n", pssh);
+        sb.Append(",\"JSON\":\"\",\"Cookies\":\"\",\"Data\":\"\"");        
+        sb.Append('}');
+        string json = sb.ToString();
+        HttpClient client = new();
 
+        HttpRequestMessage request = new(HttpMethod.Post, "https://cdrm-project.com/")
+        {              
+            Content = new StringContent(json, Encoding.UTF8, "application/json")                                           
+        };          
+
+        using var response = await client.SendAsync(request);
+
+        response.EnsureSuccessStatusCode();
+        var body = await response.Content.ReadAsStringAsync();
+
+        var doc = JsonDocument.Parse(body);
+
+        dcValue = doc.RootElement.GetProperty("Message").GetString().Trim();           
+
+        return dcValue;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+        Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+        if (ex.InnerException != null)
+        {
+            Console.WriteLine("\nInner Exception:");
+            Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+            Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+        }
+    }
+    return null;
+}
 
     public async Task<string> GetDecryptionKeyNew(Dictionary<string, string> drmHeaders, string licenceURL, string pssh, Auth auth)
     {
