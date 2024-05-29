@@ -16,6 +16,7 @@ using Serilog;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Xml.Linq;
 using WidevineClient.Widevine;
 using static WidevineClient.HttpUtil;
