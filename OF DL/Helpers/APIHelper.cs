@@ -27,6 +27,8 @@ public class APIHelper : IAPIHelper
 {
     private static readonly JsonSerializerSettings m_JsonSerializerSettings;
     private static readonly IDBHelper m_DBHelper;
+    private readonly Auth auth;
+
     static APIHelper()
     {
         m_JsonSerializerSettings = new()
@@ -36,8 +38,13 @@ public class APIHelper : IAPIHelper
         m_DBHelper = new DBHelper();
     }
 
+    public APIHelper(Auth auth)
+    {
+        this.auth = auth;
+    }
 
-    public async Task<Dictionary<string, string>> GetDynamicHeaders(string path, string queryParams, Auth auth)
+
+    public async Task<Dictionary<string, string>> GetDynamicHeaders(string path, string queryParams)
     {
         DynamicRules? root;
         var client = new HttpClient();
@@ -79,9 +86,9 @@ public class APIHelper : IAPIHelper
     }
 
 
-    private async Task<string?> BuildHeaderAndExecuteRequests(Dictionary<string, string> getParams, string endpoint, Auth auth, HttpClient client)
+    private async Task<string?> BuildHeaderAndExecuteRequests(Dictionary<string, string> getParams, string endpoint, HttpClient client)
     {
-        HttpRequestMessage request = await BuildHttpRequestMessage(getParams, endpoint, auth);
+        HttpRequestMessage request = await BuildHttpRequestMessage(getParams, endpoint);
         using var response = await client.SendAsync(request);
         response.EnsureSuccessStatusCode();
         string body = await response.Content.ReadAsStringAsync();
@@ -89,11 +96,11 @@ public class APIHelper : IAPIHelper
     }
 
 
-    private async Task<HttpRequestMessage> BuildHttpRequestMessage(Dictionary<string, string> getParams, string endpoint, Auth auth)
+    private async Task<HttpRequestMessage> BuildHttpRequestMessage(Dictionary<string, string> getParams, string endpoint)
     {
         string queryParams = "?" + string.Join("&", getParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
 
-        Dictionary<string, string> headers = await GetDynamicHeaders($"/api2/v2{endpoint}", queryParams, auth);
+        Dictionary<string, string> headers = await GetDynamicHeaders($"/api2/v2{endpoint}", queryParams);
 
         HttpRequestMessage request = new(HttpMethod.Get, $"{Constants.API_URL}{endpoint}{queryParams}");
 
@@ -119,7 +126,7 @@ public class APIHelper : IAPIHelper
     }
 
 
-    private static HttpClient GetHttpClient(Entities.Config? config = null)
+    private static HttpClient GetHttpClient(IDownloadConfig? config = null)
     {
         var client = new HttpClient();
         if (config?.Timeout != null && config.Timeout > 0)
@@ -190,7 +197,7 @@ public class APIHelper : IAPIHelper
     }
 
 
-    public async Task<User?> GetUserInfo(string endpoint, Auth auth)
+    public async Task<User?> GetUserInfo(string endpoint)
     {
         try
         {
@@ -203,7 +210,7 @@ public class APIHelper : IAPIHelper
             };
 
             HttpClient client = new();
-            HttpRequestMessage request = await BuildHttpRequestMessage(getParams, endpoint, auth);
+            HttpRequestMessage request = await BuildHttpRequestMessage(getParams, endpoint);
 
             using var response = await client.SendAsync(request);
 
@@ -231,12 +238,12 @@ public class APIHelper : IAPIHelper
         return null;
     }
 
-    public async Task<JObject> GetUserInfoById(string endpoint, Auth auth)
+    public async Task<JObject> GetUserInfoById(string endpoint)
     {
         try
         {
             HttpClient client = new();
-            HttpRequestMessage request = await BuildHttpRequestMessage(new Dictionary<string, string>(), endpoint, auth);
+            HttpRequestMessage request = await BuildHttpRequestMessage(new Dictionary<string, string>(), endpoint);
 
             using var response = await client.SendAsync(request);
 
@@ -261,14 +268,14 @@ public class APIHelper : IAPIHelper
     }
 
 
-    public async Task<Dictionary<string, int>?> GetAllSubscriptions(Dictionary<string, string> getParams, string endpoint, Auth auth, bool includeRestricted)
+    public async Task<Dictionary<string, int>?> GetAllSubscriptions(Dictionary<string, string> getParams, string endpoint, bool includeRestricted)
     {
         try
         {
             Dictionary<string, int> users = new();
             Subscriptions subscriptions = new();
 
-            string? body = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, new HttpClient());
+            string? body = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient());
 
             subscriptions = JsonConvert.DeserializeObject<Subscriptions>(body);
             if (subscriptions != null && subscriptions.hasMore)
@@ -278,7 +285,7 @@ public class APIHelper : IAPIHelper
                 while (true)
                 {
                     Subscriptions newSubscriptions = new();
-                    string? loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, new HttpClient());
+                    string? loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient());
 
                     if (!string.IsNullOrEmpty(loopbody) && loopbody.Trim() != "[]")
                     {
@@ -324,7 +331,7 @@ public class APIHelper : IAPIHelper
         return null;
     }
 
-    public async Task<Dictionary<string, int>?> GetActiveSubscriptions(string endpoint, Auth auth, bool includeRestricted)
+    public async Task<Dictionary<string, int>?> GetActiveSubscriptions(string endpoint, bool includeRestricted)
     {
         Dictionary<string, string> getParams = new()
         {
@@ -334,11 +341,11 @@ public class APIHelper : IAPIHelper
             { "format", "infinite"}
         };
 
-        return await GetAllSubscriptions(getParams, endpoint, auth, includeRestricted);
+        return await GetAllSubscriptions(getParams, endpoint, includeRestricted);
     }
 
 
-    public async Task<Dictionary<string, int>?> GetExpiredSubscriptions(string endpoint, Auth auth, bool includeRestricted)
+    public async Task<Dictionary<string, int>?> GetExpiredSubscriptions(string endpoint, bool includeRestricted)
     {
 
         Dictionary<string, string> getParams = new()
@@ -349,11 +356,11 @@ public class APIHelper : IAPIHelper
             { "format", "infinite"}
         };
 
-        return await GetAllSubscriptions(getParams, endpoint, auth, includeRestricted);
+        return await GetAllSubscriptions(getParams, endpoint, includeRestricted);
     }
 
 
-    public async Task<Dictionary<string, int>> GetLists(string endpoint, Auth auth)
+    public async Task<Dictionary<string, int>> GetLists(string endpoint)
     {
         try
         {
@@ -368,7 +375,7 @@ public class APIHelper : IAPIHelper
             Dictionary<string, int> lists = new();
             while (true)
             {
-                string? body = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, new HttpClient());
+                string? body = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient());
 
                 if (body == null)
                 {
@@ -417,7 +424,7 @@ public class APIHelper : IAPIHelper
     }
 
 
-    public async Task<List<string>?> GetListUsers(string endpoint, Auth auth)
+    public async Task<List<string>?> GetListUsers(string endpoint)
     {
         try
         {
@@ -431,7 +438,7 @@ public class APIHelper : IAPIHelper
 
             while (true)
             {
-                var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, new HttpClient());
+                var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient());
                 if (body == null)
                 {
                     break;
@@ -479,8 +486,7 @@ public class APIHelper : IAPIHelper
                                                          string endpoint,
                                                          string? username,
                                                          string folder,
-                                                         Auth auth,
-                                                         Entities.Config config,
+                                                         IDownloadConfig config,
                                                          List<long> paid_post_ids)
     {
         try
@@ -512,7 +518,7 @@ public class APIHelper : IAPIHelper
                     break;
             }
 
-            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, new HttpClient());
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient());
 
 
             if (mediatype == MediaType.Stories)
@@ -575,7 +581,7 @@ public class APIHelper : IAPIHelper
                     {
                         Highlights newhighlights = new();
 
-                        var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
+                        var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
                         newhighlights = JsonConvert.DeserializeObject<Highlights>(loopbody, m_JsonSerializerSettings);
 
                         highlights.list.AddRange(newhighlights.list);
@@ -598,7 +604,7 @@ public class APIHelper : IAPIHelper
                 foreach (string highlight_id in highlight_ids)
                 {
                     HighlightMedia highlightMedia = new();
-                    Dictionary<string, string> highlight_headers = await GetDynamicHeaders("/api2/v2/stories/highlights/" + highlight_id, string.Empty, auth);
+                    Dictionary<string, string> highlight_headers = await GetDynamicHeaders("/api2/v2/stories/highlights/" + highlight_id, string.Empty);
 
                     HttpClient highlight_client = GetHttpClient(config);
 
@@ -667,7 +673,7 @@ public class APIHelper : IAPIHelper
     }
 
 
-    public async Task<PaidPostCollection> GetPaidPosts(string endpoint, string folder, string username, Auth auth, Entities.Config config, List<long> paid_post_ids)
+    public async Task<PaidPostCollection> GetPaidPosts(string endpoint, string folder, string username, IDownloadConfig config, List<long> paid_post_ids)
     {
         try
         {
@@ -682,7 +688,7 @@ public class APIHelper : IAPIHelper
                 { "user_id", username }
             };
 
-            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
             paidPosts = JsonConvert.DeserializeObject<Purchased>(body, m_JsonSerializerSettings);
             if (paidPosts != null && paidPosts.hasMore)
             {
@@ -692,7 +698,7 @@ public class APIHelper : IAPIHelper
 
                     Purchased newPaidPosts = new();
 
-                    var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
+                    var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
                     newPaidPosts = JsonConvert.DeserializeObject<Purchased>(loopbody, m_JsonSerializerSettings);
 
                     paidPosts.list.AddRange(newPaidPosts.list);
@@ -821,7 +827,7 @@ public class APIHelper : IAPIHelper
     }
 
 
-    public async Task<PostCollection> GetPosts(string endpoint, string folder, Auth auth, Entities.Config config, List<long> paid_post_ids)
+    public async Task<PostCollection> GetPosts(string endpoint, string folder, IDownloadConfig config, List<long> paid_post_ids)
     {
         try
         {
@@ -858,7 +864,7 @@ public class APIHelper : IAPIHelper
                 ref getParams,
                 downloadAsOf);
 
-            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, new HttpClient());
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient());
             posts = JsonConvert.DeserializeObject<Post>(body, m_JsonSerializerSettings);
             if (posts != null && posts.hasMore)
             {
@@ -872,7 +878,7 @@ public class APIHelper : IAPIHelper
                 {
                     Post newposts = new();
 
-                    var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
+                    var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
                     newposts = JsonConvert.DeserializeObject<Post>(loopbody, m_JsonSerializerSettings);
 
                     posts.list.AddRange(newposts.list);
@@ -998,7 +1004,7 @@ public class APIHelper : IAPIHelper
         }
         return null;
     }
-    public async Task<SinglePostCollection> GetPost(string endpoint, string folder, Auth auth, Entities.Config config)
+    public async Task<SinglePostCollection> GetPost(string endpoint, string folder, IDownloadConfig config)
     {
         try
         {
@@ -1009,7 +1015,7 @@ public class APIHelper : IAPIHelper
                 { "skip_users", "all" }
             };
 
-            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, new HttpClient());
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient());
             singlePost = JsonConvert.DeserializeObject<SinglePost>(body, m_JsonSerializerSettings);
 
             if (singlePost != null)
@@ -1109,7 +1115,7 @@ public class APIHelper : IAPIHelper
         return null;
     }
 
-    public async Task<StreamsCollection> GetStreams(string endpoint, string folder, Auth auth, Entities.Config config, List<long> paid_post_ids)
+    public async Task<StreamsCollection> GetStreams(string endpoint, string folder, IDownloadConfig config, List<long> paid_post_ids)
     {
         try
         {
@@ -1134,7 +1140,7 @@ public class APIHelper : IAPIHelper
                 ref getParams,
                 config.CustomDate);
 
-            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, new HttpClient());
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient());
             streams = JsonConvert.DeserializeObject<Streams>(body, m_JsonSerializerSettings);
             if (streams != null && streams.hasMore)
             {
@@ -1148,7 +1154,7 @@ public class APIHelper : IAPIHelper
                 {
                     Streams newstreams = new();
 
-                    var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
+                    var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
                     newstreams = JsonConvert.DeserializeObject<Streams>(loopbody, m_JsonSerializerSettings);
 
                     streams.list.AddRange(newstreams.list);
@@ -1249,7 +1255,7 @@ public class APIHelper : IAPIHelper
     }
 
 
-    public async Task<ArchivedCollection> GetArchived(string endpoint, string folder, Auth auth, Entities.Config config)
+    public async Task<ArchivedCollection> GetArchived(string endpoint, string folder, IDownloadConfig config)
     {
         try
         {
@@ -1277,7 +1283,7 @@ public class APIHelper : IAPIHelper
                 ref getParams,
                 config.CustomDate);
 
-            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
             archived = JsonConvert.DeserializeObject<Archived>(body, m_JsonSerializerSettings);
             if (archived != null && archived.hasMore)
             {
@@ -1289,7 +1295,7 @@ public class APIHelper : IAPIHelper
                 {
                     Archived newarchived = new();
 
-                    var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
+                    var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
                     newarchived = JsonConvert.DeserializeObject<Archived>(loopbody, m_JsonSerializerSettings);
 
                     archived.list.AddRange(newarchived.list);
@@ -1381,7 +1387,7 @@ public class APIHelper : IAPIHelper
     }
 
 
-    public async Task<MessageCollection> GetMessages(string endpoint, string folder, Auth auth, Entities.Config config)
+    public async Task<MessageCollection> GetMessages(string endpoint, string folder, IDownloadConfig config)
     {
         try
         {
@@ -1394,7 +1400,7 @@ public class APIHelper : IAPIHelper
                 { "order", "desc" }
             };
 
-            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
             messages = JsonConvert.DeserializeObject<Messages>(body, m_JsonSerializerSettings);
             if (messages.hasMore)
             {
@@ -1403,7 +1409,7 @@ public class APIHelper : IAPIHelper
                 {
                     Messages newmessages = new();
 
-                    var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
+                    var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
                     newmessages = JsonConvert.DeserializeObject<Messages>(loopbody, m_JsonSerializerSettings);
 
                     messages.list.AddRange(newmessages.list);
@@ -1568,7 +1574,7 @@ public class APIHelper : IAPIHelper
     }
 
 
-    public async Task<PaidMessageCollection> GetPaidMessages(string endpoint, string folder, string username, Auth auth, Entities.Config config)
+    public async Task<PaidMessageCollection> GetPaidMessages(string endpoint, string folder, string username, IDownloadConfig config)
     {
         try
         {
@@ -1583,7 +1589,7 @@ public class APIHelper : IAPIHelper
                 { "user_id", username }
             };
 
-            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
             paidMessages = JsonConvert.DeserializeObject<Purchased>(body, m_JsonSerializerSettings);
             if (paidMessages != null && paidMessages.hasMore)
             {
@@ -1592,7 +1598,7 @@ public class APIHelper : IAPIHelper
                 {
                     string loopqueryParams = "?" + string.Join("&", getParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
                     Purchased newpaidMessages = new();
-                    Dictionary<string, string> loopheaders = await GetDynamicHeaders("/api2/v2" + endpoint, loopqueryParams, auth);
+                    Dictionary<string, string> loopheaders = await GetDynamicHeaders("/api2/v2" + endpoint, loopqueryParams);
                     HttpClient loopclient = GetHttpClient(config);
 
                     HttpRequestMessage looprequest = new(HttpMethod.Get, $"{Constants.API_URL}{endpoint}{loopqueryParams}");
@@ -1783,7 +1789,7 @@ public class APIHelper : IAPIHelper
         return null;
     }
 
-    public async Task<Dictionary<string, int>> GetPurchasedTabUsers(string endpoint, Auth auth, Entities.Config config, Dictionary<string, int> users)
+    public async Task<Dictionary<string, int>> GetPurchasedTabUsers(string endpoint, IDownloadConfig config, Dictionary<string, int> users)
     {
         try
         {
@@ -1797,7 +1803,7 @@ public class APIHelper : IAPIHelper
                 { "format", "infinite" }
             };
 
-            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
             purchased = JsonConvert.DeserializeObject<Purchased>(body, m_JsonSerializerSettings);
             if (purchased != null && purchased.hasMore)
             {
@@ -1806,7 +1812,7 @@ public class APIHelper : IAPIHelper
                 {
                     string loopqueryParams = "?" + string.Join("&", getParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
                     Purchased newPurchased = new();
-                    Dictionary<string, string> loopheaders = await GetDynamicHeaders("/api2/v2" + endpoint, loopqueryParams, auth);
+                    Dictionary<string, string> loopheaders = await GetDynamicHeaders("/api2/v2" + endpoint, loopqueryParams);
                     HttpClient loopclient = GetHttpClient(config);
 
                     HttpRequestMessage looprequest = new(HttpMethod.Get, $"{Constants.API_URL}{endpoint}{loopqueryParams}");
@@ -1855,7 +1861,7 @@ public class APIHelper : IAPIHelper
                         }
                         else
                         {
-                            JObject user = await GetUserInfoById($"/users/list?x[]={purchase.fromUser.id}", auth);
+                            JObject user = await GetUserInfoById($"/users/list?x[]={purchase.fromUser.id}");
                             if (!string.IsNullOrEmpty(user[purchase.fromUser.id.ToString()]["username"].ToString()))
                             {
                                 if (!purchasedTabUsers.ContainsKey(user[purchase.fromUser.id.ToString()]["username"].ToString()))
@@ -1893,7 +1899,7 @@ public class APIHelper : IAPIHelper
                         }
                         else
                         {
-                            JObject user = await GetUserInfoById($"/users/list?x[]={purchase.author.id}", auth);
+                            JObject user = await GetUserInfoById($"/users/list?x[]={purchase.author.id}");
                             if (!string.IsNullOrEmpty(user[purchase.author.id.ToString()]["username"].ToString()))
                             {
                                 if (!purchasedTabUsers.ContainsKey(user[purchase.author.id.ToString()]["username"].ToString()) && users.ContainsKey(user[purchase.author.id.ToString()]["username"].ToString()))
@@ -1929,7 +1935,7 @@ public class APIHelper : IAPIHelper
         return null;
     }
 
-    public async Task<List<PurchasedTabCollection>> GetPurchasedTab(string endpoint, string folder, Auth auth, Entities.Config config, Dictionary<string, int> users)
+    public async Task<List<PurchasedTabCollection>> GetPurchasedTab(string endpoint, string folder, IDownloadConfig config, Dictionary<string, int> users)
     {
         try
         {
@@ -1944,7 +1950,7 @@ public class APIHelper : IAPIHelper
                 { "format", "infinite" }
             };
 
-            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, auth, GetHttpClient(config));
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
             purchased = JsonConvert.DeserializeObject<Purchased>(body, m_JsonSerializerSettings);
             if (purchased != null && purchased.hasMore)
             {
@@ -1953,7 +1959,7 @@ public class APIHelper : IAPIHelper
                 {
                     string loopqueryParams = "?" + string.Join("&", getParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
                     Purchased newPurchased = new();
-                    Dictionary<string, string> loopheaders = await GetDynamicHeaders("/api2/v2" + endpoint, loopqueryParams, auth);
+                    Dictionary<string, string> loopheaders = await GetDynamicHeaders("/api2/v2" + endpoint, loopqueryParams);
                     HttpClient loopclient = GetHttpClient(config);
 
                     HttpRequestMessage looprequest = new(HttpMethod.Get, $"{Constants.API_URL}{endpoint}{loopqueryParams}");
@@ -2003,7 +2009,7 @@ public class APIHelper : IAPIHelper
             foreach(KeyValuePair<long, List<Purchased.List>> user in userPurchases)
             {
                 PurchasedTabCollection purchasedTabCollection = new PurchasedTabCollection();
-                JObject userObject = await GetUserInfoById($"/users/list?x[]={user.Key}", auth);
+                JObject userObject = await GetUserInfoById($"/users/list?x[]={user.Key}");
                 purchasedTabCollection.UserId = user.Key;
                 purchasedTabCollection.Username = !string.IsNullOrEmpty(userObject[user.Key.ToString()]["username"].ToString()) ? userObject[user.Key.ToString()]["username"].ToString() : $"Deleted User - {user.Key}";
                 string path = System.IO.Path.Combine(folder, purchasedTabCollection.Username);
@@ -2271,7 +2277,7 @@ public class APIHelper : IAPIHelper
     }
 
 
-    public async Task<string> GetDRMMPDPSSH(string mpdUrl, string policy, string signature, string kvp, Auth auth)
+    public async Task<string> GetDRMMPDPSSH(string mpdUrl, string policy, string signature, string kvp)
     {
         try
         {
@@ -2310,7 +2316,7 @@ public class APIHelper : IAPIHelper
     }
 
 
-    public async Task<DateTime> GetDRMMPDLastModified(string mpdUrl, string policy, string signature, string kvp, Auth auth)
+    public async Task<DateTime> GetDRMMPDLastModified(string mpdUrl, string policy, string signature, string kvp)
     {
         try
         {
@@ -2343,7 +2349,7 @@ public class APIHelper : IAPIHelper
     }
 
 
-    public async Task<string> GetDecryptionKey(Dictionary<string, string> drmHeaders, string licenceURL, string pssh, Auth auth)
+    public async Task<string> GetDecryptionKey(Dictionary<string, string> drmHeaders, string licenceURL, string pssh)
     {
         try
         {
@@ -2402,7 +2408,8 @@ public class APIHelper : IAPIHelper
         return null;
     }
 
-    public async Task<string> GetDecryptionKeyNew(Dictionary<string, string> drmHeaders, string licenceURL, string pssh, Auth auth)
+
+    public async Task<string> GetDecryptionKeyNew(Dictionary<string, string> drmHeaders, string licenceURL, string pssh)
     {
         try
         {
