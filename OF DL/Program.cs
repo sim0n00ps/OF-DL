@@ -63,9 +63,8 @@ public class Program
                     if (!cliNonInteractive)
                     {
                         Console.ReadKey();
+                        Environment.Exit(1);
                     }
-
-                    Environment.Exit(1);
                 }
                 else
                 {
@@ -92,9 +91,8 @@ public class Program
                     if (!cliNonInteractive)
                     {
                         Console.ReadKey();
+                        Environment.Exit(2);
                     }
-
-                    Environment.Exit(2);
                 }
             }
             else
@@ -106,9 +104,8 @@ public class Program
                 if (!cliNonInteractive)
                 {
                     Console.ReadKey();
-                }
-
-                Environment.Exit(2);
+                    Environment.Exit(2);
+                }                
             }
 
             if (File.Exists("config.json"))
@@ -130,9 +127,8 @@ public class Program
                     if (!cliNonInteractive)
                     {
                         Console.ReadKey();
-                    }
-
-                    Environment.Exit(3);
+                        Environment.Exit(3);
+                    }                    
                 }
             }
             else
@@ -144,9 +140,8 @@ public class Program
                 if (!cliNonInteractive)
                 {
                     Console.ReadKey();
+                    Environment.Exit(3);
                 }
-
-                Environment.Exit(3);
             }
 
             if(cliNonInteractive)
@@ -222,8 +217,8 @@ public class Program
                 if (!config.NonInteractiveMode)
                 {
                     Console.ReadKey();
+                    Environment.Exit(4);
                 }
-                Environment.Exit(4);
             }
 
             if (!File.Exists("cdm/devices/chrome_1610/device_client_id_blob"))
@@ -282,8 +277,8 @@ public class Program
             if (!cliNonInteractive)
             {
                 Console.ReadKey();
+                Environment.Exit(5);
             }
-            Environment.Exit(5);
         }
     }
 
