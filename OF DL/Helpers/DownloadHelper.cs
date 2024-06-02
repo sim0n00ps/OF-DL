@@ -27,13 +27,19 @@ namespace OF_DL.Helpers;
 
 public class DownloadHelper : IDownloadHelper
 {
-    private static readonly IDBHelper m_DBHelper;
-    private static readonly IFileNameHelper _FileNameHelper;
+    private readonly Auth auth;
+    private readonly IDBHelper m_DBHelper;
+    private readonly IFileNameHelper _FileNameHelper;
+    private readonly IDownloadConfig downloadConfig;
+    private readonly IFileNameFormatConfig fileNameFormatConfig;
 
-    static DownloadHelper()
+    public DownloadHelper(Auth auth, IDownloadConfig downloadConfig, IFileNameFormatConfig fileNameFormatConfig)
     {
-        m_DBHelper = new DBHelper();
-        _FileNameHelper = new FileNameHelper();
+        this.auth = auth;
+        this.m_DBHelper = new DBHelper();
+        this._FileNameHelper = new FileNameHelper(auth);
+        this.downloadConfig = downloadConfig;
+        this.fileNameFormatConfig = fileNameFormatConfig;
     }
 
     #region common
@@ -51,15 +57,13 @@ public class DownloadHelper : IDownloadHelper
     /// <param name="generalAuthor"></param>
     /// <param name="users"></param>
     /// <returns></returns>
-    public static async Task<bool> CreateDirectoriesAndDownloadMedia(string path,
+    protected async Task<bool> CreateDirectoriesAndDownloadMedia(string path,
                                                                      string url,
                                                                      string folder,
                                                                      long media_id,
                                                                      ProgressTask task,
                                                                      string serverFileName,
-                                                                     string resolvedFileName,
-                                                                     Config config,
-                                                                     bool showScrapeSize)
+                                                                     string resolvedFileName)
     {
         try
         {
@@ -72,7 +76,7 @@ public class DownloadHelper : IDownloadHelper
 
             path = UpdatePathBasedOnExtension(folder, path, extension);
 
-            return await ProcessMediaDownload(folder, media_id, url, path, serverFileName, resolvedFileName, extension, config, task, showScrapeSize);
+            return await ProcessMediaDownload(folder, media_id, url, path, serverFileName, resolvedFileName, extension, task);
         }
         catch (Exception ex)
         {
@@ -95,7 +99,7 @@ public class DownloadHelper : IDownloadHelper
     /// <param name="path">The initial relative path.</param>
     /// <param name="extension">The file extension.</param>
     /// <returns>A string that represents the updated path based on the file extension.</returns>
-    private static string UpdatePathBasedOnExtension(string folder, string path, string extension)
+    private string UpdatePathBasedOnExtension(string folder, string path, string extension)
     {
         string subdirectory = string.Empty;
 
@@ -145,7 +149,7 @@ public class DownloadHelper : IDownloadHelper
     /// <param name="users">Dictionary containing user-related data.</param>
     /// <param name="fileNameHelper">Helper class for filename operations.</param>
     /// <returns>A Task resulting in a string that represents the custom filename.</returns>
-    private static async Task<string> GenerateCustomFileName(string filename,
+    private async Task<string> GenerateCustomFileName(string filename,
                                                              string? filenameFormat,
                                                              object? postInfo,
                                                              object? postMedia,
@@ -175,7 +179,7 @@ public class DownloadHelper : IDownloadHelper
     }
 
 
-    private static async Task<long> GetFileSizeAsync(string url, Auth auth)
+    private async Task<long> GetFileSizeAsync(string url, Auth auth)
     {
         long fileSize = 0;
 
@@ -269,16 +273,14 @@ public class DownloadHelper : IDownloadHelper
     /// <param name="extension">The file extension.</param>
     /// <param name="task">The task object for tracking progress.</param>
     /// <returns>A Task resulting in a boolean indicating whether the media is newly downloaded or not.</returns>
-    public static async Task<bool> ProcessMediaDownload(string folder,
+    public async Task<bool> ProcessMediaDownload(string folder,
                                                         long media_id,
                                                         string url,
                                                         string path,
                                                         string serverFilename,
                                                         string resolvedFilename,
                                                         string extension,
-                                                        Config config,
-                                                        ProgressTask task,
-                                                        bool showScrapeSize)
+                                                        ProgressTask task)
     {
 
         try
@@ -292,14 +294,12 @@ public class DownloadHelper : IDownloadHelper
                                             serverFilename: serverFilename,
                                             resolvedFilename: resolvedFilename,
                                             extension: extension,
-                                            task: task,
-                                            config,
-                                            showScrapeSize);
+                                            task: task);
             }
             else
             {
-                bool status = await HandlePreviouslyDownloadedMediaAsync(folder, media_id, task, showScrapeSize);
-                if (config.RenameExistingFilesWhenCustomFormatIsSelected && (serverFilename != resolvedFilename))
+                bool status = await HandlePreviouslyDownloadedMediaAsync(folder, media_id, task);
+                if (downloadConfig.RenameExistingFilesWhenCustomFormatIsSelected && (serverFilename != resolvedFilename))
                 {
                     await HandleRenamingOfExistingFilesAsync(folder, media_id, path, serverFilename, resolvedFilename, extension);
                 }
@@ -315,7 +315,7 @@ public class DownloadHelper : IDownloadHelper
     }
 
 
-    private static async Task<bool> HandleRenamingOfExistingFilesAsync(string folder,
+    private async Task<bool> HandleRenamingOfExistingFilesAsync(string folder,
                                                                        long media_id,
                                                                        string path,
                                                                        string serverFilename,
@@ -358,16 +358,14 @@ public class DownloadHelper : IDownloadHelper
     /// <param name="task"></param>
     /// <param name="dBHelper"></param>
     /// <returns>A Task resulting in a boolean indicating whether the media is newly downloaded or not.</returns>
-    private static async Task<bool> HandleNewMedia(string folder,
+    private async Task<bool> HandleNewMedia(string folder,
                                                    long media_id,
                                                    string url,
                                                    string path,
                                                    string serverFilename,
                                                    string resolvedFilename,
                                                    string extension,
-                                                   ProgressTask task,
-                                                   Config config,
-                                                   bool showScrapeSize)
+                                                   ProgressTask task)
     {
         long fileSizeInBytes;
         DateTime lastModified;
@@ -410,7 +408,7 @@ public class DownloadHelper : IDownloadHelper
 
             fileSizeInBytes = GetLocalFileSize(finalPath);
             lastModified = File.GetLastWriteTime(finalPath);
-            if (showScrapeSize)
+            if (downloadConfig.ShowScrapeSize)
             {
                 task.Increment(fileSizeInBytes);
             }
@@ -427,7 +425,7 @@ public class DownloadHelper : IDownloadHelper
         {
             fileSizeInBytes = GetLocalFileSize(fullPathWithTheNewFileName);
             lastModified = File.GetLastWriteTime(fullPathWithTheNewFileName);
-            if (showScrapeSize)
+            if (downloadConfig.ShowScrapeSize)
             {
                 task.Increment(fileSizeInBytes);
             }
@@ -439,7 +437,7 @@ public class DownloadHelper : IDownloadHelper
         }
         else //file doesn't exist and we should download it.
         {
-            lastModified = await DownloadFile(url, fullPathWithTheNewFileName, task, config, showScrapeSize);
+            lastModified = await DownloadFile(url, fullPathWithTheNewFileName, task);
             fileSizeInBytes = GetLocalFileSize(fullPathWithTheNewFileName);
             status = true;
         }
@@ -460,9 +458,9 @@ public class DownloadHelper : IDownloadHelper
     /// <param name="task"></param>
     /// <param name="dBHelper"></param>
     /// <returns>A boolean indicating whether the media is newly downloaded or not.</returns>
-    private static async Task<bool> HandlePreviouslyDownloadedMediaAsync(string folder, long media_id, ProgressTask task, bool showScrapeSize)
+    private async Task<bool> HandlePreviouslyDownloadedMediaAsync(string folder, long media_id, ProgressTask task)
     {
-        if (showScrapeSize)
+        if (downloadConfig.ShowScrapeSize)
         {
             long size = await m_DBHelper.GetStoredFileSize(folder, media_id);
             task.Increment(size);
@@ -480,7 +478,7 @@ public class DownloadHelper : IDownloadHelper
     /// </summary>
     /// <param name="filePath">The path to the file.</param>
     /// <returns>The file size in bytes.</returns>
-    private static long GetLocalFileSize(string filePath)
+    private long GetLocalFileSize(string filePath)
     {
         return new FileInfo(filePath).Length;
     }
@@ -494,7 +492,7 @@ public class DownloadHelper : IDownloadHelper
     /// <param name="task">Progress tracking object.</param>
     /// <returns>A Task resulting in a DateTime indicating the last modified date of the downloaded file.</returns>
 
-    private static async Task<DateTime> DownloadFile(string url, string destinationPath, ProgressTask task, Config config, bool showScrapeSize)
+    private async Task<DateTime> DownloadFile(string url, string destinationPath, ProgressTask task)
     {
         using var client = new HttpClient();
         var request = new HttpRequestMessage
@@ -508,14 +506,14 @@ public class DownloadHelper : IDownloadHelper
         var body = await response.Content.ReadAsStreamAsync();
 
         // Wrap the body stream with the ThrottledStream to limit read rate.
-        using (ThrottledStream throttledStream = new(body, config.DownloadLimitInMbPerSec * 1_000_000, config.LimitDownloadRate))
+        using (ThrottledStream throttledStream = new(body, downloadConfig.DownloadLimitInMbPerSec * 1_000_000, downloadConfig.LimitDownloadRate))
         {
             using FileStream fileStream = new(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None, 16384, true);
             var buffer = new byte[16384];
             int read;
             while ((read = await throttledStream.ReadAsync(buffer, CancellationToken.None)) > 0)
             {
-                if (showScrapeSize)
+                if (downloadConfig.ShowScrapeSize)
                 {
                     task.Increment(read);
                 }
@@ -524,14 +522,14 @@ public class DownloadHelper : IDownloadHelper
         }
 
         File.SetLastWriteTime(destinationPath, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
-        if (!showScrapeSize)
+        if (!downloadConfig.ShowScrapeSize)
         {
             task.Increment(1);
         }
         return response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now;
     }
 
-    public async Task<long> CalculateTotalFileSize(List<string> urls, Auth auth)
+    public async Task<long> CalculateTotalFileSize(List<string> urls)
     {
         long totalFileSize = 0;
         if (urls.Count > 250)
@@ -580,7 +578,7 @@ public class DownloadHelper : IDownloadHelper
 
     #region drm common
 
-    private static async Task<bool> DownloadDrmMedia(string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string customFileName, string filename, string path, bool showScrapeSize, Config config)
+    private async Task<bool> DownloadDrmMedia(string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string customFileName, string filename, string path)
     {
         int pos1 = decryptionKey.IndexOf(':');
         string decKey = "";
@@ -593,7 +591,7 @@ public class DownloadHelper : IDownloadHelper
 
         ProcessStartInfo ffmpegStartInfo = new()
         {
-            FileName = config.FFmpegPath,
+            FileName = downloadConfig.FFmpegPath,
             Arguments = $"-cenc_decryption_key {decKey} -headers \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess}\r\nOrigin: https://onlyfans.com\r\nReferer: https://onlyfans.com\r\nUser-Agent: {user_agent}\r\n\r\n\" -i \"{url}\" -codec copy \"{tempFilename}\"",
             CreateNoWindow = true,
             UseShellExecute = false,
@@ -625,7 +623,7 @@ public class DownloadHelper : IDownloadHelper
         }
         //Cleanup Files
         long fileSizeInBytes = new FileInfo(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + ".mp4" : tempFilename).Length;
-        if (showScrapeSize)
+        if (downloadConfig.ShowScrapeSize)
         {
             task.Increment(fileSizeInBytes);
         }
@@ -640,10 +638,10 @@ public class DownloadHelper : IDownloadHelper
     #endregion
 
     #region normal posts
-    public async Task<bool> DownloadPostMedia(string url, string folder, long media_id, ProgressTask task, string? filenameFormat, Post.List? postInfo, Post.Medium? postMedia, Post.Author? author, Dictionary<string, int> users, Config config, bool showScrapeSize)
+    public async Task<bool> DownloadPostMedia(string url, string folder, long media_id, ProgressTask task, string? filenameFormat, Post.List? postInfo, Post.Medium? postMedia, Post.Author? author, Dictionary<string, int> users)
     {
         string path;
-        if (config.FolderPerPost && postInfo != null && postInfo?.id is not null && postInfo?.postedAt is not null)
+        if (downloadConfig.FolderPerPost && postInfo != null && postInfo?.id is not null && postInfo?.postedAt is not null)
         {
             path = $"/Posts/Free/{postInfo.id} {postInfo.postedAt:yyyy-MM-dd HH-mm-ss}";
         }
@@ -656,12 +654,12 @@ public class DownloadHelper : IDownloadHelper
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
         string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, postInfo, postMedia, author, folder.Split("/")[^1], users, _FileNameHelper, CustomFileNameOption.ReturnOriginal);
 
-        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config, showScrapeSize);
+        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename);
     }
-    public async Task<bool> DownloadPostMedia(string url, string folder, long media_id, ProgressTask task, string? filenameFormat, SinglePost? postInfo, SinglePost.Medium? postMedia, SinglePost.Author? author, Dictionary<string, int> users, Config config, bool showScrapeSize)
+    public async Task<bool> DownloadPostMedia(string url, string folder, long media_id, ProgressTask task, string? filenameFormat, SinglePost? postInfo, SinglePost.Medium? postMedia, SinglePost.Author? author, Dictionary<string, int> users)
     {
         string path;
-        if (config.FolderPerPost && postInfo != null && postInfo?.id is not null && postInfo?.postedAt is not null)
+        if (downloadConfig.FolderPerPost && postInfo != null && postInfo?.id is not null && postInfo?.postedAt is not null)
         {
             path = $"/Posts/Free/{postInfo.id} {postInfo.postedAt:yyyy-MM-dd HH-mm-ss}";
         }
@@ -674,12 +672,12 @@ public class DownloadHelper : IDownloadHelper
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
         string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, postInfo, postMedia, author, folder.Split("/")[^1], users, _FileNameHelper, CustomFileNameOption.ReturnOriginal);
 
-        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config, showScrapeSize);
+        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename);
     }
-    public async Task<bool> DownloadStreamMedia(string url, string folder, long media_id, ProgressTask task, string? filenameFormat, Streams.List? streamInfo, Streams.Medium? streamMedia, Streams.Author? author, Dictionary<string, int> users, Config config, bool showScrapeSize)
+    public async Task<bool> DownloadStreamMedia(string url, string folder, long media_id, ProgressTask task, string? filenameFormat, Streams.List? streamInfo, Streams.Medium? streamMedia, Streams.Author? author, Dictionary<string, int> users)
     {
         string path;
-        if (config.FolderPerPost && streamInfo != null && streamInfo?.id is not null && streamInfo?.postedAt is not null)
+        if (downloadConfig.FolderPerPost && streamInfo != null && streamInfo?.id is not null && streamInfo?.postedAt is not null)
         {
             path = $"/Posts/Free/{streamInfo.id} {streamInfo.postedAt:yyyy-MM-dd HH-mm-ss}";
         }
@@ -692,14 +690,14 @@ public class DownloadHelper : IDownloadHelper
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
         string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, streamInfo, streamMedia, author, folder.Split("/")[^1], users, _FileNameHelper, CustomFileNameOption.ReturnOriginal);
 
-        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config, showScrapeSize);
+        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename);
     }
 
 
-    public async Task<bool> DownloadMessageMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Messages.List messageInfo, Messages.Medium messageMedia, Messages.FromUser fromUser, Dictionary<string, int> users, Config config, bool showScrapeSize)
+    public async Task<bool> DownloadMessageMedia(string url, string folder, long media_id, ProgressTask task, string? filenameFormat, Messages.List? messageInfo, Messages.Medium? messageMedia, Messages.FromUser? fromUser, Dictionary<string, int> users)
     {
         string path;
-        if (config.FolderPerMessage && messageInfo != null && messageInfo?.id is not null && messageInfo?.createdAt is not null)
+        if (downloadConfig.FolderPerMessage && messageInfo != null && messageInfo?.id is not null && messageInfo?.createdAt is not null)
         {
             path = $"/Messages/Free/{messageInfo.id} {messageInfo.createdAt.Value:yyyy-MM-dd HH-mm-ss}";
         }
@@ -710,33 +708,33 @@ public class DownloadHelper : IDownloadHelper
         Uri uri = new(url);
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
         string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, messageInfo, messageMedia, fromUser, folder.Split("/")[^1], users, _FileNameHelper, CustomFileNameOption.ReturnOriginal);
-        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config, showScrapeSize);
+        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename);
     }
 
 
-    public async Task<bool> DownloadArchivedMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Archived.List messageInfo, Archived.Medium messageMedia, Archived.Author author, Dictionary<string, int> users, Config config, bool showScrapeSize)
+    public async Task<bool> DownloadArchivedMedia(string url, string folder, long media_id, ProgressTask task, string? filenameFormat, Archived.List? messageInfo, Archived.Medium? messageMedia, Archived.Author? author, Dictionary<string, int> users)
     {
         string path = "/Archived/Posts/Free";
         Uri uri = new(url);
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
         string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, messageInfo, messageMedia, author, folder.Split("/")[^1], users, _FileNameHelper, CustomFileNameOption.ReturnOriginal);
-        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config, showScrapeSize);
+        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename);
     }
 
 
 
-    public async Task<bool> DownloadStoryMedia(string url, string folder, long media_id, ProgressTask task, Config config, bool showScrapeSize)
+    public async Task<bool> DownloadStoryMedia(string url, string folder, long media_id, ProgressTask task)
     {
         string path = "/Stories/Free";
         Uri uri = new(url);
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
-        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, filename, config, showScrapeSize);
+        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, filename);
     }
 
-    public async Task<bool> DownloadPurchasedMedia(string url, string folder, long media_id, ProgressTask task, string filenameFormat, Purchased.List messageInfo, Purchased.Medium messageMedia, Purchased.FromUser fromUser, Dictionary<string, int> users, Config config, bool showScrapeSize)
+    public async Task<bool> DownloadPurchasedMedia(string url, string folder, long media_id, ProgressTask task, string? filenameFormat, Purchased.List? messageInfo, Purchased.Medium? messageMedia, Purchased.FromUser? fromUser, Dictionary<string, int> users)
     {
         string path;
-        if (config.FolderPerPaidMessage && messageInfo != null && messageInfo?.id is not null && messageInfo?.createdAt is not null)
+        if (downloadConfig.FolderPerPaidMessage && messageInfo != null && messageInfo?.id is not null && messageInfo?.createdAt is not null)
         {
             path = $"/Messages/Paid/{messageInfo.id} {messageInfo.createdAt.Value:yyyy-MM-dd HH-mm-ss}";
         }
@@ -747,23 +745,21 @@ public class DownloadHelper : IDownloadHelper
         Uri uri = new(url);
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
         string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, messageInfo, messageMedia, fromUser, folder.Split("/")[^1], users, _FileNameHelper, CustomFileNameOption.ReturnOriginal);
-        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config, showScrapeSize);
+        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename);
     }
 
     public async Task<bool> DownloadPurchasedPostMedia(string url,
                                                        string folder,
                                                        long media_id,
                                                        ProgressTask task,
-                                                       string filenameFormat,
-                                                       Purchased.List messageInfo,
-                                                       Purchased.Medium messageMedia,
-                                                       Purchased.FromUser fromUser,
-                                                       Dictionary<string, int> users,
-                                                       Config config,
-                                                       bool showScrapeSize)
+                                                       string? filenameFormat,
+                                                       Purchased.List? messageInfo,
+                                                       Purchased.Medium? messageMedia,
+                                                       Purchased.FromUser? fromUser,
+                                                       Dictionary<string, int> users)
     {
         string path;
-        if (config.FolderPerPaidPost && messageInfo != null && messageInfo?.id is not null && messageInfo?.postedAt is not null)
+        if (downloadConfig.FolderPerPaidPost && messageInfo != null && messageInfo?.id is not null && messageInfo?.postedAt is not null)
         {
             path = $"/Posts/Paid/{messageInfo.id} {messageInfo.postedAt.Value:yyyy-MM-dd HH-mm-ss}";
         }
@@ -774,7 +770,7 @@ public class DownloadHelper : IDownloadHelper
         Uri uri = new(url);
         string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
         string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, messageInfo, messageMedia, fromUser, folder.Split("/")[^1], users, _FileNameHelper, CustomFileNameOption.ReturnOriginal);
-        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename, config, showScrapeSize);
+        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, task, filename, resolvedFilename);
     }
 
     #endregion
@@ -890,7 +886,7 @@ public class DownloadHelper : IDownloadHelper
     }
 
     #region drm posts
-    public async Task<bool> DownloadMessageDRMVideo(string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string filenameFormat, Messages.List messageInfo, Messages.Medium messageMedia, Messages.FromUser fromUser, Dictionary<string, int> users, Config config, bool showScrapeSize)
+    public async Task<bool> DownloadMessageDRMVideo(string policy, string signature, string kvp, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string? filenameFormat, Messages.List? messageInfo, Messages.Medium? messageMedia, Messages.FromUser? fromUser, Dictionary<string, int> users)
     {
         try
         {
@@ -898,7 +894,7 @@ public class DownloadHelper : IDownloadHelper
             string path;
             Uri uri = new(url);
             string filename = System.IO.Path.GetFileName(uri.LocalPath).Split(".")[0];
-            if (config.FolderPerMessage && messageInfo != null && messageInfo?.id is not null && messageInfo?.createdAt is not null)
+            if (downloadConfig.FolderPerMessage && messageInfo != null && messageInfo?.id is not null && messageInfo?.createdAt is not null)
             {
                 path = $"/Messages/Free/{messageInfo.id} {messageInfo.createdAt.Value:yyyy-MM-dd HH-mm-ss}/Videos";
             }
@@ -929,12 +925,12 @@ public class DownloadHelper : IDownloadHelper
             {
                 if (!string.IsNullOrEmpty(customFileName) ? !File.Exists(folder + path + "/" + customFileName + ".mp4") : !File.Exists(folder + path + "/" + filename + "_source.mp4"))
                 {
-                    return await DownloadDrmMedia(user_agent, policy, signature, kvp, sess, url, decryptionKey, folder, lastModified, media_id, task, customFileName, filename, path, showScrapeSize, config);
+                    return await DownloadDrmMedia(auth.USER_AGENT, policy, signature, kvp, auth.COOKIE, url, decryptionKey, folder, lastModified, media_id, task, customFileName, filename, path);
                 }
                 else
                 {
                     long fileSizeInBytes = new FileInfo(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + ".mp4" : folder + path + "/" + filename + "_source.mp4").Length;
-                    if (showScrapeSize)
+                    if (downloadConfig.ShowScrapeSize)
                     {
                         task.Increment(fileSizeInBytes);
                     }
@@ -947,7 +943,7 @@ public class DownloadHelper : IDownloadHelper
             }
             else
             {
-                if (showScrapeSize)
+                if (downloadConfig.ShowScrapeSize)
                 {
                     long size = await m_DBHelper.GetStoredFileSize(folder, media_id);
                     task.Increment(size);
@@ -974,7 +970,7 @@ public class DownloadHelper : IDownloadHelper
     }
 
 
-    public async Task<bool> DownloadPurchasedMessageDRMVideo(string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string filenameFormat, Purchased.List messageInfo, Purchased.Medium messageMedia, Purchased.FromUser fromUser, Dictionary<string, int> users, Config config, bool showScrapeSize)
+    public async Task<bool> DownloadPurchasedMessageDRMVideo(string policy, string signature, string kvp, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string? filenameFormat, Purchased.List? messageInfo, Purchased.Medium? messageMedia, Purchased.FromUser? fromUser, Dictionary<string, int> users)
     {
         try
         {
@@ -982,7 +978,7 @@ public class DownloadHelper : IDownloadHelper
             string path;
             Uri uri = new(url);
             string filename = System.IO.Path.GetFileName(uri.LocalPath).Split(".")[0];
-            if (config.FolderPerPaidMessage && messageInfo != null && messageInfo?.id is not null && messageInfo?.createdAt is not null)
+            if (downloadConfig.FolderPerPaidMessage && messageInfo != null && messageInfo?.id is not null && messageInfo?.createdAt is not null)
             {
                 path = $"/Messages/Paid/{messageInfo.id} {messageInfo.createdAt.Value:yyyy-MM-dd HH-mm-ss}/Videos";
             }
@@ -1012,12 +1008,12 @@ public class DownloadHelper : IDownloadHelper
             {
                 if (!string.IsNullOrEmpty(customFileName) ? !File.Exists(folder + path + "/" + customFileName + ".mp4") : !File.Exists(folder + path + "/" + filename + "_source.mp4"))
                 {
-                    return await DownloadDrmMedia(user_agent, policy, signature, kvp, sess, url, decryptionKey, folder, lastModified, media_id, task, customFileName, filename, path, showScrapeSize, config);
+                    return await DownloadDrmMedia(auth.USER_AGENT, policy, signature, kvp, auth.COOKIE, url, decryptionKey, folder, lastModified, media_id, task, customFileName, filename, path);
                 }
                 else
                 {
                     long fileSizeInBytes = new FileInfo(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + ".mp4" : folder + path + "/" + filename + "_source.mp4").Length;
-                    if (showScrapeSize)
+                    if (downloadConfig.ShowScrapeSize)
                     {
                         task.Increment(fileSizeInBytes);
                     }
@@ -1030,7 +1026,7 @@ public class DownloadHelper : IDownloadHelper
             }
             else
             {
-                if (showScrapeSize)
+                if (downloadConfig.ShowScrapeSize)
                 {
                     long size = await m_DBHelper.GetStoredFileSize(folder, media_id);
                     task.Increment(size);
@@ -1057,7 +1053,7 @@ public class DownloadHelper : IDownloadHelper
     }
 
 
-    public async Task<bool> DownloadPostDRMVideo(string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string filenameFormat, Post.List postInfo, Post.Medium postMedia, Post.Author author, Dictionary<string, int> users, Config config, bool showScrapeSize)
+    public async Task<bool> DownloadPostDRMVideo(string policy, string signature, string kvp, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string? filenameFormat, Post.List? postInfo, Post.Medium? postMedia, Post.Author? author, Dictionary<string, int> users)
     {
         try
         {
@@ -1065,7 +1061,7 @@ public class DownloadHelper : IDownloadHelper
             string path;
             Uri uri = new(url);
             string filename = System.IO.Path.GetFileName(uri.LocalPath).Split(".")[0];
-            if (config.FolderPerPost && postInfo != null && postInfo?.id is not null && postInfo?.postedAt is not null)
+            if (downloadConfig.FolderPerPost && postInfo != null && postInfo?.id is not null && postInfo?.postedAt is not null)
             {
                 path = $"/Posts/Free/{postInfo.id} {postInfo.postedAt:yyyy-MM-dd HH-mm-ss}/Videos";
             }
@@ -1095,12 +1091,12 @@ public class DownloadHelper : IDownloadHelper
             {
                 if (!string.IsNullOrEmpty(customFileName) ? !File.Exists(folder + path + "/" + customFileName + ".mp4") : !File.Exists(folder + path + "/" + filename + "_source.mp4"))
                 {
-                    return await DownloadDrmMedia(user_agent, policy, signature, kvp, sess, url, decryptionKey, folder, lastModified, media_id, task, customFileName, filename, path, showScrapeSize, config);
+                    return await DownloadDrmMedia(auth.USER_AGENT, policy, signature, kvp, auth.COOKIE, url, decryptionKey, folder, lastModified, media_id, task, customFileName, filename, path);
                 }
                 else
                 {
                     long fileSizeInBytes = new FileInfo(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + ".mp4" : folder + path + "/" + filename + "_source.mp4").Length;
-                    if (showScrapeSize)
+                    if (downloadConfig.ShowScrapeSize)
                     {
                         task.Increment(fileSizeInBytes);
                     }
@@ -1113,7 +1109,7 @@ public class DownloadHelper : IDownloadHelper
             }
             else
             {
-                if (showScrapeSize)
+                if (downloadConfig.ShowScrapeSize)
                 {
                     long size = await m_DBHelper.GetStoredFileSize(folder, media_id);
                     task.Increment(size);
@@ -1138,7 +1134,7 @@ public class DownloadHelper : IDownloadHelper
         }
         return false;
     }
-    public async Task<bool> DownloadPostDRMVideo(string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string filenameFormat, SinglePost postInfo, SinglePost.Medium postMedia, SinglePost.Author author, Dictionary<string, int> users, Config config, bool showScrapeSize)
+    public async Task<bool> DownloadPostDRMVideo(string policy, string signature, string kvp, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string filenameFormat, SinglePost postInfo, SinglePost.Medium postMedia, SinglePost.Author author, Dictionary<string, int> users)
     {
         try
         {
@@ -1146,7 +1142,7 @@ public class DownloadHelper : IDownloadHelper
             string path;
             Uri uri = new(url);
             string filename = System.IO.Path.GetFileName(uri.LocalPath).Split(".")[0];
-            if (config.FolderPerPost && postInfo != null && postInfo?.id is not null && postInfo?.postedAt is not null)
+            if (downloadConfig.FolderPerPost && postInfo != null && postInfo?.id is not null && postInfo?.postedAt is not null)
             {
                 path = $"/Posts/Free/{postInfo.id} {postInfo.postedAt:yyyy-MM-dd HH-mm-ss}/Videos";
             }
@@ -1176,12 +1172,12 @@ public class DownloadHelper : IDownloadHelper
             {
                 if (!string.IsNullOrEmpty(customFileName) ? !File.Exists(folder + path + "/" + customFileName + ".mp4") : !File.Exists(folder + path + "/" + filename + "_source.mp4"))
                 {
-                    return await DownloadDrmMedia(user_agent, policy, signature, kvp, sess, url, decryptionKey, folder, lastModified, media_id, task, customFileName, filename, path, showScrapeSize, config);
+                    return await DownloadDrmMedia(auth.USER_AGENT, policy, signature, kvp, auth.COOKIE, url, decryptionKey, folder, lastModified, media_id, task, customFileName, filename, path);
                 }
                 else
                 {
                     long fileSizeInBytes = new FileInfo(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + ".mp4" : folder + path + "/" + filename + "_source.mp4").Length;
-                    if (showScrapeSize)
+                    if (downloadConfig.ShowScrapeSize)
                     {
                         task.Increment(fileSizeInBytes);
                     }
@@ -1194,7 +1190,7 @@ public class DownloadHelper : IDownloadHelper
             }
             else
             {
-                if (showScrapeSize)
+                if (downloadConfig.ShowScrapeSize)
                 {
                     long size = await m_DBHelper.GetStoredFileSize(folder, media_id);
                     task.Increment(size);
@@ -1219,7 +1215,7 @@ public class DownloadHelper : IDownloadHelper
         }
         return false;
     }
-    public async Task<bool> DownloadStreamsDRMVideo(string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string filenameFormat, Streams.List streamInfo, Streams.Medium streamMedia, Streams.Author author, Dictionary<string, int> users, Config config, bool showScrapeSize)
+    public async Task<bool> DownloadStreamsDRMVideo(string policy, string signature, string kvp, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string? filenameFormat, Streams.List? streamInfo, Streams.Medium? streamMedia, Streams.Author? author, Dictionary<string, int> users)
     {
         try
         {
@@ -1227,7 +1223,7 @@ public class DownloadHelper : IDownloadHelper
             string path;
             Uri uri = new(url);
             string filename = System.IO.Path.GetFileName(uri.LocalPath).Split(".")[0];
-            if (config.FolderPerPost && streamInfo != null && streamInfo?.id is not null && streamInfo?.postedAt is not null)
+            if (downloadConfig.FolderPerPost && streamInfo != null && streamInfo?.id is not null && streamInfo?.postedAt is not null)
             {
                 path = $"/Posts/Free/{streamInfo.id} {streamInfo.postedAt:yyyy-MM-dd HH-mm-ss}/Videos";
             }
@@ -1257,12 +1253,12 @@ public class DownloadHelper : IDownloadHelper
             {
                 if (!string.IsNullOrEmpty(customFileName) ? !File.Exists(folder + path + "/" + customFileName + ".mp4") : !File.Exists(folder + path + "/" + filename + "_source.mp4"))
                 {
-                    return await DownloadDrmMedia(user_agent, policy, signature, kvp, sess, url, decryptionKey, folder, lastModified, media_id, task, customFileName, filename, path, showScrapeSize, config);
+                    return await DownloadDrmMedia(auth.USER_AGENT, policy, signature, kvp, auth.COOKIE, url, decryptionKey, folder, lastModified, media_id, task, customFileName, filename, path);
                 }
                 else
                 {
                     long fileSizeInBytes = new FileInfo(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + ".mp4" : folder + path + "/" + filename + "_source.mp4").Length;
-                    if (showScrapeSize)
+                    if (downloadConfig.ShowScrapeSize)
                     {
                         task.Increment(fileSizeInBytes);
                     }
@@ -1275,7 +1271,7 @@ public class DownloadHelper : IDownloadHelper
             }
             else
             {
-                if (showScrapeSize)
+                if (downloadConfig.ShowScrapeSize)
                 {
                     long size = await m_DBHelper.GetStoredFileSize(folder, media_id);
                     task.Increment(size);
@@ -1301,7 +1297,7 @@ public class DownloadHelper : IDownloadHelper
         return false;
     }
 
-    public async Task<bool> DownloadPurchasedPostDRMVideo(string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string filenameFormat, Purchased.List postInfo, Purchased.Medium postMedia, Purchased.FromUser fromUser, Dictionary<string, int> users, Config config, bool showScrapeSize)
+    public async Task<bool> DownloadPurchasedPostDRMVideo(string policy, string signature, string kvp, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string? filenameFormat, Purchased.List? postInfo, Purchased.Medium? postMedia, Purchased.FromUser? fromUser, Dictionary<string, int> users)
     {
         try
         {
@@ -1309,7 +1305,7 @@ public class DownloadHelper : IDownloadHelper
             string path;
             Uri uri = new(url);
             string filename = System.IO.Path.GetFileName(uri.LocalPath).Split(".")[0];
-            if (config.FolderPerPaidPost && postInfo != null && postInfo?.id is not null && postInfo?.postedAt is not null)
+            if (downloadConfig.FolderPerPaidPost && postInfo != null && postInfo?.id is not null && postInfo?.postedAt is not null)
             {
                 path = $"/Posts/Paid/{postInfo.id} {postInfo.postedAt.Value:yyyy-MM-dd HH-mm-ss}/Videos";
             }
@@ -1340,12 +1336,12 @@ public class DownloadHelper : IDownloadHelper
             {
                 if (!string.IsNullOrEmpty(customFileName) ? !File.Exists(folder + path + "/" + customFileName + ".mp4") : !File.Exists(folder + path + "/" + filename + "_source.mp4"))
                 {
-                    return await DownloadDrmMedia(user_agent, policy, signature, kvp, sess, url, decryptionKey, folder, lastModified, media_id, task, customFileName, filename, path, showScrapeSize, config);
+                    return await DownloadDrmMedia(auth.USER_AGENT, policy, signature, kvp, auth.COOKIE, url, decryptionKey, folder, lastModified, media_id, task, customFileName, filename, path);
                 }
                 else
                 {
                     long fileSizeInBytes = new FileInfo(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + ".mp4" : folder + path + "/" + filename + "_source.mp4").Length;
-                    if (showScrapeSize)
+                    if (downloadConfig.ShowScrapeSize)
                     {
                         task.Increment(fileSizeInBytes);
                     }
@@ -1358,7 +1354,7 @@ public class DownloadHelper : IDownloadHelper
             }
             else
             {
-                if (showScrapeSize)
+                if (downloadConfig.ShowScrapeSize)
                 {
                     long size = await m_DBHelper.GetStoredFileSize(folder, media_id);
                     task.Increment(size);
@@ -1385,7 +1381,7 @@ public class DownloadHelper : IDownloadHelper
     }
 
 
-    public async Task<bool> DownloadArchivedPostDRMVideo(string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string filenameFormat, Archived.List postInfo, Archived.Medium postMedia, Archived.Author author, Dictionary<string, int> users, Config config, bool showScrapeSize)
+    public async Task<bool> DownloadArchivedPostDRMVideo(string policy, string signature, string kvp, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, ProgressTask task, string? filenameFormat, Archived.List? postInfo, Archived.Medium? postMedia, Archived.Author? author, Dictionary<string, int> users)
     {
         try
         {
@@ -1415,12 +1411,12 @@ public class DownloadHelper : IDownloadHelper
             {
                 if (!string.IsNullOrEmpty(customFileName) ? !File.Exists(folder + path + "/" + customFileName + ".mp4") : !File.Exists(folder + path + "/" + filename + "_source.mp4"))
                 {
-                    return await DownloadDrmMedia(user_agent, policy, signature, kvp, sess, url, decryptionKey, folder, lastModified, media_id, task, customFileName, filename, path, showScrapeSize, config);
+                    return await DownloadDrmMedia(auth.USER_AGENT, policy, signature, kvp, auth.COOKIE, url, decryptionKey, folder, lastModified, media_id, task, customFileName, filename, path);
                 }
                 else
                 {
                     long fileSizeInBytes = new FileInfo(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + ".mp4" : folder + path + "/" + filename + "_source.mp4").Length;
-                    if (showScrapeSize)
+                    if (downloadConfig.ShowScrapeSize)
                     {
                         task.Increment(fileSizeInBytes);
                     }
@@ -1433,7 +1429,7 @@ public class DownloadHelper : IDownloadHelper
             }
             else
             {
-                if (showScrapeSize)
+                if (downloadConfig.ShowScrapeSize)
                 {
                     long size = await m_DBHelper.GetStoredFileSize(folder, media_id);
                     task.Increment(size);

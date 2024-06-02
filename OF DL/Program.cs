@@ -9,6 +9,7 @@ using OF_DL.Enumurations;
 using OF_DL.Helpers;
 using Serilog;
 using Spectre.Console;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using static OF_DL.Entities.Lists.UserList;
@@ -17,26 +18,16 @@ namespace OF_DL;
 
 public class Program
 {
-    public static Auth? Auth { get; set; } = null;
-    public static Config? Config { get; set; } = null;
     public int MAX_AGE = 0;
     public static List<long> paid_post_ids = new();
-    private static readonly IAPIHelper m_ApiHelper;
-    private static readonly IDBHelper m_DBHelper;
-    private static readonly IDownloadHelper m_DownloadHelper;
+
     private static bool clientIdBlobMissing = false;
     private static bool devicePrivateKeyMissing = false;
 
-
-    static Program()
-    {
-        m_ApiHelper = new APIHelper();
-        m_DBHelper = new DBHelper();
-        m_DownloadHelper = new DownloadHelper();
-    }
-
     public async static Task Main(string[] args)
     {
+        bool cliNonInteractive = false;
+
         try
         {
             Log.Logger = new LoggerConfiguration()
@@ -46,6 +37,17 @@ public class Program
 
 
             AnsiConsole.Write(new FigletText("Welcome to OF-DL").Color(Color.Red));
+
+            Auth? auth = null;
+            Config? config = null;            
+
+            if (args is not null && args.Length > 0)
+            {
+                const string NON_INTERACTIVE_ARG = "--non-interactive";
+
+                if (args.Any(a => NON_INTERACTIVE_ARG.Equals(NON_INTERACTIVE_ARG, StringComparison.OrdinalIgnoreCase)))
+                    cliNonInteractive = true;
+            }
 
             var os = Environment.OSVersion;
             if (os.Platform == PlatformID.Win32NT)
@@ -57,7 +59,8 @@ public class Program
                     Console.Write("OF-DL requires Windows 10 or higher when being run on Windows. Your reported version is: {0}\n\n", os.VersionString);
                     Console.Write("Press any key to continue.\n");
                     Log.Error("Windows version prior to 10.x: {0}", os.VersionString);
-                    if (!Config.NonInteractiveMode)
+
+                    if (!cliNonInteractive)
                     {
                         Console.ReadKey();
                         Environment.Exit(1);
@@ -74,7 +77,7 @@ public class Program
                 AnsiConsole.Markup("[green]auth.json located successfully!\n[/]");
                 try
                 {
-                    Auth = JsonConvert.DeserializeObject<Auth>(File.ReadAllText("auth.json"));
+                    auth = JsonConvert.DeserializeObject<Auth>(File.ReadAllText("auth.json"));
                 }
                 catch (Exception e)
                 {
@@ -84,7 +87,8 @@ public class Program
                     AnsiConsole.MarkupLine($"[link]https://of-dl.gitbook.io/of-dl/auth#browser-extension[/]\n");
                     AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
                     Log.Error("auth.json processing failed.");
-                    if (!Config.NonInteractiveMode)
+
+                    if (!cliNonInteractive)
                     {
                         Console.ReadKey();
                         Environment.Exit(2);
@@ -96,11 +100,12 @@ public class Program
                 File.WriteAllText("auth.json", JsonConvert.SerializeObject(new Auth()));
                 AnsiConsole.Markup("[red]auth.json does not exist, a default file has been created in the folder you are running the program from[/]");
                 Log.Error("auth.json does not exist");
-                if (!Config.NonInteractiveMode)
+
+                if (!cliNonInteractive)
                 {
                     Console.ReadKey();
                     Environment.Exit(2);
-                }
+                }                
             }
 
             if (File.Exists("config.json"))
@@ -108,7 +113,7 @@ public class Program
                 AnsiConsole.Markup("[green]config.json located successfully!\n[/]");
                 try
                 {
-                    Config = JsonConvert.DeserializeObject<Config>(File.ReadAllText("config.json"));
+                    config = JsonConvert.DeserializeObject<Config>(File.ReadAllText("config.json"))!;
                 }
                 catch (Exception e)
                 {
@@ -118,11 +123,12 @@ public class Program
                     AnsiConsole.MarkupLine($"[link]https://jsonlint.com/[/]\n");
                     AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
                     Log.Error("config.json processing failed.");
-                    if (!Config.NonInteractiveMode)
+
+                    if (!cliNonInteractive)
                     {
                         Console.ReadKey();
                         Environment.Exit(3);
-                    }
+                    }                    
                 }
             }
             else
@@ -130,27 +136,39 @@ public class Program
                 File.WriteAllText("config.json", JsonConvert.SerializeObject(new Config()));
                 AnsiConsole.Markup("[red]config.json does not exist, a default file has been created in the folder you are running the program from[/]");
                 Log.Error("config.json does not exist");
-                if (!Config.NonInteractiveMode)
+
+                if (!cliNonInteractive)
                 {
                     Console.ReadKey();
                     Environment.Exit(3);
                 }
             }
 
+            if(cliNonInteractive)
+            {
+                // CLI argument overrides configuration
+                config!.NonInteractiveMode = true;
+            }
+
+            if(config!.NonInteractiveMode)
+            {
+                cliNonInteractive = true; // If it was set in the config, reset the cli value so exception handling works
+            }
+
             var ffmpegFound = false;
             var pathAutoDetected = false;
-            if (!string.IsNullOrEmpty(Config!.FFmpegPath) && ValidateFilePath(Config.FFmpegPath))
+            if (!string.IsNullOrEmpty(config!.FFmpegPath) && ValidateFilePath(config.FFmpegPath))
             {
                 // FFmpeg path is set in config.json and is valid
                 ffmpegFound = true;
             }
-            else if (!string.IsNullOrEmpty(Auth!.FFMPEG_PATH) && ValidateFilePath(Auth.FFMPEG_PATH))
+            else if (!string.IsNullOrEmpty(auth!.FFMPEG_PATH) && ValidateFilePath(auth.FFMPEG_PATH))
             {
                 // FFmpeg path is set in auth.json and is valid (config.json takes precedence and auth.json is only available for backward compatibility)
                 ffmpegFound = true;
-                Config.FFmpegPath = Auth.FFMPEG_PATH;
+                config.FFmpegPath = auth.FFMPEG_PATH;
             }
-            else if (string.IsNullOrEmpty(Config.FFmpegPath))
+            else if (string.IsNullOrEmpty(config.FFmpegPath))
             {
                 // FFmpeg path is not set in config.json, so we will try to locate it in the PATH or current directory
                 var ffmpegPath = GetFullPath("ffmpeg");
@@ -159,7 +177,7 @@ public class Program
                     // FFmpeg is found in the PATH or current directory
                     ffmpegFound = true;
                     pathAutoDetected = true;
-                    Config.FFmpegPath = ffmpegPath;
+                    config.FFmpegPath = ffmpegPath;
                 }
                 else
                 {
@@ -170,7 +188,7 @@ public class Program
                         // FFmpeg windows executable is found in the PATH or current directory
                         ffmpegFound = true;
                         pathAutoDetected = true;
-                        Config.FFmpegPath = ffmpegPath;
+                        config.FFmpegPath = ffmpegPath;
                     }
                 }
             }
@@ -179,7 +197,7 @@ public class Program
             {
                 if (pathAutoDetected)
                 {
-                    AnsiConsole.Markup($"[green]FFmpeg located successfully. Path auto-detected: {Config.FFmpegPath}\n[/]");
+                    AnsiConsole.Markup($"[green]FFmpeg located successfully. Path auto-detected: {config.FFmpegPath}\n[/]");
                 }
                 else
                 {
@@ -187,16 +205,16 @@ public class Program
                 }
 
                 // Escape backslashes in the path for Windows
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Config.FFmpegPath!.Contains(@":\") && !Config.FFmpegPath.Contains(@":\\"))
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && config.FFmpegPath!.Contains(@":\") && !config.FFmpegPath.Contains(@":\\"))
                 {
-                    Config.FFmpegPath = Config.FFmpegPath.Replace(@"\", @"\\");
+                    config.FFmpegPath = config.FFmpegPath.Replace(@"\", @"\\");
                 }
             }
             else
             {
                 AnsiConsole.Markup("[red]Cannot locate FFmpeg; please modify config.json with the correct path. Press any key to exit.[/]");
-                Log.Error($"Cannot locate FFmpeg with path: {Config.FFmpegPath}");
-                if (!Config.NonInteractiveMode)
+                Log.Error($"Cannot locate FFmpeg with path: {config.FFmpegPath}");
+                if (!config.NonInteractiveMode)
                 {
                     Console.ReadKey();
                     Environment.Exit(4);
@@ -227,8 +245,10 @@ public class Program
             }
 
             //Check if auth is valid
-            Entities.User validate = await m_ApiHelper.GetUserInfo($"/users/me", Auth);
-            if (validate.name == null && validate.username == null)
+            var apiHelper = new APIHelper(auth);
+
+            Entities.User validate = await apiHelper.GetUserInfo($"/users/me");
+            if (validate?.name == null && validate?.username == null)
             {
                 AnsiConsole.MarkupLine($"[red]Auth failed, please check the values in auth.json are correct.[/]\n");
                 AnsiConsole.MarkupLine($"[red]If you have previously been able to auth successfully, the most likely cause of this is that your browser has updated, which will change the values of the USER_AGENT string. The version change to this string is usually very minor and easy to overlook, but even a slight difference will cause an authentication failure.[/]\n");
@@ -240,16 +260,8 @@ public class Program
                 return;
             }
 
-            if (args is not null && args.Length > 0)
-            {
-                const string NON_INTERACTIVE_ARG = "--non-interactive";
-
-                if (args.Any(a => NON_INTERACTIVE_ARG.Equals(NON_INTERACTIVE_ARG, StringComparison.OrdinalIgnoreCase)))
-                    Config.NonInteractiveMode = true;
-            }
-
             AnsiConsole.Markup($"[green]Logged In successfully as {validate.name} {validate.username}\n[/]");
-            await DownloadAllData();
+            await DownloadAllData(apiHelper, auth, config);
         }
         catch (Exception ex)
         {
@@ -262,7 +274,7 @@ public class Program
                 Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
             Console.WriteLine("\nPress any key to exit.");
-            if (!Config.NonInteractiveMode)
+            if (!cliNonInteractive)
             {
                 Console.ReadKey();
                 Environment.Exit(5);
@@ -271,13 +283,15 @@ public class Program
     }
 
 
-    private static async Task DownloadAllData()
+    private static async Task DownloadAllData(APIHelper m_ApiHelper, Auth Auth, Config Config)
     {
+        DBHelper dBHelper = new DBHelper();
+
         do
         {
             DateTime startTime = DateTime.Now;
             Dictionary<string, int> users = new();
-            Dictionary<string, int> activeSubs = await m_ApiHelper.GetActiveSubscriptions("/subscriptions/subscribes", Auth, Config.IncludeRestrictedSubscriptions);
+            Dictionary<string, int> activeSubs = await m_ApiHelper.GetActiveSubscriptions("/subscriptions/subscribes", Config.IncludeRestrictedSubscriptions);
             foreach (KeyValuePair<string, int> activeSub in activeSubs)
             {
                 if (!users.ContainsKey(activeSub.Key))
@@ -287,7 +301,7 @@ public class Program
             }
             if (Config!.IncludeExpiredSubscriptions)
             {
-                Dictionary<string, int> expiredSubs = await m_ApiHelper.GetExpiredSubscriptions("/subscriptions/subscribes", Auth, Config.IncludeRestrictedSubscriptions);
+                Dictionary<string, int> expiredSubs = await m_ApiHelper.GetExpiredSubscriptions("/subscriptions/subscribes", Config.IncludeRestrictedSubscriptions);
                 foreach (KeyValuePair<string, int> expiredSub in expiredSubs)
                 {
                     if (!users.ContainsKey(expiredSub.Key))
@@ -296,9 +310,8 @@ public class Program
                     }
                 }
             }
-            await m_DBHelper.CreateUsersDB(users);
-            Dictionary<string, int> lists = await m_ApiHelper.GetLists("/lists", Auth);
-            Dictionary<string, int> selectedUsers = new();
+            await dBHelper.CreateUsersDB(users);
+            Dictionary<string, int> lists = await m_ApiHelper.GetLists("/lists");
             KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP;
             if(Config.NonInteractiveMode && Config.NonInteractiveModePurchasedTab)
             {
@@ -312,17 +325,20 @@ public class Program
             {
                 List<string> listUsernames = new();
                 int listId = lists[Config.NonInteractiveModeListName];
-                List<string> usernames = await m_ApiHelper.GetListUsers($"/lists/{listId}/users", Auth);
+                List<string> usernames = await m_ApiHelper.GetListUsers($"/lists/{listId}/users");
                 foreach (string user in usernames)
                 {
                     listUsernames.Add(user);
                 }
-                selectedUsers = users.Where(x => listUsernames.Contains($"{x.Key}")).Distinct().ToDictionary(x => x.Key, x => x.Value);
+                var selectedUsers = users.Where(x => listUsernames.Contains($"{x.Key}")).Distinct().ToDictionary(x => x.Key, x => x.Value);
                 hasSelectedUsersKVP = new KeyValuePair<bool, Dictionary<string, int>>(true, selectedUsers);
             }
             else
             {
-                hasSelectedUsersKVP = await HandleUserSelection(selectedUsers, users, lists);
+                var userSelectionResult = await HandleUserSelection(m_ApiHelper, Config, users, lists);
+
+                Config = userSelectionResult.updatedConfig;
+                hasSelectedUsersKVP = new KeyValuePair<bool, Dictionary<string, int>>(userSelectionResult.IsExit, userSelectionResult.selectedUsers);
             }
 
             if (hasSelectedUsersKVP.Key && hasSelectedUsersKVP.Value != null && hasSelectedUsersKVP.Value.ContainsKey("SinglePost"))
@@ -365,14 +381,16 @@ public class Program
                         AnsiConsole.Markup($"[red]Folder for {username} already created\n[/]");
                     }
 
-                    await m_DBHelper.CreateDB(path);
+                    await dBHelper.CreateDB(path);
 
-                    await DownloadSinglePost(post_id, path, users);
+                    var downloadContext = new DownloadContext(Auth, Config, GetCreatorFileNameFormatConfig(Config, username), m_ApiHelper, dBHelper);
+
+                    await DownloadSinglePost(downloadContext, post_id, path, users);
                 }
             }
             else if (hasSelectedUsersKVP.Key && hasSelectedUsersKVP.Value != null && hasSelectedUsersKVP.Value.ContainsKey("PurchasedTab"))
             {
-                Dictionary<string, int> purchasedTabUsers = await m_ApiHelper.GetPurchasedTabUsers("/posts/paid", Auth, Config, users);
+                Dictionary<string, int> purchasedTabUsers = await m_ApiHelper.GetPurchasedTabUsers("/posts/paid", Config, users);
                 AnsiConsole.Markup($"[red]Checking folders for Users in Purchased Tab\n[/]");
                 foreach (KeyValuePair<string, int> user in purchasedTabUsers)
                 {
@@ -386,7 +404,7 @@ public class Program
                         path = $"__user_data__/sites/OnlyFans/{user.Key}"; 
                     }
 
-                    await m_DBHelper.CheckUsername(user, path);
+                    await dBHelper.CheckUsername(user, path);
 
                     if (!Directory.Exists(path))
                     {
@@ -398,9 +416,9 @@ public class Program
                         AnsiConsole.Markup($"[red]Folder for {user.Key} already created\n[/]");
                     }
 
-                    Entities.User user_info = await m_ApiHelper.GetUserInfo($"/users/{user.Key}", Auth);
+                    Entities.User user_info = await m_ApiHelper.GetUserInfo($"/users/{user.Key}");
 
-                    await m_DBHelper.CreateDB(path);
+                    await dBHelper.CreateDB(path);
                 }
 
                 string p = "";
@@ -412,7 +430,7 @@ public class Program
                 {
                     p = $"__user_data__/sites/OnlyFans/";
                 }
-                List<PurchasedTabCollection> purchasedTabCollections = await m_ApiHelper.GetPurchasedTab("/posts/paid", p, Auth, Config, users);
+                List<PurchasedTabCollection> purchasedTabCollections = await m_ApiHelper.GetPurchasedTab("/posts/paid", p, Config, users);
                 foreach(PurchasedTabCollection purchasedTabCollection in purchasedTabCollections)
                 {
                     AnsiConsole.Markup($"[red]\nScraping Data for {purchasedTabCollection.Username}\n[/]");
@@ -425,10 +443,13 @@ public class Program
                     {
                         path = $"__user_data__/sites/OnlyFans/{purchasedTabCollection.Username}"; // specify the path for the new folder
                     }
+
+                    var downloadContext = new DownloadContext(Auth, Config, GetCreatorFileNameFormatConfig(Config, purchasedTabCollection.Username), m_ApiHelper, dBHelper);
+
                     int paidPostCount = 0;
                     int paidMessagesCount = 0;
-                    paidPostCount = await DownloadPaidPostsPurchasedTab(purchasedTabCollection.PaidPosts, users.FirstOrDefault(u => u.Value == purchasedTabCollection.UserId), paidPostCount, path, users);
-                    paidMessagesCount = await DownloadPaidMessagesPurchasedTab(purchasedTabCollection.PaidMessages, users.FirstOrDefault(u => u.Value == purchasedTabCollection.UserId), paidMessagesCount, path, users);
+                    paidPostCount = await DownloadPaidPostsPurchasedTab(downloadContext, purchasedTabCollection.PaidPosts, users.FirstOrDefault(u => u.Value == purchasedTabCollection.UserId), paidPostCount, path, users);
+                    paidMessagesCount = await DownloadPaidMessagesPurchasedTab(downloadContext, purchasedTabCollection.PaidMessages, users.FirstOrDefault(u => u.Value == purchasedTabCollection.UserId), paidMessagesCount, path, users);
 
                     AnsiConsole.Markup("\n");
                     AnsiConsole.Write(new BreakdownChart()
@@ -466,7 +487,7 @@ public class Program
                         path = $"__user_data__/sites/OnlyFans/{user.Key}"; // specify the path for the new folder
                     }
 
-                    await m_DBHelper.CheckUsername(user, path);
+                    await dBHelper.CheckUsername(user, path);
 
                     if (!Directory.Exists(path)) // check if the folder already exists
                     {
@@ -476,55 +497,59 @@ public class Program
                     else
                     {
                         AnsiConsole.Markup($"[red]Folder for {user.Key} already created\n[/]");
-                    }
+                    }                    
 
-                    Entities.User user_info = await m_ApiHelper.GetUserInfo($"/users/{user.Key}", Auth);
+                    await dBHelper.CreateDB(path);
 
-                    await m_DBHelper.CreateDB(path);
+                    var downloadContext = new DownloadContext(Auth, Config, GetCreatorFileNameFormatConfig(Config, user.Key), m_ApiHelper, dBHelper);
 
                     if (Config.DownloadAvatarHeaderPhoto)
                     {
-                        await m_DownloadHelper.DownloadAvatarHeader(user_info.avatar, user_info.header, path, user.Key);
+                        Entities.User? user_info = await m_ApiHelper.GetUserInfo($"/users/{user.Key}");
+                        if (user_info != null)
+                        {
+                            await downloadContext.DownloadHelper.DownloadAvatarHeader(user_info.avatar, user_info.header, path, user.Key);
+                        }
                     }
 
                     if (Config.DownloadPaidPosts)
                     {
-                        paidPostCount = await DownloadPaidPosts(hasSelectedUsersKVP, user, paidPostCount, path);
+                        paidPostCount = await DownloadPaidPosts(downloadContext, hasSelectedUsersKVP, user, paidPostCount, path);
                     }
 
                     if (Config.DownloadPosts)
                     {
-                        postCount = await DownloadFreePosts(hasSelectedUsersKVP, user, postCount, path);
+                        postCount = await DownloadFreePosts(downloadContext, hasSelectedUsersKVP, user, postCount, path);
                     }
 
                     if (Config.DownloadArchived)
                     {
-                        archivedCount = await DownloadArchived(hasSelectedUsersKVP, user, archivedCount, path);
+                        archivedCount = await DownloadArchived(downloadContext, hasSelectedUsersKVP, user, archivedCount, path);
                     }
 
                     if (Config.DownloadStreams)
                     {
-                        streamsCount = await DownloadStreams(hasSelectedUsersKVP, user, streamsCount, path);
+                        streamsCount = await DownloadStreams(downloadContext, hasSelectedUsersKVP, user, streamsCount, path);
                     }
 
                     if (Config.DownloadStories)
                     {
-                        storiesCount = await DownloadStories(user, storiesCount, path);
+                        storiesCount = await DownloadStories(downloadContext, user, storiesCount, path);
                     }
 
                     if (Config.DownloadHighlights)
                     {
-                        highlightsCount = await DownloadHighlights(user, highlightsCount, path);
+                        highlightsCount = await DownloadHighlights(downloadContext, user, highlightsCount, path);
                     }
 
                     if (Config.DownloadMessages)
                     {
-                        messagesCount = await DownloadMessages(hasSelectedUsersKVP, user, messagesCount, path);
+                        messagesCount = await DownloadMessages(downloadContext, hasSelectedUsersKVP, user, messagesCount, path);
                     }
 
                     if (Config.DownloadPaidMessages)
                     {
-                        paidMessagesCount = await DownloadPaidMessages(hasSelectedUsersKVP, user, paidMessagesCount, path);
+                        paidMessagesCount = await DownloadPaidMessages(downloadContext, hasSelectedUsersKVP, user, paidMessagesCount, path);
                     }
 
                     AnsiConsole.Markup("\n");
@@ -555,11 +580,42 @@ public class Program
         } while (!Config.NonInteractiveMode);
     }
 
-    private static async Task<int> DownloadPaidMessages(KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int paidMessagesCount, string path)
+    private static IFileNameFormatConfig GetCreatorFileNameFormatConfig(Config config, string userName)
+    {
+        FileNameFormatConfig combinedConfig = new FileNameFormatConfig();
+
+        Func<string?, string?, string?> func = (val1, val2) =>
+        {
+            if (string.IsNullOrEmpty(val1))
+                return val2;
+            else
+                return val1;
+        };
+
+        if(config.CreatorConfigs.TryGetValue(userName, out var creatorConfig))
+        {
+            if(creatorConfig != null)
+            {
+                combinedConfig.PaidMessageFileNameFormat = creatorConfig.PaidMessageFileNameFormat;
+                combinedConfig.PostFileNameFormat = creatorConfig.PostFileNameFormat;
+                combinedConfig.MessageFileNameFormat = creatorConfig.MessageFileNameFormat;
+                combinedConfig.PaidPostFileNameFormat = creatorConfig.PaidPostFileNameFormat;
+            }
+        }
+
+        combinedConfig.PaidMessageFileNameFormat = func(combinedConfig.PaidMessageFileNameFormat, config.PaidMessageFileNameFormat);
+        combinedConfig.PostFileNameFormat = func(combinedConfig.PostFileNameFormat, config.PostFileNameFormat);
+        combinedConfig.MessageFileNameFormat = func(combinedConfig.MessageFileNameFormat, config.MessageFileNameFormat);
+        combinedConfig.PaidPostFileNameFormat = func(combinedConfig.PaidPostFileNameFormat, config.PaidPostFileNameFormat);
+
+        return combinedConfig;
+    }
+
+    private static async Task<int> DownloadPaidMessages(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int paidMessagesCount, string path)
     {
         AnsiConsole.Markup($"[red]Getting Paid Messages\n[/]");
         //Dictionary<long, string> purchased = await apiHelper.GetMedia(MediaType.PaidMessages, "/posts/paid", user.Key, path, auth, paid_post_ids);
-        PaidMessageCollection paidMessageCollection = await m_ApiHelper.GetPaidMessages("/posts/paid", path, user.Key, Auth!, Config!);
+        PaidMessageCollection paidMessageCollection = await downloadContext.ApiHelper.GetPaidMessages("/posts/paid", path, user.Key, downloadContext.DownloadConfig!);
         int oldPaidMessagesCount = 0;
         int newPaidMessagesCount = 0;
         if (paidMessageCollection != null && paidMessageCollection.PaidMessages.Count > 0)
@@ -567,16 +623,16 @@ public class Program
             AnsiConsole.Markup($"[red]Found {paidMessageCollection.PaidMessages.Count} Paid Messages\n[/]");
             paidMessagesCount = paidMessageCollection.PaidMessages.Count;
             long totalSize = 0;
-            if (Config.ShowScrapeSize)
+            if (downloadContext.DownloadConfig.ShowScrapeSize)
             {
-                totalSize = await m_DownloadHelper.CalculateTotalFileSize(paidMessageCollection.PaidMessages.Values.ToList(), Auth);
+                totalSize = await downloadContext.DownloadHelper.CalculateTotalFileSize(paidMessageCollection.PaidMessages.Values.ToList());
             }
             else
             {
                 totalSize = paidMessagesCount;
             }
             await AnsiConsole.Progress()
-            .Columns(GetProgressColumns(Config.ShowScrapeSize))
+            .Columns(GetProgressColumns(downloadContext.DownloadConfig.ShowScrapeSize))
             .StartAsync(async ctx =>
             {
                 // Define tasks
@@ -596,44 +652,40 @@ public class Program
                         string mediaId = messageUrlParsed[4];
                         string messageId = messageUrlParsed[5];
                         string? licenseURL = null;
-                        string? pssh = await m_ApiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp, Auth);
+                        string? pssh = await downloadContext.ApiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp);
                         if (pssh != null)
                         {
-                            DateTime lastModified = await m_ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp, Auth);
-                            Dictionary<string, string> drmHeaders = await m_ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/message/{messageId}", "?type=widevine", Auth);
+                            DateTime lastModified = await downloadContext.ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
+                            Dictionary<string, string> drmHeaders = await downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/message/{messageId}", "?type=widevine");
                             string decryptionKey;
                             if (clientIdBlobMissing || devicePrivateKeyMissing)
                             {
-                                decryptionKey = await m_ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh, Auth);
+                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
                             }
                             else
                             {
-                                decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh, Auth);
+                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
                             }
 
 
                             Purchased.Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
                             Purchased.List? messageInfo = paidMessageCollection.PaidMessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
-                            isNew = await m_DownloadHelper.DownloadPurchasedMessageDRMVideo(
-                                user_agent: Auth.USER_AGENT,
+                            isNew = await downloadContext.DownloadHelper.DownloadPurchasedMessageDRMVideo(
                                 policy: policy,
                                 signature: signature,
                                 kvp: kvp,
-                                sess: Auth.COOKIE,
                                 url: mpdURL,
                                 decryptionKey: decryptionKey,
                                 folder: path,
                                 lastModified: lastModified,
                                 media_id: paidMessageKVP.Key,
                                 task: task,
-                                filenameFormat: !string.IsNullOrEmpty(Config.PaidMessageFileNameFormat) ? Config.PaidMessageFileNameFormat : string.Empty,
+                                filenameFormat: downloadContext.FileNameFormatConfig.PaidMessageFileNameFormat ?? string.Empty,
                                 messageInfo: messageInfo,
                                 messageMedia: mediaInfo,
-                                fromUser: messageInfo.fromUser,
-                                users: hasSelectedUsersKVP.Value,
-                                config: Config,
-                                showScrapeSize: Config.ShowScrapeSize);
+                                fromUser: messageInfo?.fromUser,
+                                users: hasSelectedUsersKVP.Value);
 
                             if (isNew)
                             {
@@ -650,18 +702,16 @@ public class Program
                         Purchased.Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
                         Purchased.List messageInfo = paidMessageCollection.PaidMessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
-                        isNew = await m_DownloadHelper.DownloadPurchasedMedia(
+                        isNew = await downloadContext.DownloadHelper.DownloadPurchasedMedia(
                             url: paidMessageKVP.Value,
                             folder: path,
                             media_id: paidMessageKVP.Key,
                             task: task,
-                            filenameFormat: !string.IsNullOrEmpty(Config.PaidMessageFileNameFormat) ? Config.PaidMessageFileNameFormat : string.Empty,
+                            filenameFormat: downloadContext.FileNameFormatConfig.PaidMessageFileNameFormat ?? string.Empty,
                             messageInfo: messageInfo,
                             messageMedia: mediaInfo,
-                            fromUser: messageInfo.fromUser,
-                            users: hasSelectedUsersKVP.Value,
-                            config: Config,
-                            Config.ShowScrapeSize);
+                            fromUser: messageInfo?.fromUser,
+                            users: hasSelectedUsersKVP.Value);
                         if (isNew)
                         {
                             newPaidMessagesCount++;
@@ -684,11 +734,11 @@ public class Program
         return paidMessagesCount;
     }
 
-    private static async Task<int> DownloadMessages(KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int messagesCount, string path)
+    private static async Task<int> DownloadMessages(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int messagesCount, string path)
     {
         AnsiConsole.Markup($"[red]Getting Messages\n[/]");
         //Dictionary<long, string> messages = await apiHelper.GetMedia(MediaType.Messages, $"/chats/{user.Value}/messages", null, path, auth, paid_post_ids);
-        MessageCollection messages = await m_ApiHelper.GetMessages($"/chats/{user.Value}/messages", path, Auth!, Config!);
+        MessageCollection messages = await downloadContext.ApiHelper.GetMessages($"/chats/{user.Value}/messages", path, downloadContext.DownloadConfig!);
         int oldMessagesCount = 0;
         int newMessagesCount = 0;
         if (messages != null && messages.Messages.Count > 0)
@@ -696,16 +746,16 @@ public class Program
             AnsiConsole.Markup($"[red]Found {messages.Messages.Count} Messages\n[/]");
             messagesCount = messages.Messages.Count;
             long totalSize = 0;
-            if (Config.ShowScrapeSize)
+            if (downloadContext.DownloadConfig.ShowScrapeSize)
             {
-                totalSize = await m_DownloadHelper.CalculateTotalFileSize(messages.Messages.Values.ToList(), Auth);
+                totalSize = await downloadContext.DownloadHelper.CalculateTotalFileSize(messages.Messages.Values.ToList());
             }
             else
             {
                 totalSize = messagesCount;
             }
             await AnsiConsole.Progress()
-            .Columns(GetProgressColumns(Config.ShowScrapeSize))
+            .Columns(GetProgressColumns(downloadContext.DownloadConfig.ShowScrapeSize))
             .StartAsync(async ctx =>
             {
                 // Define tasks
@@ -725,42 +775,38 @@ public class Program
                         string mediaId = messageUrlParsed[4];
                         string messageId = messageUrlParsed[5];
                         string? licenseURL = null;
-                        string? pssh = await m_ApiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp, Auth);
+                        string? pssh = await downloadContext.ApiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp);
                         if (pssh != null)
                         {
-                            DateTime lastModified = await m_ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp, Auth);
-                            Dictionary<string, string> drmHeaders = await m_ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/message/{messageId}", "?type=widevine", Auth);
+                            DateTime lastModified = await downloadContext.ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
+                            Dictionary<string, string> drmHeaders = await downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/message/{messageId}", "?type=widevine");
                             string decryptionKey;
                             if (clientIdBlobMissing || devicePrivateKeyMissing)
                             {
-                                decryptionKey = await m_ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh, Auth);
+                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
                             }
                             else
                             {
-                                decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh, Auth);
+                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
                             }
                             Messages.Medium? mediaInfo = messages.MessageMedia.FirstOrDefault(m => m.id == messageKVP.Key);
                             Messages.List? messageInfo = messages.MessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
-                            isNew = await m_DownloadHelper.DownloadMessageDRMVideo(
-                                user_agent: Auth.USER_AGENT,
+                            isNew = await downloadContext.DownloadHelper.DownloadMessageDRMVideo(
                                 policy: policy,
                                 signature: signature,
                                 kvp: kvp,
-                                sess: Auth.COOKIE,
                                 url: mpdURL,
                                 decryptionKey: decryptionKey,
                                 folder: path,
                                 lastModified: lastModified,
                                 media_id: messageKVP.Key,
                                 task: task,
-                                filenameFormat: !string.IsNullOrEmpty(Config.MessageFileNameFormat) ? Config.MessageFileNameFormat : string.Empty,
+                                filenameFormat: downloadContext.FileNameFormatConfig.MessageFileNameFormat ?? string.Empty,
                                 messageInfo: messageInfo,
                                 messageMedia: mediaInfo,
-                                fromUser: messageInfo.fromUser,
-                                users: hasSelectedUsersKVP.Value,
-                                config: Config,
-                                showScrapeSize: Config.ShowScrapeSize);
+                                fromUser: messageInfo?.fromUser,
+                                users: hasSelectedUsersKVP.Value);
 
 
                             if (isNew)
@@ -778,18 +824,16 @@ public class Program
                         Messages.Medium? mediaInfo = messages.MessageMedia.FirstOrDefault(m => m.id == messageKVP.Key);
                         Messages.List? messageInfo = messages.MessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
-                        isNew = await m_DownloadHelper.DownloadMessageMedia(
+                        isNew = await downloadContext.DownloadHelper.DownloadMessageMedia(
                             url: messageKVP.Value,
                             folder: path,
                             media_id: messageKVP.Key,
                             task: task,
-                            filenameFormat: !string.IsNullOrEmpty(Config!.MessageFileNameFormat) ? Config.MessageFileNameFormat : string.Empty,
+                            filenameFormat: downloadContext.FileNameFormatConfig!.MessageFileNameFormat ?? string.Empty,
                             messageInfo: messageInfo,
                             messageMedia: mediaInfo,
-                            fromUser: messageInfo.fromUser,
-                            users: hasSelectedUsersKVP.Value,
-                            config: Config,
-                            Config.ShowScrapeSize);
+                            fromUser: messageInfo?.fromUser,
+                            users: hasSelectedUsersKVP.Value);
 
                         if (isNew)
                         {
@@ -813,10 +857,10 @@ public class Program
         return messagesCount;
     }
 
-    private static async Task<int> DownloadHighlights(KeyValuePair<string, int> user, int highlightsCount, string path)
+    private static async Task<int> DownloadHighlights(IDownloadContext downloadContext, KeyValuePair<string, int> user, int highlightsCount, string path)
     {
         AnsiConsole.Markup($"[red]Getting Highlights\n[/]");
-        Dictionary<long, string> highlights = await m_ApiHelper.GetMedia(MediaType.Highlights, $"/users/{user.Value}/stories/highlights", null, path, Auth!, Config!, paid_post_ids);
+        Dictionary<long, string> highlights = await downloadContext.ApiHelper.GetMedia(MediaType.Highlights, $"/users/{user.Value}/stories/highlights", null, path, downloadContext.DownloadConfig!, paid_post_ids);
         int oldHighlightsCount = 0;
         int newHighlightsCount = 0;
         if (highlights != null && highlights.Count > 0)
@@ -824,16 +868,16 @@ public class Program
             AnsiConsole.Markup($"[red]Found {highlights.Count} Highlights\n[/]");
             highlightsCount = highlights.Count;
             long totalSize = 0;
-            if (Config.ShowScrapeSize)
+            if (downloadContext.DownloadConfig.ShowScrapeSize)
             {
-                totalSize = await m_DownloadHelper.CalculateTotalFileSize(highlights.Values.ToList(), Auth);
+                totalSize = await downloadContext.DownloadHelper.CalculateTotalFileSize(highlights.Values.ToList());
             }
             else
             {
                 totalSize = highlightsCount;
             }
             await AnsiConsole.Progress()
-            .Columns(GetProgressColumns(Config.ShowScrapeSize))
+            .Columns(GetProgressColumns(downloadContext.DownloadConfig.ShowScrapeSize))
             .StartAsync(async ctx =>
             {
                 // Define tasks
@@ -842,7 +886,7 @@ public class Program
                 task.StartTask();
                 foreach (KeyValuePair<long, string> highlightKVP in highlights)
                 {
-                    bool isNew = await m_DownloadHelper.DownloadStoryMedia(highlightKVP.Value, path, highlightKVP.Key, task, Config!, Config.ShowScrapeSize);
+                    bool isNew = await downloadContext.DownloadHelper.DownloadStoryMedia(highlightKVP.Value, path, highlightKVP.Key, task);
                     if (isNew)
                     {
                         newHighlightsCount++;
@@ -864,10 +908,10 @@ public class Program
         return highlightsCount;
     }
 
-    private static async Task<int> DownloadStories(KeyValuePair<string, int> user, int storiesCount, string path)
+    private static async Task<int> DownloadStories(IDownloadContext downloadContext, KeyValuePair<string, int> user, int storiesCount, string path)
     {
         AnsiConsole.Markup($"[red]Getting Stories\n[/]");
-        Dictionary<long, string> stories = await m_ApiHelper.GetMedia(MediaType.Stories, $"/users/{user.Value}/stories", null, path, Auth!, Config!, paid_post_ids);
+        Dictionary<long, string> stories = await downloadContext.ApiHelper.GetMedia(MediaType.Stories, $"/users/{user.Value}/stories", null, path, downloadContext.DownloadConfig!, paid_post_ids);
         int oldStoriesCount = 0;
         int newStoriesCount = 0;
         if (stories != null && stories.Count > 0)
@@ -875,16 +919,16 @@ public class Program
             AnsiConsole.Markup($"[red]Found {stories.Count} Stories\n[/]");
             storiesCount = stories.Count;
             long totalSize = 0;
-            if (Config.ShowScrapeSize)
+            if (downloadContext.DownloadConfig.ShowScrapeSize)
             {
-                totalSize = await m_DownloadHelper.CalculateTotalFileSize(stories.Values.ToList(), Auth);
+                totalSize = await downloadContext.DownloadHelper.CalculateTotalFileSize(stories.Values.ToList());
             }
             else
             {
                 totalSize = storiesCount;
             }
             await AnsiConsole.Progress()
-            .Columns(GetProgressColumns(Config.ShowScrapeSize))
+            .Columns(GetProgressColumns(downloadContext.DownloadConfig.ShowScrapeSize))
             .StartAsync(async ctx =>
             {
                 // Define tasks
@@ -893,7 +937,7 @@ public class Program
                 task.StartTask();
                 foreach (KeyValuePair<long, string> storyKVP in stories)
                 {
-                    bool isNew = await m_DownloadHelper.DownloadStoryMedia(storyKVP.Value, path, storyKVP.Key, task, Config!, Config.ShowScrapeSize);
+                    bool isNew = await downloadContext.DownloadHelper.DownloadStoryMedia(storyKVP.Value, path, storyKVP.Key, task);
                     if (isNew)
                     {
                         newStoriesCount++;
@@ -915,11 +959,11 @@ public class Program
         return storiesCount;
     }
 
-    private static async Task<int> DownloadArchived(KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int archivedCount, string path)
+    private static async Task<int> DownloadArchived(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int archivedCount, string path)
     {
         AnsiConsole.Markup($"[red]Getting Archived Posts\n[/]");
         //Dictionary<long, string> archived = await apiHelper.GetMedia(MediaType.Archived, $"/users/{user.Value}/posts", null, path, auth, paid_post_ids);
-        ArchivedCollection archived = await m_ApiHelper.GetArchived($"/users/{user.Value}/posts", path, Auth!, Config!);
+        ArchivedCollection archived = await downloadContext.ApiHelper.GetArchived($"/users/{user.Value}/posts", path, downloadContext.DownloadConfig!);
         int oldArchivedCount = 0;
         int newArchivedCount = 0;
         if (archived != null && archived.ArchivedPosts.Count > 0)
@@ -927,16 +971,16 @@ public class Program
             AnsiConsole.Markup($"[red]Found {archived.ArchivedPosts.Count} Archived Posts\n[/]");
             archivedCount = archived.ArchivedPosts.Count;
             long totalSize = 0;
-            if (Config.ShowScrapeSize)
+            if (downloadContext.DownloadConfig.ShowScrapeSize)
             {
-                totalSize = await m_DownloadHelper.CalculateTotalFileSize(archived.ArchivedPosts.Values.ToList(), Auth);
+                totalSize = await downloadContext.DownloadHelper.CalculateTotalFileSize(archived.ArchivedPosts.Values.ToList());
             }
             else
             {
                 totalSize = archivedCount;
             }
             await AnsiConsole.Progress()
-            .Columns(GetProgressColumns(Config.ShowScrapeSize))
+            .Columns(GetProgressColumns(downloadContext.DownloadConfig.ShowScrapeSize))
             .StartAsync(async ctx =>
             {
                 // Define tasks
@@ -956,42 +1000,38 @@ public class Program
                         string mediaId = messageUrlParsed[4];
                         string postId = messageUrlParsed[5];
                         string? licenseURL = null;
-                        string? pssh = await m_ApiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp, Auth);
+                        string? pssh = await downloadContext.ApiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp);
                         if (pssh != null)
                         {
-                            DateTime lastModified = await m_ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp, Auth);
-                            Dictionary<string, string> drmHeaders = await m_ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine", Auth);
+                            DateTime lastModified = await downloadContext.ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
+                            Dictionary<string, string> drmHeaders = await downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
                             string decryptionKey;
                             if (clientIdBlobMissing || devicePrivateKeyMissing)
                             {
-                                decryptionKey = await m_ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                             }
                             else
                             {
-                                decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                             }
                             Archived.Medium? mediaInfo = archived.ArchivedPostMedia.FirstOrDefault(m => m.id == archivedKVP.Key);
                             Archived.List? postInfo = archived.ArchivedPostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
-                            isNew = await m_DownloadHelper.DownloadArchivedPostDRMVideo(
-                                user_agent: Auth.USER_AGENT,
+                            isNew = await downloadContext.DownloadHelper.DownloadArchivedPostDRMVideo(
                                 policy: policy,
                                 signature: signature,
                                 kvp: kvp,
-                                sess: Auth.COOKIE,
                                 url: mpdURL,
                                 decryptionKey: decryptionKey,
                                 folder: path,
                                 lastModified: lastModified,
                                 media_id: archivedKVP.Key,
                                 task: task,
-                                filenameFormat: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? Config.PostFileNameFormat : string.Empty,
-                                postInfo: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? postInfo : null,
-                                postMedia: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? mediaInfo : null,
-                                author: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? postInfo.author : null,
-                                users: hasSelectedUsersKVP.Value,
-                                config: Config,
-                                showScrapeSize: Config.ShowScrapeSize);
+                                filenameFormat: downloadContext.FileNameFormatConfig.PostFileNameFormat ?? string.Empty,
+                                postInfo: postInfo,
+                                postMedia: mediaInfo,
+                                author: postInfo?.author,
+                                users: hasSelectedUsersKVP.Value);
 
                             if (isNew)
                             {
@@ -1008,18 +1048,16 @@ public class Program
                         Archived.Medium? mediaInfo = archived.ArchivedPostMedia.FirstOrDefault(m => m.id == archivedKVP.Key);
                         Archived.List? postInfo = archived.ArchivedPostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
-                        isNew = await m_DownloadHelper.DownloadArchivedMedia(
+                        isNew = await downloadContext.DownloadHelper.DownloadArchivedMedia(
                             url: archivedKVP.Value,
                             folder: path,
                             media_id: archivedKVP.Key,
                             task: task,
-                            filenameFormat: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? Config.PostFileNameFormat : string.Empty,
-                            messageInfo: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? postInfo : null,
-                            messageMedia: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? mediaInfo : null,
-                            author: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? postInfo.author : null,
-                            users: hasSelectedUsersKVP.Value,
-                            config: Config,
-                            Config.ShowScrapeSize);
+                            filenameFormat: downloadContext.FileNameFormatConfig.PostFileNameFormat ?? string.Empty,
+                            messageInfo: postInfo,
+                            messageMedia: mediaInfo,
+                            author: postInfo?.author,
+                            users: hasSelectedUsersKVP.Value);
 
                         if (isNew)
                         {
@@ -1043,11 +1081,11 @@ public class Program
         return archivedCount;
     }
 
-    private static async Task<int> DownloadFreePosts(KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int postCount, string path)
+    private static async Task<int> DownloadFreePosts(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int postCount, string path)
     {
         AnsiConsole.Markup($"[red]Getting Posts\n[/]");
         //Dictionary<long, string> posts = await apiHelper.GetMedia(MediaType.Posts, $"/users/{user.Value}/posts", null, path, auth, paid_post_ids);
-        PostCollection posts = await m_ApiHelper.GetPosts($"/users/{user.Value}/posts", path, Auth!, Config!, paid_post_ids);
+        PostCollection posts = await downloadContext.ApiHelper.GetPosts($"/users/{user.Value}/posts", path, downloadContext.DownloadConfig!, paid_post_ids);
         int oldPostCount = 0;
         int newPostCount = 0;
         if (posts == null || posts.Posts.Count <= 0)
@@ -1059,16 +1097,16 @@ public class Program
         AnsiConsole.Markup($"[red]Found {posts.Posts.Count} Posts\n[/]");
         postCount = posts.Posts.Count;
         long totalSize = 0;
-        if (Config.ShowScrapeSize)
+        if (downloadContext.DownloadConfig.ShowScrapeSize)
         {
-            totalSize = await m_DownloadHelper.CalculateTotalFileSize(posts.Posts.Values.ToList(), Auth);
+            totalSize = await downloadContext.DownloadHelper.CalculateTotalFileSize(posts.Posts.Values.ToList());
         }
         else
         {
             totalSize = postCount;
         }
         await AnsiConsole.Progress()
-        .Columns(GetProgressColumns(Config.ShowScrapeSize))
+        .Columns(GetProgressColumns(downloadContext.DownloadConfig.ShowScrapeSize))
         .StartAsync(async ctx =>
         {
             var task = ctx.AddTask($"[red]Downloading {posts.Posts.Count} Posts[/]", autoStart: false);
@@ -1087,45 +1125,41 @@ public class Program
                     string mediaId = messageUrlParsed[4];
                     string postId = messageUrlParsed[5];
                     string? licenseURL = null;
-                    string? pssh = await m_ApiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp, Auth);
+                    string? pssh = await downloadContext.ApiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp);
                     if (pssh == null)
                     {
                         continue;
                     }
 
-                    DateTime lastModified = await m_ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp, Auth);
-                    Dictionary<string, string> drmHeaders = await m_ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine", Auth);
+                    DateTime lastModified = await downloadContext.ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
+                    Dictionary<string, string> drmHeaders = await downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
                     string decryptionKey;
                     if (clientIdBlobMissing || devicePrivateKeyMissing)
                     {
-                        decryptionKey = await m_ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                     }
                     else
                     {
-                        decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                     }
                     Post.Medium mediaInfo = posts.PostMedia.FirstOrDefault(m => m.id == postKVP.Key);
                     Post.List postInfo = posts.PostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
-                    isNew = await m_DownloadHelper.DownloadPostDRMVideo(
-                        user_agent: Auth.USER_AGENT,
+                    isNew = await downloadContext.DownloadHelper.DownloadPostDRMVideo(
                         policy: policy,
                         signature: signature,
                         kvp: kvp,
-                        sess: Auth.COOKIE,
                         url: mpdURL,
                         decryptionKey: decryptionKey,
                         folder: path,
                         lastModified: lastModified,
                         media_id: postKVP.Key,
                         task: task,
-                        filenameFormat: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? Config.PostFileNameFormat : string.Empty,
+                        filenameFormat: downloadContext.FileNameFormatConfig.PostFileNameFormat ?? string.Empty,
                         postInfo: postInfo,
                         postMedia: mediaInfo,
                         author: postInfo?.author,
-                        users: hasSelectedUsersKVP.Value,
-                        config: Config,
-                        showScrapeSize: Config.ShowScrapeSize);
+                        users: hasSelectedUsersKVP.Value);
                     if (isNew)
                     {
                         newPostCount++;
@@ -1142,18 +1176,16 @@ public class Program
                         Post.Medium? mediaInfo = posts.PostMedia.FirstOrDefault(m => (m?.id == postKVP.Key) == true);
                         Post.List? postInfo = posts.PostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
-                        isNew = await m_DownloadHelper.DownloadPostMedia(
+                        isNew = await downloadContext.DownloadHelper.DownloadPostMedia(
                             url: postKVP.Value,
                             folder: path,
                             media_id: postKVP.Key,
                             task: task,
-                            filenameFormat: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? Config.PostFileNameFormat : string.Empty,
+                            filenameFormat: downloadContext.FileNameFormatConfig.PostFileNameFormat ?? string.Empty,
                             postInfo: postInfo,
                             postMedia: mediaInfo,
                             author: postInfo?.author,
-                            users: hasSelectedUsersKVP.Value,
-                            config: Config,
-                            Config.ShowScrapeSize);
+                            users: hasSelectedUsersKVP.Value);
                         if (isNew)
                         {
                             newPostCount++;
@@ -1176,11 +1208,11 @@ public class Program
         return postCount;
     }
 
-    private static async Task<int> DownloadPaidPosts(KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int paidPostCount, string path)
+    private static async Task<int> DownloadPaidPosts(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int paidPostCount, string path)
     {
         AnsiConsole.Markup($"[red]Getting Paid Posts\n[/]");
         //Dictionary<long, string> purchasedPosts = await apiHelper.GetMedia(MediaType.PaidPosts, "/posts/paid", user.Key, path, auth, paid_post_ids);
-        PaidPostCollection purchasedPosts = await m_ApiHelper.GetPaidPosts("/posts/paid", path, user.Key, Auth!, Config!, paid_post_ids);
+        PaidPostCollection purchasedPosts = await downloadContext.ApiHelper.GetPaidPosts("/posts/paid", path, user.Key, downloadContext.DownloadConfig!, paid_post_ids);
         int oldPaidPostCount = 0;
         int newPaidPostCount = 0;
         if (purchasedPosts == null || purchasedPosts.PaidPosts.Count <= 0)
@@ -1192,16 +1224,16 @@ public class Program
         AnsiConsole.Markup($"[red]Found {purchasedPosts.PaidPosts.Count} Paid Posts\n[/]");
         paidPostCount = purchasedPosts.PaidPosts.Count;
         long totalSize = 0;
-        if (Config.ShowScrapeSize)
+        if (downloadContext.DownloadConfig.ShowScrapeSize)
         {
-            totalSize = await m_DownloadHelper.CalculateTotalFileSize(purchasedPosts.PaidPosts.Values.ToList(), Auth);
+            totalSize = await downloadContext.DownloadHelper.CalculateTotalFileSize(purchasedPosts.PaidPosts.Values.ToList());
         }
         else
         {
             totalSize = paidPostCount;
         }
         await AnsiConsole.Progress()
-        .Columns(GetProgressColumns(Config.ShowScrapeSize))
+        .Columns(GetProgressColumns(downloadContext.DownloadConfig.ShowScrapeSize))
         .StartAsync(async ctx =>
         {
             // Define tasks
@@ -1221,45 +1253,41 @@ public class Program
                     string mediaId = messageUrlParsed[4];
                     string postId = messageUrlParsed[5];
                     string? licenseURL = null;
-                    string? pssh = await m_ApiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp, Auth);
+                    string? pssh = await downloadContext.ApiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp);
                     if (pssh == null)
                     {
                         continue;
                     }
 
-                    DateTime lastModified = await m_ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp, Auth);
-                    Dictionary<string, string> drmHeaders = await m_ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine", Auth);
+                    DateTime lastModified = await downloadContext.ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
+                    Dictionary<string, string> drmHeaders = await downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
                     string decryptionKey;
                     if (clientIdBlobMissing || devicePrivateKeyMissing)
                     {
-                        decryptionKey = await m_ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                     }
                     else
                     {
-                        decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                     }
                     Purchased.Medium? mediaInfo = purchasedPosts.PaidPostMedia.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
                     Purchased.List? postInfo = purchasedPosts.PaidPostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
-                    isNew = await m_DownloadHelper.DownloadPurchasedPostDRMVideo(
-                        user_agent: Auth.USER_AGENT,
+                    isNew = await downloadContext.DownloadHelper.DownloadPurchasedPostDRMVideo(
                         policy: policy,
                         signature: signature,
                         kvp: kvp,
-                        sess: Auth.COOKIE,
                         url: mpdURL,
                         decryptionKey: decryptionKey,
                         folder: path,
                         lastModified: lastModified,
                         media_id: purchasedPostKVP.Key,
                         task: task,
-                        filenameFormat: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? Config.PaidPostFileNameFormat : string.Empty,
-                        postInfo: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo : null,
-                        postMedia: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? mediaInfo : null,
-                        fromUser: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo.fromUser : null,
-                        users: hasSelectedUsersKVP.Value,
-                        config: Config,
-                        showScrapeSize: Config.ShowScrapeSize);
+                        filenameFormat: downloadContext.FileNameFormatConfig.PaidPostFileNameFormat ?? string.Empty,
+                        postInfo: postInfo,
+                        postMedia: mediaInfo,
+                        fromUser: postInfo?.fromUser,
+                        users: hasSelectedUsersKVP.Value);
                     if (isNew)
                     {
                         newPaidPostCount++;
@@ -1274,18 +1302,16 @@ public class Program
                     Purchased.Medium mediaInfo = purchasedPosts.PaidPostMedia.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
                     Purchased.List postInfo = purchasedPosts.PaidPostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
-                    isNew = await m_DownloadHelper.DownloadPurchasedPostMedia(
+                    isNew = await downloadContext.DownloadHelper.DownloadPurchasedPostMedia(
                         url: purchasedPostKVP.Value,
                         folder: path,
                         media_id: purchasedPostKVP.Key,
                         task: task,
-                        filenameFormat: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? Config.PaidPostFileNameFormat : string.Empty,
-                        messageInfo: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo : null,
-                        messageMedia: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? mediaInfo : null,
-                        fromUser: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo.fromUser : null,
-                        users: hasSelectedUsersKVP.Value,
-                        config: Config,
-                        Config.ShowScrapeSize);
+                        filenameFormat: downloadContext.FileNameFormatConfig.PaidPostFileNameFormat ?? string.Empty,
+                        messageInfo: postInfo,
+                        messageMedia: mediaInfo,
+                        fromUser: postInfo?.fromUser,
+                        users: hasSelectedUsersKVP.Value);
                     if (isNew)
                     {
                         newPaidPostCount++;
@@ -1303,7 +1329,7 @@ public class Program
         return paidPostCount;
     }
 
-    private static async Task<int> DownloadPaidPostsPurchasedTab(PaidPostCollection purchasedPosts, KeyValuePair<string, int> user, int paidPostCount, string path, Dictionary<string, int> users)
+    private static async Task<int> DownloadPaidPostsPurchasedTab(IDownloadContext downloadContext, PaidPostCollection purchasedPosts, KeyValuePair<string, int> user, int paidPostCount, string path, Dictionary<string, int> users)
     {
         int oldPaidPostCount = 0;
         int newPaidPostCount = 0;
@@ -1316,16 +1342,16 @@ public class Program
         AnsiConsole.Markup($"[red]Found {purchasedPosts.PaidPosts.Count} Paid Posts\n[/]");
         paidPostCount = purchasedPosts.PaidPosts.Count;
         long totalSize = 0;
-        if (Config.ShowScrapeSize)
+        if (downloadContext.DownloadConfig.ShowScrapeSize)
         {
-            totalSize = await m_DownloadHelper.CalculateTotalFileSize(purchasedPosts.PaidPosts.Values.ToList(), Auth);
+            totalSize = await downloadContext.DownloadHelper.CalculateTotalFileSize(purchasedPosts.PaidPosts.Values.ToList());
         }
         else
         {
             totalSize = paidPostCount;
         }
         await AnsiConsole.Progress()
-        .Columns(GetProgressColumns(Config.ShowScrapeSize))
+        .Columns(GetProgressColumns(downloadContext.DownloadConfig.ShowScrapeSize))
         .StartAsync(async ctx =>
         {
             // Define tasks
@@ -1345,45 +1371,41 @@ public class Program
                     string mediaId = messageUrlParsed[4];
                     string postId = messageUrlParsed[5];
                     string? licenseURL = null;
-                    string? pssh = await m_ApiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp, Auth);
+                    string? pssh = await downloadContext.ApiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp);
                     if (pssh == null)
                     {
                         continue;
                     }
 
-                    DateTime lastModified = await m_ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp, Auth);
-                    Dictionary<string, string> drmHeaders = await m_ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine", Auth);
+                    DateTime lastModified = await downloadContext.ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
+                    Dictionary<string, string> drmHeaders = await downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
                     string decryptionKey;
                     if (clientIdBlobMissing || devicePrivateKeyMissing)
                     {
-                        decryptionKey = await m_ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                     }
                     else
                     {
-                        decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                     }
-                    Purchased.Medium? mediaInfo = purchasedPosts.PaidPostMedia.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
-                    Purchased.List? postInfo = purchasedPosts.PaidPostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
+                    Purchased.Medium? mediaInfo = purchasedPosts?.PaidPostMedia?.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
+                    Purchased.List? postInfo = mediaInfo != null ? purchasedPosts?.PaidPostObjects?.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true) : null;
 
-                    isNew = await m_DownloadHelper.DownloadPurchasedPostDRMVideo(
-                        user_agent: Auth.USER_AGENT,
+                    isNew = await downloadContext.DownloadHelper.DownloadPurchasedPostDRMVideo(
                         policy: policy,
                         signature: signature,
                         kvp: kvp,
-                        sess: Auth.COOKIE,
                         url: mpdURL,
                         decryptionKey: decryptionKey,
                         folder: path,
                         lastModified: lastModified,
                         media_id: purchasedPostKVP.Key,
                         task: task,
-                        filenameFormat: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? Config.PaidPostFileNameFormat : string.Empty,
-                        postInfo: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo : null,
-                        postMedia: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? mediaInfo : null,
-                        fromUser: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo.fromUser : null,
-                        users: users,
-                        config: Config,
-                        showScrapeSize: Config.ShowScrapeSize);
+                        filenameFormat: downloadContext.FileNameFormatConfig.PaidPostFileNameFormat ?? string.Empty,
+                        postInfo: postInfo,
+                        postMedia: mediaInfo,
+                        fromUser: postInfo?.fromUser,
+                        users: users);
                     if (isNew)
                     {
                         newPaidPostCount++;
@@ -1395,21 +1417,19 @@ public class Program
                 }
                 else
                 {
-                    Purchased.Medium mediaInfo = purchasedPosts.PaidPostMedia.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
-                    Purchased.List postInfo = purchasedPosts.PaidPostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
+                    Purchased.Medium? mediaInfo = purchasedPosts?.PaidPostMedia?.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
+                    Purchased.List? postInfo = mediaInfo != null ? purchasedPosts?.PaidPostObjects?.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true) : null;
 
-                    isNew = await m_DownloadHelper.DownloadPurchasedPostMedia(
+                    isNew = await downloadContext.DownloadHelper.DownloadPurchasedPostMedia(
                         url: purchasedPostKVP.Value,
                         folder: path,
                         media_id: purchasedPostKVP.Key,
                         task: task,
-                        filenameFormat: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? Config.PaidPostFileNameFormat : string.Empty,
-                        messageInfo: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo : null,
-                        messageMedia: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? mediaInfo : null,
-                        fromUser: !string.IsNullOrEmpty(Config.PaidPostFileNameFormat) ? postInfo.fromUser : null,
-                        users: users,
-                        config: Config,
-                        Config.ShowScrapeSize);
+                        filenameFormat: downloadContext.FileNameFormatConfig.PaidPostFileNameFormat ?? string.Empty,
+                        messageInfo: postInfo,
+                        messageMedia: mediaInfo,
+                        fromUser: postInfo?.fromUser,
+                        users: users);
                     if (isNew)
                     {
                         newPaidPostCount++;
@@ -1427,7 +1447,7 @@ public class Program
         return paidPostCount;
     }
 
-    private static async Task<int> DownloadPaidMessagesPurchasedTab(PaidMessageCollection paidMessageCollection, KeyValuePair<string, int> user, int paidMessagesCount, string path, Dictionary<string, int> users)
+    private static async Task<int> DownloadPaidMessagesPurchasedTab(IDownloadContext downloadContext, PaidMessageCollection paidMessageCollection, KeyValuePair<string, int> user, int paidMessagesCount, string path, Dictionary<string, int> users)
     {
         int oldPaidMessagesCount = 0;
         int newPaidMessagesCount = 0;
@@ -1436,16 +1456,16 @@ public class Program
             AnsiConsole.Markup($"[red]Found {paidMessageCollection.PaidMessages.Count} Paid Messages\n[/]");
             paidMessagesCount = paidMessageCollection.PaidMessages.Count;
             long totalSize = 0;
-            if (Config.ShowScrapeSize)
+            if (downloadContext.DownloadConfig.ShowScrapeSize)
             {
-                totalSize = await m_DownloadHelper.CalculateTotalFileSize(paidMessageCollection.PaidMessages.Values.ToList(), Auth);
+                totalSize = await downloadContext.DownloadHelper.CalculateTotalFileSize(paidMessageCollection.PaidMessages.Values.ToList());
             }
             else
             {
                 totalSize = paidMessagesCount;
             }
             await AnsiConsole.Progress()
-            .Columns(GetProgressColumns(Config.ShowScrapeSize))
+            .Columns(GetProgressColumns(downloadContext.DownloadConfig.ShowScrapeSize))
             .StartAsync(async ctx =>
             {
                 // Define tasks
@@ -1465,44 +1485,40 @@ public class Program
                         string mediaId = messageUrlParsed[4];
                         string messageId = messageUrlParsed[5];
                         string? licenseURL = null;
-                        string? pssh = await m_ApiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp, Auth);
+                        string? pssh = await downloadContext.ApiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp);
                         if (pssh != null)
                         {
-                            DateTime lastModified = await m_ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp, Auth);
-                            Dictionary<string, string> drmHeaders = await m_ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/message/{messageId}", "?type=widevine", Auth);
+                            DateTime lastModified = await downloadContext.ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
+                            Dictionary<string, string> drmHeaders = await downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/message/{messageId}", "?type=widevine");
                             string decryptionKey;
                             if (clientIdBlobMissing || devicePrivateKeyMissing)
                             {
-                                decryptionKey = await m_ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh, Auth);
+                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
                             }
                             else
                             {
-                                decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh, Auth);
+                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
                             }
 
 
                             Purchased.Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
                             Purchased.List? messageInfo = paidMessageCollection.PaidMessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
-                            isNew = await m_DownloadHelper.DownloadPurchasedMessageDRMVideo(
-                                user_agent: Auth.USER_AGENT,
+                            isNew = await downloadContext.DownloadHelper.DownloadPurchasedMessageDRMVideo(
                                 policy: policy,
                                 signature: signature,
                                 kvp: kvp,
-                                sess: Auth.COOKIE,
                                 url: mpdURL,
                                 decryptionKey: decryptionKey,
                                 folder: path,
                                 lastModified: lastModified,
                                 media_id: paidMessageKVP.Key,
                                 task: task,
-                                filenameFormat: !string.IsNullOrEmpty(Config.PaidMessageFileNameFormat) ? Config.PaidMessageFileNameFormat : string.Empty,
+                                filenameFormat: downloadContext.FileNameFormatConfig.PaidMessageFileNameFormat ?? string.Empty,
                                 messageInfo: messageInfo,
                                 messageMedia: mediaInfo,
-                                fromUser: messageInfo.fromUser,
-                                users: users,
-                                config: Config,
-                                showScrapeSize: Config.ShowScrapeSize);
+                                fromUser: messageInfo?.fromUser,
+                                users: users);
 
                             if (isNew)
                             {
@@ -1519,18 +1535,16 @@ public class Program
                         Purchased.Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
                         Purchased.List messageInfo = paidMessageCollection.PaidMessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
-                        isNew = await m_DownloadHelper.DownloadPurchasedMedia(
+                        isNew = await downloadContext.DownloadHelper.DownloadPurchasedMedia(
                             url: paidMessageKVP.Value,
                             folder: path,
                             media_id: paidMessageKVP.Key,
                             task: task,
-                            filenameFormat: !string.IsNullOrEmpty(Config.PaidMessageFileNameFormat) ? Config.PaidMessageFileNameFormat : string.Empty,
+                            filenameFormat: downloadContext.FileNameFormatConfig.PaidMessageFileNameFormat ?? string.Empty,
                             messageInfo: messageInfo,
                             messageMedia: mediaInfo,
-                            fromUser: messageInfo.fromUser,
-                            users: users,
-                            config: Config,
-                            Config.ShowScrapeSize);
+                            fromUser: messageInfo?.fromUser,
+                            users: users);
                         if (isNew)
                         {
                             newPaidMessagesCount++;
@@ -1553,10 +1567,10 @@ public class Program
         return paidMessagesCount;
     }
 
-    private static async Task<int> DownloadStreams(KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int streamsCount, string path)
+    private static async Task<int> DownloadStreams(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int streamsCount, string path)
     {
         AnsiConsole.Markup($"[red]Getting Streams\n[/]");
-        StreamsCollection streams = await m_ApiHelper.GetStreams($"/users/{user.Value}/posts/streams", path, Auth!, Config!, paid_post_ids);
+        StreamsCollection streams = await downloadContext.ApiHelper.GetStreams($"/users/{user.Value}/posts/streams", path, downloadContext.DownloadConfig!, paid_post_ids);
         int oldStreamsCount = 0;
         int newStreamsCount = 0;
         if (streams == null || streams.Streams.Count <= 0)
@@ -1568,16 +1582,16 @@ public class Program
         AnsiConsole.Markup($"[red]Found {streams.Streams.Count} Streams\n[/]");
         streamsCount = streams.Streams.Count;
         long totalSize = 0;
-        if (Config.ShowScrapeSize)
+        if (downloadContext.DownloadConfig.ShowScrapeSize)
         {
-            totalSize = await m_DownloadHelper.CalculateTotalFileSize(streams.Streams.Values.ToList(), Auth);
+            totalSize = await downloadContext.DownloadHelper.CalculateTotalFileSize(streams.Streams.Values.ToList());
         }
         else
         {
             totalSize = streamsCount;
         }
         await AnsiConsole.Progress()
-        .Columns(GetProgressColumns(Config.ShowScrapeSize))
+        .Columns(GetProgressColumns(downloadContext.DownloadConfig.ShowScrapeSize))
         .StartAsync(async ctx =>
         {
             var task = ctx.AddTask($"[red]Downloading {streams.Streams.Count} Streams[/]", autoStart: false);
@@ -1596,45 +1610,41 @@ public class Program
                     string mediaId = messageUrlParsed[4];
                     string postId = messageUrlParsed[5];
                     string? licenseURL = null;
-                    string? pssh = await m_ApiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp, Auth);
+                    string? pssh = await downloadContext.ApiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp);
                     if (pssh == null)
                     {
                         continue;
                     }
 
-                    DateTime lastModified = await m_ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp, Auth);
-                    Dictionary<string, string> drmHeaders = await m_ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine", Auth);
+                    DateTime lastModified = await downloadContext.ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
+                    Dictionary<string, string> drmHeaders = await downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
                     string decryptionKey;
                     if (clientIdBlobMissing || devicePrivateKeyMissing)
                     {
-                        decryptionKey = await m_ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                     }
                     else
                     {
-                        decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                     }
                     Streams.Medium mediaInfo = streams.StreamMedia.FirstOrDefault(m => m.id == streamKVP.Key);
                     Streams.List streamInfo = streams.StreamObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
-                    isNew = await m_DownloadHelper.DownloadStreamsDRMVideo(
-                        user_agent: Auth.USER_AGENT,
+                    isNew = await downloadContext.DownloadHelper.DownloadStreamsDRMVideo(
                         policy: policy,
                         signature: signature,
                         kvp: kvp,
-                        sess: Auth.COOKIE,
                         url: mpdURL,
                         decryptionKey: decryptionKey,
                         folder: path,
                         lastModified: lastModified,
                         media_id: streamKVP.Key,
                         task: task,
-                        filenameFormat: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? Config.PostFileNameFormat : string.Empty,
+                        filenameFormat: downloadContext.FileNameFormatConfig.PostFileNameFormat ?? string.Empty,
                         streamInfo: streamInfo,
                         streamMedia: mediaInfo,
                         author: streamInfo?.author,
-                        users: hasSelectedUsersKVP.Value,
-                        config: Config,
-                        showScrapeSize: Config.ShowScrapeSize);
+                        users: hasSelectedUsersKVP.Value);
                     if (isNew)
                     {
                         newStreamsCount++;
@@ -1651,18 +1661,16 @@ public class Program
                         Streams.Medium? mediaInfo = streams.StreamMedia.FirstOrDefault(m => (m?.id == streamKVP.Key) == true);
                         Streams.List? streamInfo = streams.StreamObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
-                        isNew = await m_DownloadHelper.DownloadStreamMedia(
+                        isNew = await downloadContext.DownloadHelper.DownloadStreamMedia(
                             url: streamKVP.Value,
                             folder: path,
                             media_id: streamKVP.Key,
                             task: task,
-                            filenameFormat: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? Config.PostFileNameFormat : string.Empty,
+                            filenameFormat: downloadContext.FileNameFormatConfig.PostFileNameFormat ?? string.Empty,
                             streamInfo: streamInfo,
                             streamMedia: mediaInfo,
                             author: streamInfo?.author,
-                            users: hasSelectedUsersKVP.Value,
-                            config: Config,
-                            Config.ShowScrapeSize);
+                            users: hasSelectedUsersKVP.Value);
                         if (isNew)
                         {
                             newStreamsCount++;
@@ -1685,10 +1693,10 @@ public class Program
         return streamsCount;
     }
 
-    private static async Task DownloadSinglePost(long post_id, string path, Dictionary<string, int> users)
+    private static async Task DownloadSinglePost(IDownloadContext downloadContext, long post_id, string path, Dictionary<string, int> users)
     {
         AnsiConsole.Markup($"[red]Getting Post\n[/]");
-        SinglePostCollection post = await m_ApiHelper.GetPost($"/posts/{post_id.ToString()}", path, Auth!, Config!);
+        SinglePostCollection post = await downloadContext.ApiHelper.GetPost($"/posts/{post_id.ToString()}", path, downloadContext.DownloadConfig!);
 
         if (post == null)
         {
@@ -1697,9 +1705,9 @@ public class Program
         }
 
         long totalSize = 0;
-        if (Config.ShowScrapeSize)
+        if (downloadContext.DownloadConfig.ShowScrapeSize)
         {
-            totalSize = await m_DownloadHelper.CalculateTotalFileSize(post.SinglePosts.Values.ToList(), Auth);
+            totalSize = await downloadContext.DownloadHelper.CalculateTotalFileSize(post.SinglePosts.Values.ToList());
         }
         else
         {
@@ -1707,7 +1715,7 @@ public class Program
         }
         bool isNew = false;
         await AnsiConsole.Progress()
-        .Columns(GetProgressColumns(Config.ShowScrapeSize))
+        .Columns(GetProgressColumns(downloadContext.DownloadConfig.ShowScrapeSize))
         .StartAsync(async ctx =>
         {
             var task = ctx.AddTask($"[red]Downloading Post[/]", autoStart: false);
@@ -1725,45 +1733,41 @@ public class Program
                     string mediaId = messageUrlParsed[4];
                     string postId = messageUrlParsed[5];
                     string? licenseURL = null;
-                    string? pssh = await m_ApiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp, Auth);
+                    string? pssh = await downloadContext.ApiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp);
                     if (pssh == null)
                     {
                         continue;
                     }
 
-                    DateTime lastModified = await m_ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp, Auth);
-                    Dictionary<string, string> drmHeaders = await m_ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine", Auth);
+                    DateTime lastModified = await downloadContext.ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
+                    Dictionary<string, string> drmHeaders = await downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
                     string decryptionKey;
                     if (clientIdBlobMissing || devicePrivateKeyMissing)
                     {
-                        decryptionKey = await m_ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                     }
                     else
                     {
-                        decryptionKey = await m_ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh, Auth);
+                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                     }
                     SinglePost.Medium mediaInfo = post.SinglePostMedia.FirstOrDefault(m => m.id == postKVP.Key);
                     SinglePost postInfo = post.SinglePostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
-                    isNew = await m_DownloadHelper.DownloadPostDRMVideo(
-                        user_agent: Auth.USER_AGENT,
+                    isNew = await downloadContext.DownloadHelper.DownloadPostDRMVideo(
                         policy: policy,
                         signature: signature,
                         kvp: kvp,
-                        sess: Auth.COOKIE,
                         url: mpdURL,
                         decryptionKey: decryptionKey,
                         folder: path,
                         lastModified: lastModified,
                         media_id: postKVP.Key,
                         task: task,
-                        filenameFormat: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? Config.PostFileNameFormat : string.Empty,
+                        filenameFormat: downloadContext.FileNameFormatConfig.PostFileNameFormat ?? string.Empty,
                         postInfo: postInfo,
                         postMedia: mediaInfo,
                         author: postInfo?.author,
-                        users: users,
-                        config: Config,
-                        showScrapeSize: Config.ShowScrapeSize);
+                        users: users);
                 }
                 else
                 {
@@ -1772,18 +1776,16 @@ public class Program
                         SinglePost.Medium? mediaInfo = post.SinglePostMedia.FirstOrDefault(m => (m?.id == postKVP.Key) == true);
                         SinglePost? postInfo = post.SinglePostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
-                        isNew = await m_DownloadHelper.DownloadPostMedia(
+                        isNew = await downloadContext.DownloadHelper.DownloadPostMedia(
                             url: postKVP.Value,
                             folder: path,
                             media_id: postKVP.Key,
                             task: task,
-                            filenameFormat: !string.IsNullOrEmpty(Config.PostFileNameFormat) ? Config.PostFileNameFormat : string.Empty,
+                            filenameFormat: downloadContext.FileNameFormatConfig.PostFileNameFormat ?? string.Empty,
                             postInfo: postInfo,
                             postMedia: mediaInfo,
                             author: postInfo?.author,
-                            users: users,
-                            config: Config,
-                            Config.ShowScrapeSize);
+                            users: users);
                     }
                     catch
                     {
@@ -1802,9 +1804,11 @@ public class Program
             AnsiConsole.Markup($"[red]Post {post_id} already downloaded\n[/]");
         }
     }
-    public static async Task<KeyValuePair<bool, Dictionary<string, int>>> HandleUserSelection(Dictionary<string, int> selectedUsers, Dictionary<string, int> users, Dictionary<string, int> lists)
+
+    public static async Task<(bool IsExit, Dictionary<string, int>? selectedUsers, Config? updatedConfig)> HandleUserSelection(APIHelper apiHelper, Config currentConfig, Dictionary<string, int> users, Dictionary<string, int> lists)
     {
         bool hasSelectedUsers = false;
+        Dictionary<string, int> selectedUsers = new Dictionary<string, int>();
 
         while (!hasSelectedUsers)
         {
@@ -1846,7 +1850,7 @@ public class Program
                             foreach (var item in listSelection)
                             {
                                 int listId = lists[item.Replace("[red]", "").Replace("[/]", "")];
-                                List<string> usernames = await m_ApiHelper.GetListUsers($"/lists/{listId}/users", Auth);
+                                List<string> usernames = await apiHelper.GetListUsers($"/lists/{listId}/users");
                                 foreach (string user in usernames)
                                 {
                                     listUsernames.Add(user);
@@ -1885,43 +1889,29 @@ public class Program
                     }
                     break;
                 case "[red]Download Single Post[/]":
-                    return new KeyValuePair<bool, Dictionary<string, int>>(true, new Dictionary<string, int> { { "SinglePost", 0 } });
+                    return (true, new Dictionary<string, int> { { "SinglePost", 0 } }, currentConfig);
                 case "[red]Download Purchased Tab[/]":
-                    return new KeyValuePair<bool, Dictionary<string, int>>(true, new Dictionary<string, int> { { "PurchasedTab", 0 } });
+                    return (true, new Dictionary<string, int> { { "PurchasedTab", 0 } }, currentConfig);
                 case "[red]Edit config.json[/]":
                     while (true)
                     {
-                        var choices = new List<(string choice, bool isSelected)>();
-                        choices.AddRange(new[]
+                        if (currentConfig == null)
+                            currentConfig = new Config();
+
+                        var choices = new List<(string choice, bool isSelected)>
                         {
-                            ( "[red]Go Back[/]", false ),
-                            ( "[red]DownloadAvatarHeaderPhoto[/]", Config.DownloadAvatarHeaderPhoto),
-                            ( "[red]DownloadPaidPosts[/]", Config.DownloadPaidPosts ),
-                            ( "[red]DownloadPosts[/]",  Config.DownloadPosts ),
-                            ( "[red]DownloadArchived[/]", Config.DownloadArchived ),
-                            ( "[red]DownloadStreams[/]", Config.DownloadStreams),
-                            ( "[red]DownloadStories[/]", Config.DownloadStories ),
-                            ( "[red]DownloadHighlights[/]", Config.DownloadHighlights ),
-                            ( "[red]DownloadMessages[/]", Config.DownloadMessages ),
-                            ( "[red]DownloadPaidMessages[/]", Config.DownloadPaidMessages ),
-                            ( "[red]DownloadImages[/]", Config.DownloadImages ),
-                            ( "[red]DownloadVideos[/]", Config.DownloadVideos ),
-                            ( "[red]DownloadAudios[/]", Config.DownloadAudios ),
-                            ( "[red]IncludeExpiredSubscriptions[/]", Config.IncludeExpiredSubscriptions ),
-                            ( "[red]IncludeRestrictedSubscriptions[/]", Config.IncludeRestrictedSubscriptions ),
-                            ( "[red]SkipAds[/]", Config.SkipAds ),
-                            ( "[red]FolderPerPaidPost[/]", Config.FolderPerPaidPost ),
-                            ( "[red]FolderPerPost[/]", Config.FolderPerPost ),
-                            ( "[red]FolderPerPaidMessage[/]", Config.FolderPerPaidMessage ),
-                            ( "[red]FolderPerMessage[/]", Config.FolderPerMessage ),
-                            ( "[red]LimitDownloadRate[/]", Config.LimitDownloadRate ),
-                            ( "[red]RenameExistingFilesOnCustomFormat[/]", Config.RenameExistingFilesWhenCustomFormatIsSelected ),
-                            ( "[red]DownloadPostsBeforeOrAfterSpecificDate[/]", Config.DownloadOnlySpecificDates ),
-                            ( "[red]ShowScrapeSize[/]", Config.ShowScrapeSize),
-                            ( "[red]DownloadPostsIncrementally[/]", Config.DownloadPostsIncrementally),
-                            ( "[red]NonInteractiveMode[/]", Config.NonInteractiveMode),
-                            ( "[red]NonInteractiveModePurchasedTab[/]", Config.NonInteractiveModePurchasedTab)
-                        });
+                            ("[red]Go Back[/]", false)
+                        };
+
+                        foreach(var propInfo in typeof(Config).GetProperties().OrderBy(p => p.Name))
+                        {
+                            var attr = propInfo.GetCustomAttribute<ToggleableConfigAttribute>();
+                            if(attr != null)
+                            {
+                                string itemLabel = $"[red]{propInfo.Name}[/]";
+                                choices.Add(new(itemLabel, (bool)propInfo.GetValue(currentConfig)!));
+                            }
+                        }
 
                         MultiSelectionPrompt<string> multiSelectionPrompt = new MultiSelectionPrompt<string>()
                             .Title("[red]Edit config.json[/]")
@@ -1939,67 +1929,52 @@ public class Program
                             break;
                         }
 
-                        Config newConfig = new()
-                        {
-                            DownloadPath = Config.DownloadPath,
-                            PostFileNameFormat = Config.PostFileNameFormat,
-                            MessageFileNameFormat = Config.MessageFileNameFormat,
-                            PaidPostFileNameFormat = Config.PaidPostFileNameFormat,
-                            PaidMessageFileNameFormat = Config.PaidMessageFileNameFormat,
-                            DownloadLimitInMbPerSec = Config.DownloadLimitInMbPerSec,
-                            DownloadDateSelection = Config.DownloadDateSelection,
-                            CustomDate = Config.CustomDate,
-                            Timeout = Config.Timeout,
-                            FFmpegPath = Config.FFmpegPath,
-                            NonInteractiveModeListName = Config.NonInteractiveModeListName,
-                            DownloadAvatarHeaderPhoto = configOptions.Contains("[red]DownloadAvatarHeaderPhoto[/]"),
-                            DownloadPaidPosts = configOptions.Contains("[red]DownloadPaidPosts[/]"),
-                            DownloadPosts = configOptions.Contains("[red]DownloadPosts[/]"),
-                            DownloadArchived = configOptions.Contains("[red]DownloadArchived[/]"),
-                            DownloadStreams = configOptions.Contains("[red]DownloadStreams[/]"),
-                            DownloadStories = configOptions.Contains("[red]DownloadStories[/]"),
-                            DownloadHighlights = configOptions.Contains("[red]DownloadHighlights[/]"),
-                            DownloadMessages = configOptions.Contains("[red]DownloadMessages[/]"),
-                            DownloadPaidMessages = configOptions.Contains("[red]DownloadPaidMessages[/]"),
-                            DownloadImages = configOptions.Contains("[red]DownloadImages[/]"),
-                            DownloadVideos = configOptions.Contains("[red]DownloadVideos[/]"),
-                            DownloadAudios = configOptions.Contains("[red]DownloadAudios[/]"),
-                            IncludeExpiredSubscriptions = configOptions.Contains("[red]IncludeExpiredSubscriptions[/]"),
-                            IncludeRestrictedSubscriptions = configOptions.Contains("[red]IncludeRestrictedSubscriptions[/]"),
-                            SkipAds = configOptions.Contains("[red]SkipAds[/]"),
-                            FolderPerPaidPost = configOptions.Contains("[red]FolderPerPaidPost[/]"),
-                            FolderPerPost = configOptions.Contains("[red]FolderPerPost[/]"),
-                            FolderPerPaidMessage = configOptions.Contains("[red]FolderPerPaidMessage[/]"),
-                            FolderPerMessage = configOptions.Contains("[red]FolderPerMessage[/]"),
-                            LimitDownloadRate = configOptions.Contains("[red]LimitDownloadRate[/]"),
-                            RenameExistingFilesWhenCustomFormatIsSelected = configOptions.Contains("[red]RenameExistingFilesOnCustomFormat[/]"),
-                            DownloadOnlySpecificDates = configOptions.Contains("[red]DownloadPostsBeforeOrAfterSpecificDate[/]"),
-                            ShowScrapeSize = configOptions.Contains("[red]ShowScrapeSize[/]"),
-                            DownloadPostsIncrementally = configOptions.Contains("[red]DownloadPostsIncrementally[/]"),
-                            NonInteractiveMode = configOptions.Contains("[red]NonInteractiveMode[/]"),
-                            NonInteractiveModePurchasedTab = configOptions.Contains("[red]NonInteractiveModePurchasedTab[/]")
-                        };
+                        bool configChanged = false;
 
+                        Config newConfig = new Config();
+                        foreach (var propInfo in typeof(Config).GetProperties())
+                        {
+                            var attr = propInfo.GetCustomAttribute<ToggleableConfigAttribute>();
+                            if (attr != null)
+                            {
+                                //
+                                // Get the new choice from the selection
+                                //
+                                string itemLabel = $"[red]{propInfo.Name}[/]";
+                                var newValue = configOptions.Contains(itemLabel);
+                                var oldValue = choices.Where(c => c.choice == itemLabel).Select(c => c.isSelected).First();
+                                propInfo.SetValue(newConfig, newValue);
+
+                                if (newValue != oldValue)
+                                    configChanged = true;
+                            }
+                            else
+                            {
+                                //
+                                // Reassign any non toggleable values
+                                //
+                                propInfo.SetValue(newConfig, propInfo.GetValue(currentConfig));
+                            }
+                        }
 
                         string newConfigString = JsonConvert.SerializeObject(newConfig, Formatting.Indented);
                         File.WriteAllText("config.json", newConfigString);
-                        if (Config.IncludeExpiredSubscriptions != Config.IncludeExpiredSubscriptions)
+
+                        currentConfig = newConfig;
+                        if (configChanged)
                         {
-                            Config = JsonConvert.DeserializeObject<Config>(File.ReadAllText("config.json"));
-                            return new KeyValuePair<bool, Dictionary<string, int>>(true, new Dictionary<string, int> { { "ConfigChanged", 0 } });
+                            return (true, new Dictionary<string, int> { { "ConfigChanged", 0 } }, currentConfig);
                         }
-                        Config = JsonConvert.DeserializeObject<Config>(File.ReadAllText("config.json"));
                         break;
                     }
                     break;
                 case "[red]Exit[/]":
-                    return new KeyValuePair<bool, Dictionary<string, int>>(false, null); // Return false to indicate exit
+                    return (false, null, currentConfig); // Return false to indicate exit
             }
         }
 
-        return new KeyValuePair<bool, Dictionary<string, int>>(true, selectedUsers); // Return true to indicate selected users
+        return (true, selectedUsers, currentConfig); // Return true to indicate selected users
     }
-
 
     public static List<string> GetMainMenuOptions(Dictionary<string, int> users, Dictionary<string, int> lists)
     {

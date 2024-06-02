@@ -1,3 +1,4 @@
+using OF_DL.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,13 @@ namespace OF_DL.Helpers
 {
     public class FileNameHelper : IFileNameHelper
     {
+        private readonly Auth auth;
+
+        public FileNameHelper(Auth auth)
+        {
+            this.auth = auth;
+        }
+
         public async Task<Dictionary<string, string>> GetFilename(object obj1, object obj2, object obj3, List<string> selectedProperties, string username, Dictionary<string, int> users = null)
         {
             Dictionary<string, string> values = new();
@@ -34,7 +42,7 @@ namespace OF_DL.Helpers
                         object policy = GetNestedPropertyValue(obj2, "files.drm.signature.dash.CloudFrontPolicy");
                         object signature = GetNestedPropertyValue(obj2, "files.drm.signature.dash.CloudFrontSignature");
                         object kvp = GetNestedPropertyValue(obj2, "files.drm.signature.dash.CloudFrontKeyPairId");
-                        DateTime lastModified = await DownloadHelper.GetDRMVideoLastModified(string.Join(",", mpdurl, policy, signature, kvp) ,Program.Auth);
+                        DateTime lastModified = await DownloadHelper.GetDRMVideoLastModified(string.Join(",", mpdurl, policy, signature, kvp), auth);
                         values.Add(propertyName, lastModified.ToString("yyyy-MM-dd"));
                         continue;
                     }
