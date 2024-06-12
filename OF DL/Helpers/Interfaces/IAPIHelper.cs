@@ -29,7 +29,7 @@ namespace OF_DL.Helpers
         Task<List<PurchasedTabCollection>> GetPurchasedTab(string endpoint, string folder, IDownloadConfig config, Dictionary<string, int> users);
         Task<User> GetUserInfo(string endpoint);
         Task<JObject> GetUserInfoById(string endpoint);
-        Task<Dictionary<string, string>> GetDynamicHeaders(string path, string queryParam);
+        Dictionary<string, string> GetDynamicHeaders(string path, string queryParam);
         Task<Dictionary<string, int>> GetActiveSubscriptions(string endpoint, bool includeRestrictedSubscriptions);
         Task<Dictionary<string, int>> GetExpiredSubscriptions(string endpoint, bool includeRestrictedSubscriptions);
     }
