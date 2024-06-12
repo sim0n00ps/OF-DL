@@ -656,7 +656,7 @@ public class Program
                         if (pssh != null)
                         {
                             DateTime lastModified = await downloadContext.ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
-                            Dictionary<string, string> drmHeaders = await downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/message/{messageId}", "?type=widevine");
+                            Dictionary<string, string> drmHeaders = downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/message/{messageId}", "?type=widevine");
                             string decryptionKey;
                             if (clientIdBlobMissing || devicePrivateKeyMissing)
                             {
@@ -779,7 +779,7 @@ public class Program
                         if (pssh != null)
                         {
                             DateTime lastModified = await downloadContext.ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
-                            Dictionary<string, string> drmHeaders = await downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/message/{messageId}", "?type=widevine");
+                            Dictionary<string, string> drmHeaders = downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/message/{messageId}", "?type=widevine");
                             string decryptionKey;
                             if (clientIdBlobMissing || devicePrivateKeyMissing)
                             {
@@ -1004,7 +1004,7 @@ public class Program
                         if (pssh != null)
                         {
                             DateTime lastModified = await downloadContext.ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
-                            Dictionary<string, string> drmHeaders = await downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
+                            Dictionary<string, string> drmHeaders = downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
                             string decryptionKey;
                             if (clientIdBlobMissing || devicePrivateKeyMissing)
                             {
@@ -1132,7 +1132,7 @@ public class Program
                     }
 
                     DateTime lastModified = await downloadContext.ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
-                    Dictionary<string, string> drmHeaders = await downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
+                    Dictionary<string, string> drmHeaders = downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
                     string decryptionKey;
                     if (clientIdBlobMissing || devicePrivateKeyMissing)
                     {
@@ -1260,7 +1260,7 @@ public class Program
                     }
 
                     DateTime lastModified = await downloadContext.ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
-                    Dictionary<string, string> drmHeaders = await downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
+                    Dictionary<string, string> drmHeaders = downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
                     string decryptionKey;
                     if (clientIdBlobMissing || devicePrivateKeyMissing)
                     {
@@ -1378,7 +1378,7 @@ public class Program
                     }
 
                     DateTime lastModified = await downloadContext.ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
-                    Dictionary<string, string> drmHeaders = await downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
+                    Dictionary<string, string> drmHeaders = downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
                     string decryptionKey;
                     if (clientIdBlobMissing || devicePrivateKeyMissing)
                     {
@@ -1489,7 +1489,7 @@ public class Program
                         if (pssh != null)
                         {
                             DateTime lastModified = await downloadContext.ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
-                            Dictionary<string, string> drmHeaders = await downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/message/{messageId}", "?type=widevine");
+                            Dictionary<string, string> drmHeaders = downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/message/{messageId}", "?type=widevine");
                             string decryptionKey;
                             if (clientIdBlobMissing || devicePrivateKeyMissing)
                             {
@@ -1617,7 +1617,7 @@ public class Program
                     }
 
                     DateTime lastModified = await downloadContext.ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
-                    Dictionary<string, string> drmHeaders = await downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
+                    Dictionary<string, string> drmHeaders = downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
                     string decryptionKey;
                     if (clientIdBlobMissing || devicePrivateKeyMissing)
                     {
@@ -1740,7 +1740,7 @@ public class Program
                     }
 
                     DateTime lastModified = await downloadContext.ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
-                    Dictionary<string, string> drmHeaders = await downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
+                    Dictionary<string, string> drmHeaders = downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
                     string decryptionKey;
                     if (clientIdBlobMissing || devicePrivateKeyMissing)
                     {
