@@ -44,21 +44,11 @@ public class APIHelper : IAPIHelper
     }
 
 
-    public async Task<Dictionary<string, string>> GetDynamicHeaders(string path, string queryParams)
+    public Dictionary<string, string> GetDynamicHeaders(string path, string queryParams)
     {
         DynamicRules? root;
-        var client = new HttpClient();
-        var request = new HttpRequestMessage
-        {
-            Method = HttpMethod.Get,
-            RequestUri = new Uri(Constants.DYNAMIC_RULES),
-        };
-        using (var vresponse = client.Send(request))
-        {
-            vresponse.EnsureSuccessStatusCode();
-            var body = await vresponse.Content.ReadAsStringAsync();
-            root = JsonConvert.DeserializeObject<DynamicRules>(body);
-        }
+
+        root = JsonConvert.DeserializeObject<DynamicRules>(File.ReadAllText("rules.json"));
 
         DateTimeOffset dto = (DateTimeOffset)DateTime.UtcNow;
         long timestamp = dto.ToUnixTimeMilliseconds();
@@ -100,7 +90,7 @@ public class APIHelper : IAPIHelper
     {
         string queryParams = "?" + string.Join("&", getParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
 
-        Dictionary<string, string> headers = await GetDynamicHeaders($"/api2/v2{endpoint}", queryParams);
+        Dictionary<string, string> headers = GetDynamicHeaders($"/api2/v2{endpoint}", queryParams);
 
         HttpRequestMessage request = new(HttpMethod.Get, $"{Constants.API_URL}{endpoint}{queryParams}");
 
@@ -604,7 +594,7 @@ public class APIHelper : IAPIHelper
                 foreach (string highlight_id in highlight_ids)
                 {
                     HighlightMedia highlightMedia = new();
-                    Dictionary<string, string> highlight_headers = await GetDynamicHeaders("/api2/v2/stories/highlights/" + highlight_id, string.Empty);
+                    Dictionary<string, string> highlight_headers = GetDynamicHeaders("/api2/v2/stories/highlights/" + highlight_id, string.Empty);
 
                     HttpClient highlight_client = GetHttpClient(config);
 
@@ -1598,7 +1588,7 @@ public class APIHelper : IAPIHelper
                 {
                     string loopqueryParams = "?" + string.Join("&", getParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
                     Purchased newpaidMessages = new();
-                    Dictionary<string, string> loopheaders = await GetDynamicHeaders("/api2/v2" + endpoint, loopqueryParams);
+                    Dictionary<string, string> loopheaders = GetDynamicHeaders("/api2/v2" + endpoint, loopqueryParams);
                     HttpClient loopclient = GetHttpClient(config);
 
                     HttpRequestMessage looprequest = new(HttpMethod.Get, $"{Constants.API_URL}{endpoint}{loopqueryParams}");
@@ -1812,7 +1802,7 @@ public class APIHelper : IAPIHelper
                 {
                     string loopqueryParams = "?" + string.Join("&", getParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
                     Purchased newPurchased = new();
-                    Dictionary<string, string> loopheaders = await GetDynamicHeaders("/api2/v2" + endpoint, loopqueryParams);
+                    Dictionary<string, string> loopheaders = GetDynamicHeaders("/api2/v2" + endpoint, loopqueryParams);
                     HttpClient loopclient = GetHttpClient(config);
 
                     HttpRequestMessage looprequest = new(HttpMethod.Get, $"{Constants.API_URL}{endpoint}{loopqueryParams}");
@@ -1959,7 +1949,7 @@ public class APIHelper : IAPIHelper
                 {
                     string loopqueryParams = "?" + string.Join("&", getParams.Select(kvp => $"{kvp.Key}={kvp.Value}"));
                     Purchased newPurchased = new();
-                    Dictionary<string, string> loopheaders = await GetDynamicHeaders("/api2/v2" + endpoint, loopqueryParams);
+                    Dictionary<string, string> loopheaders = GetDynamicHeaders("/api2/v2" + endpoint, loopqueryParams);
                     HttpClient loopclient = GetHttpClient(config);
 
                     HttpRequestMessage looprequest = new(HttpMethod.Get, $"{Constants.API_URL}{endpoint}{loopqueryParams}");
@@ -1985,9 +1975,9 @@ public class APIHelper : IAPIHelper
 
             if (purchased.list != null && purchased.list.Count > 0)
             {
-                foreach(Purchased.List purchase in purchased.list.OrderByDescending(p => p.postedAt ?? p.createdAt))
+                foreach (Purchased.List purchase in purchased.list.OrderByDescending(p => p.postedAt ?? p.createdAt))
                 {
-                    if(purchase.fromUser != null)
+                    if (purchase.fromUser != null)
                     {
                         if (!userPurchases.ContainsKey(purchase.fromUser.id))
                         {
@@ -1995,7 +1985,7 @@ public class APIHelper : IAPIHelper
                         }
                         userPurchases[purchase.fromUser.id].Add(purchase);
                     }
-                    else if(purchase.author != null)
+                    else if (purchase.author != null)
                     {
                         if (!userPurchases.ContainsKey(purchase.author.id))
                         {
@@ -2006,7 +1996,7 @@ public class APIHelper : IAPIHelper
                 }
             }
 
-            foreach(KeyValuePair<long, List<Purchased.List>> user in userPurchases)
+            foreach (KeyValuePair<long, List<Purchased.List>> user in userPurchases)
             {
                 PurchasedTabCollection purchasedTabCollection = new PurchasedTabCollection();
                 JObject userObject = await GetUserInfoById($"/users/list?x[]={user.Key}");
