@@ -239,6 +239,13 @@ public class APIHelper : IAPIHelper
 
             response.EnsureSuccessStatusCode();
             var body = await response.Content.ReadAsStringAsync();
+
+            //if the content creator doesnt exist, we get a 200 response, but the content isnt usable
+            //so let's not throw an exception, since "content creator no longer exists" is handled elsewhere
+            //which means we wont get loads of exceptions
+            if (body.Equals("[]"))
+                return null;
+
             JObject jObject = JObject.Parse(body);
 
             return jObject;
@@ -1855,7 +1862,10 @@ public class APIHelper : IAPIHelper
 
                             if(user is null)
                             {
-                                purchasedTabUsers.Add($"Deleted User - {purchase.fromUser.id}", purchase.fromUser.id);
+                                if (!config.BypassContentForCreatorsWhoNoLongerExist)
+                                {
+                                    purchasedTabUsers.Add($"Deleted User - {purchase.fromUser.id}", purchase.fromUser.id);
+                                }
                                 Log.Information("Content creator not longer exists - {0}", purchase.fromUser.id);
                             }
                             else if (!string.IsNullOrEmpty(user[purchase.fromUser.id.ToString()]["username"].ToString()))
@@ -1899,7 +1909,10 @@ public class APIHelper : IAPIHelper
 
                             if (user is null)
                             {
-                                purchasedTabUsers.Add($"Deleted User - {purchase.fromUser.id}", purchase.fromUser.id);
+                                if (!config.BypassContentForCreatorsWhoNoLongerExist)
+                                {
+                                    purchasedTabUsers.Add($"Deleted User - {purchase.fromUser.id}", purchase.fromUser.id);
+                                }
                                 Log.Information("Content creator not longer exists - {0}", purchase.fromUser.id);
                             }
                             else if (!string.IsNullOrEmpty(user[purchase.author.id.ToString()]["username"].ToString()))
