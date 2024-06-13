@@ -1,4 +1,4 @@
-﻿using OF_DL.Enumerations;
+using OF_DL.Enumerations;
 
 namespace OF_DL.Entities
 {
@@ -30,6 +30,7 @@ namespace OF_DL.Entities
         string? FFmpegPath { get; set; }
 
         bool SkipAds { get; set; }
+        bool BypassContentForCreatorsWhoNoLongerExist { get; set; }
 
         #region Download Date Configurations
 

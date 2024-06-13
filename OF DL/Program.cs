@@ -221,7 +221,7 @@ public class Program
                 }
             }
 
-            if (!File.Exists("cdm/devices/chrome_1610/device_client_id_blob"))
+            if (!File.Exists(Path.Join(WidevineClient.Widevine.Constants.DEVICES_FOLDER, WidevineClient.Widevine.Constants.DEVICE_NAME, "device_client_id_blob")))
             {
                 clientIdBlobMissing = true;
             }
@@ -230,7 +230,7 @@ public class Program
                 AnsiConsole.Markup($"[green]device_client_id_blob located successfully![/]\n");
             }
 
-            if (!File.Exists("cdm/devices/chrome_1610/device_private_key"))
+            if (!File.Exists(Path.Join(WidevineClient.Widevine.Constants.DEVICES_FOLDER, WidevineClient.Widevine.Constants.DEVICE_NAME, "device_private_key")))
             {
                 devicePrivateKeyMissing = true;
             }

@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/OF DL/auth.json
+/OF DL/config.json
+/OF DL/device_client_id_blob
+/OF DL/device_private_key

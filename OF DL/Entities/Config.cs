@@ -81,6 +81,9 @@ namespace OF_DL.Entities
         public bool NonInteractiveModePurchasedTab { get; set; } = false;
         public string? FFmpegPath { get; set; } = string.Empty;
 
+        [ToggleableConfig]
+        public bool BypassContentForCreatorsWhoNoLongerExist { get; set; } = false;
+
         public Dictionary<string, CreatorConfig> CreatorConfigs { get; set; } = new Dictionary<string, CreatorConfig>();
     }
 

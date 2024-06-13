@@ -239,6 +239,13 @@ public class APIHelper : IAPIHelper
 
             response.EnsureSuccessStatusCode();
             var body = await response.Content.ReadAsStringAsync();
+
+            //if the content creator doesnt exist, we get a 200 response, but the content isnt usable
+            //so let's not throw an exception, since "content creator no longer exists" is handled elsewhere
+            //which means we wont get loads of exceptions
+            if (body.Equals("[]"))
+                return null;
+
             JObject jObject = JObject.Parse(body);
 
             return jObject;
@@ -1852,7 +1859,16 @@ public class APIHelper : IAPIHelper
                         else
                         {
                             JObject user = await GetUserInfoById($"/users/list?x[]={purchase.fromUser.id}");
-                            if (!string.IsNullOrEmpty(user[purchase.fromUser.id.ToString()]["username"].ToString()))
+
+                            if(user is null)
+                            {
+                                if (!config.BypassContentForCreatorsWhoNoLongerExist)
+                                {
+                                    purchasedTabUsers.Add($"Deleted User - {purchase.fromUser.id}", purchase.fromUser.id);
+                                }
+                                Log.Information("Content creator not longer exists - {0}", purchase.fromUser.id);
+                            }
+                            else if (!string.IsNullOrEmpty(user[purchase.fromUser.id.ToString()]["username"].ToString()))
                             {
                                 if (!purchasedTabUsers.ContainsKey(user[purchase.fromUser.id.ToString()]["username"].ToString()))
                                 {
@@ -1890,7 +1906,16 @@ public class APIHelper : IAPIHelper
                         else
                         {
                             JObject user = await GetUserInfoById($"/users/list?x[]={purchase.author.id}");
-                            if (!string.IsNullOrEmpty(user[purchase.author.id.ToString()]["username"].ToString()))
+
+                            if (user is null)
+                            {
+                                if (!config.BypassContentForCreatorsWhoNoLongerExist)
+                                {
+                                    purchasedTabUsers.Add($"Deleted User - {purchase.fromUser.id}", purchase.fromUser.id);
+                                }
+                                Log.Information("Content creator not longer exists - {0}", purchase.fromUser.id);
+                            }
+                            else if (!string.IsNullOrEmpty(user[purchase.author.id.ToString()]["username"].ToString()))
                             {
                                 if (!purchasedTabUsers.ContainsKey(user[purchase.author.id.ToString()]["username"].ToString()) && users.ContainsKey(user[purchase.author.id.ToString()]["username"].ToString()))
                                 {
@@ -2001,7 +2026,7 @@ public class APIHelper : IAPIHelper
                 PurchasedTabCollection purchasedTabCollection = new PurchasedTabCollection();
                 JObject userObject = await GetUserInfoById($"/users/list?x[]={user.Key}");
                 purchasedTabCollection.UserId = user.Key;
-                purchasedTabCollection.Username = !string.IsNullOrEmpty(userObject[user.Key.ToString()]["username"].ToString()) ? userObject[user.Key.ToString()]["username"].ToString() : $"Deleted User - {user.Key}";
+                purchasedTabCollection.Username = userObject is not null && !string.IsNullOrEmpty(userObject[user.Key.ToString()]["username"].ToString()) ? userObject[user.Key.ToString()]["username"].ToString() : $"Deleted User - {user.Key}";
                 string path = System.IO.Path.Combine(folder, purchasedTabCollection.Username);
                 if (Path.Exists(path))
                 {

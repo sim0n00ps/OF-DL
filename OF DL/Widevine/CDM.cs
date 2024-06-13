@@ -1,4 +1,4 @@
-﻿using ProtoBuf;
+using ProtoBuf;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,7 +14,7 @@ namespace WidevineClient.Widevine
     {
         static Dictionary<string, CDMDevice> Devices { get; } = new Dictionary<string, CDMDevice>()
         {
-            ["chrome_1610"] = new CDMDevice("chrome_1610", null, null, null)
+            [Constants.DEVICE_NAME] = new CDMDevice(Constants.DEVICE_NAME, null, null, null)
         };
         static Dictionary<string, Session> Sessions { get; set; } = new Dictionary<string, Session>();
 
