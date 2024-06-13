@@ -14,7 +14,7 @@
 
 - Clone the repo
 `git clone https://github.com/sim0n00ps/OF-DL.git`
-`cd 'OF DL'`
+`cd 'OF-DL'`
 
 - Build the project
 `dotnet install`
