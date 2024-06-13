@@ -17,7 +17,7 @@
 `cd 'OF-DL'`
 
 - Build the project
-`dotnet install`
+`dotnet build`
 `cd 'OF DL/bin/Debug/net7.0'`
 
 - Add the .json files like stated in README.md
