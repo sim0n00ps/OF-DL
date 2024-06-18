@@ -85,6 +85,9 @@ namespace OF_DL.Entities
         public bool BypassContentForCreatorsWhoNoLongerExist { get; set; } = false;
 
         public Dictionary<string, CreatorConfig> CreatorConfigs { get; set; } = new Dictionary<string, CreatorConfig>();
+
+        [ToggleableConfig]
+        public bool DownloadDuplicatedMedia { get; set; } = false;
     }
 
     public class CreatorConfig : IFileNameFormatConfig

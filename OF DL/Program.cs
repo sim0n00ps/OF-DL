@@ -245,7 +245,7 @@ public class Program
             }
 
             //Check if auth is valid
-            var apiHelper = new APIHelper(auth);
+            var apiHelper = new APIHelper(auth, config);
 
             Entities.User validate = await apiHelper.GetUserInfo($"/users/me");
             if (validate?.name == null && validate?.username == null)
@@ -285,7 +285,7 @@ public class Program
 
     private static async Task DownloadAllData(APIHelper m_ApiHelper, Auth Auth, Config Config)
     {
-        DBHelper dBHelper = new DBHelper();
+        DBHelper dBHelper = new DBHelper(Config);
 
         do
         {
@@ -680,6 +680,7 @@ public class Program
                                 folder: path,
                                 lastModified: lastModified,
                                 media_id: paidMessageKVP.Key,
+                                api_type: "Messages",
                                 task: task,
                                 filenameFormat: downloadContext.FileNameFormatConfig.PaidMessageFileNameFormat ?? string.Empty,
                                 messageInfo: messageInfo,
@@ -706,6 +707,7 @@ public class Program
                             url: paidMessageKVP.Value,
                             folder: path,
                             media_id: paidMessageKVP.Key,
+                            api_type: "Messages",
                             task: task,
                             filenameFormat: downloadContext.FileNameFormatConfig.PaidMessageFileNameFormat ?? string.Empty,
                             messageInfo: messageInfo,
@@ -801,6 +803,7 @@ public class Program
                                 folder: path,
                                 lastModified: lastModified,
                                 media_id: messageKVP.Key,
+                                api_type: "Messages",
                                 task: task,
                                 filenameFormat: downloadContext.FileNameFormatConfig.MessageFileNameFormat ?? string.Empty,
                                 messageInfo: messageInfo,
@@ -828,6 +831,7 @@ public class Program
                             url: messageKVP.Value,
                             folder: path,
                             media_id: messageKVP.Key,
+                            api_type: "Messages",
                             task: task,
                             filenameFormat: downloadContext.FileNameFormatConfig!.MessageFileNameFormat ?? string.Empty,
                             messageInfo: messageInfo,
@@ -886,7 +890,7 @@ public class Program
                 task.StartTask();
                 foreach (KeyValuePair<long, string> highlightKVP in highlights)
                 {
-                    bool isNew = await downloadContext.DownloadHelper.DownloadStoryMedia(highlightKVP.Value, path, highlightKVP.Key, task);
+                    bool isNew = await downloadContext.DownloadHelper.DownloadStoryMedia(highlightKVP.Value, path, highlightKVP.Key, "Stories", task);
                     if (isNew)
                     {
                         newHighlightsCount++;
@@ -937,7 +941,7 @@ public class Program
                 task.StartTask();
                 foreach (KeyValuePair<long, string> storyKVP in stories)
                 {
-                    bool isNew = await downloadContext.DownloadHelper.DownloadStoryMedia(storyKVP.Value, path, storyKVP.Key, task);
+                    bool isNew = await downloadContext.DownloadHelper.DownloadStoryMedia(storyKVP.Value, path, storyKVP.Key, "Stories", task);
                     if (isNew)
                     {
                         newStoriesCount++;
@@ -1026,6 +1030,7 @@ public class Program
                                 folder: path,
                                 lastModified: lastModified,
                                 media_id: archivedKVP.Key,
+                                api_type: "Posts",
                                 task: task,
                                 filenameFormat: downloadContext.FileNameFormatConfig.PostFileNameFormat ?? string.Empty,
                                 postInfo: postInfo,
@@ -1052,6 +1057,7 @@ public class Program
                             url: archivedKVP.Value,
                             folder: path,
                             media_id: archivedKVP.Key,
+                            api_type: "Posts",
                             task: task,
                             filenameFormat: downloadContext.FileNameFormatConfig.PostFileNameFormat ?? string.Empty,
                             messageInfo: postInfo,
@@ -1154,6 +1160,7 @@ public class Program
                         folder: path,
                         lastModified: lastModified,
                         media_id: postKVP.Key,
+                        api_type: "Posts",
                         task: task,
                         filenameFormat: downloadContext.FileNameFormatConfig.PostFileNameFormat ?? string.Empty,
                         postInfo: postInfo,
@@ -1180,6 +1187,7 @@ public class Program
                             url: postKVP.Value,
                             folder: path,
                             media_id: postKVP.Key,
+                            api_type: "Posts",
                             task: task,
                             filenameFormat: downloadContext.FileNameFormatConfig.PostFileNameFormat ?? string.Empty,
                             postInfo: postInfo,
@@ -1282,6 +1290,7 @@ public class Program
                         folder: path,
                         lastModified: lastModified,
                         media_id: purchasedPostKVP.Key,
+                        api_type: "Posts",
                         task: task,
                         filenameFormat: downloadContext.FileNameFormatConfig.PaidPostFileNameFormat ?? string.Empty,
                         postInfo: postInfo,
@@ -1306,6 +1315,7 @@ public class Program
                         url: purchasedPostKVP.Value,
                         folder: path,
                         media_id: purchasedPostKVP.Key,
+                        api_type: "Posts",
                         task: task,
                         filenameFormat: downloadContext.FileNameFormatConfig.PaidPostFileNameFormat ?? string.Empty,
                         messageInfo: postInfo,
@@ -1400,6 +1410,7 @@ public class Program
                         folder: path,
                         lastModified: lastModified,
                         media_id: purchasedPostKVP.Key,
+                        api_type: "Posts",
                         task: task,
                         filenameFormat: downloadContext.FileNameFormatConfig.PaidPostFileNameFormat ?? string.Empty,
                         postInfo: postInfo,
@@ -1424,6 +1435,7 @@ public class Program
                         url: purchasedPostKVP.Value,
                         folder: path,
                         media_id: purchasedPostKVP.Key,
+                        api_type: "Posts",
                         task: task,
                         filenameFormat: downloadContext.FileNameFormatConfig.PaidPostFileNameFormat ?? string.Empty,
                         messageInfo: postInfo,
@@ -1513,6 +1525,7 @@ public class Program
                                 folder: path,
                                 lastModified: lastModified,
                                 media_id: paidMessageKVP.Key,
+                                api_type: "Messages",
                                 task: task,
                                 filenameFormat: downloadContext.FileNameFormatConfig.PaidMessageFileNameFormat ?? string.Empty,
                                 messageInfo: messageInfo,
@@ -1539,6 +1552,7 @@ public class Program
                             url: paidMessageKVP.Value,
                             folder: path,
                             media_id: paidMessageKVP.Key,
+                            api_type: "Messages",
                             task: task,
                             filenameFormat: downloadContext.FileNameFormatConfig.PaidMessageFileNameFormat ?? string.Empty,
                             messageInfo: messageInfo,
@@ -1639,6 +1653,7 @@ public class Program
                         folder: path,
                         lastModified: lastModified,
                         media_id: streamKVP.Key,
+                        api_type: "Posts",
                         task: task,
                         filenameFormat: downloadContext.FileNameFormatConfig.PostFileNameFormat ?? string.Empty,
                         streamInfo: streamInfo,
@@ -1665,6 +1680,7 @@ public class Program
                             url: streamKVP.Value,
                             folder: path,
                             media_id: streamKVP.Key,
+                            api_type: "Posts",
                             task: task,
                             filenameFormat: downloadContext.FileNameFormatConfig.PostFileNameFormat ?? string.Empty,
                             streamInfo: streamInfo,
@@ -1762,6 +1778,7 @@ public class Program
                         folder: path,
                         lastModified: lastModified,
                         media_id: postKVP.Key,
+                        api_type: "Posts",
                         task: task,
                         filenameFormat: downloadContext.FileNameFormatConfig.PostFileNameFormat ?? string.Empty,
                         postInfo: postInfo,
@@ -1780,6 +1797,7 @@ public class Program
                             url: postKVP.Value,
                             folder: path,
                             media_id: postKVP.Key,
+                            api_type: "Posts",
                             task: task,
                             filenameFormat: downloadContext.FileNameFormatConfig.PostFileNameFormat ?? string.Empty,
                             postInfo: postInfo,

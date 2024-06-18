@@ -26,7 +26,7 @@ namespace OF_DL.Helpers;
 public class APIHelper : IAPIHelper
 {
     private static readonly JsonSerializerSettings m_JsonSerializerSettings;
-    private static readonly IDBHelper m_DBHelper;
+    private readonly IDBHelper m_DBHelper;
     private readonly Auth auth;
 
     static APIHelper()
@@ -35,12 +35,12 @@ public class APIHelper : IAPIHelper
         {
             MissingMemberHandling = MissingMemberHandling.Ignore
         };
-        m_DBHelper = new DBHelper();
     }
 
-    public APIHelper(Auth auth)
+    public APIHelper(Auth auth, IDownloadConfig downloadConfig)
     {
         this.auth = auth;
+        m_DBHelper = new DBHelper(downloadConfig);
     }
 
 
