@@ -39,7 +39,7 @@ public class Program
             AnsiConsole.Write(new FigletText("Welcome to OF-DL").Color(Color.Red));
 
             Auth? auth = null;
-            Config? config = null;            
+            Config? config = null;
 
             if (args is not null && args.Length > 0)
             {
@@ -63,8 +63,8 @@ public class Program
                     if (!cliNonInteractive)
                     {
                         Console.ReadKey();
-                        Environment.Exit(1);
                     }
+                    Environment.Exit(1);
                 }
                 else
                 {
@@ -91,8 +91,8 @@ public class Program
                     if (!cliNonInteractive)
                     {
                         Console.ReadKey();
-                        Environment.Exit(2);
                     }
+                    Environment.Exit(2);
                 }
             }
             else
@@ -104,8 +104,8 @@ public class Program
                 if (!cliNonInteractive)
                 {
                     Console.ReadKey();
-                    Environment.Exit(2);
-                }                
+                }
+                Environment.Exit(2);
             }
 
             if (File.Exists("config.json"))
@@ -127,8 +127,8 @@ public class Program
                     if (!cliNonInteractive)
                     {
                         Console.ReadKey();
-                        Environment.Exit(3);
-                    }                    
+                    }
+                    Environment.Exit(3);
                 }
             }
             else
@@ -140,8 +140,8 @@ public class Program
                 if (!cliNonInteractive)
                 {
                     Console.ReadKey();
-                    Environment.Exit(3);
                 }
+                Environment.Exit(3);
             }
 
             if(cliNonInteractive)
@@ -217,8 +217,8 @@ public class Program
                 if (!config.NonInteractiveMode)
                 {
                     Console.ReadKey();
-                    Environment.Exit(4);
                 }
+                Environment.Exit(4);
             }
 
             if (!File.Exists(Path.Join(WidevineClient.Widevine.Constants.DEVICES_FOLDER, WidevineClient.Widevine.Constants.DEVICE_NAME, "device_client_id_blob")))
@@ -277,8 +277,8 @@ public class Program
             if (!cliNonInteractive)
             {
                 Console.ReadKey();
-                Environment.Exit(5);
             }
+            Environment.Exit(5);
         }
     }
 
@@ -401,14 +401,14 @@ public class Program
                     }
                     else
                     {
-                        path = $"__user_data__/sites/OnlyFans/{user.Key}"; 
+                        path = $"__user_data__/sites/OnlyFans/{user.Key}";
                     }
 
                     await dBHelper.CheckUsername(user, path);
 
                     if (!Directory.Exists(path))
                     {
-                        Directory.CreateDirectory(path); 
+                        Directory.CreateDirectory(path);
                         AnsiConsole.Markup($"[red]Created folder for {user.Key}\n[/]");
                     }
                     else
@@ -497,7 +497,7 @@ public class Program
                     else
                     {
                         AnsiConsole.Markup($"[red]Folder for {user.Key} already created\n[/]");
-                    }                    
+                    }
 
                     await dBHelper.CreateDB(path);
 
