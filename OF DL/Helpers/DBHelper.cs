@@ -7,11 +7,19 @@ using OF_DL.Enumurations;
 using System.IO;
 using Microsoft.Data.Sqlite;
 using Serilog;
+using OF_DL.Entities;
 
 namespace OF_DL.Helpers
 {
     public class DBHelper : IDBHelper
     {
+        private readonly IDownloadConfig downloadConfig;
+
+        public DBHelper(IDownloadConfig downloadConfig)
+        {
+            this.downloadConfig = downloadConfig;
+        }
+
         public async Task CreateDB(string folder)
         {
             try
@@ -30,6 +38,45 @@ namespace OF_DL.Helpers
 
                 // create the 'medias' table
                 using (SqliteCommand cmd = new("CREATE TABLE IF NOT EXISTS medias (id INTEGER NOT NULL, media_id INTEGER, post_id INTEGER NOT NULL, link VARCHAR, directory VARCHAR, filename VARCHAR, size INTEGER, api_type VARCHAR, media_type VARCHAR, preview INTEGER, linked VARCHAR, downloaded INTEGER, created_at TIMESTAMP, PRIMARY KEY(id), UNIQUE(media_id));", connection))
+                {
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                //
+                // Alter existing databases to create unique constraint on `medias`
+                //
+                using (SqliteCommand cmd = new(@"
+                    PRAGMA foreign_keys=off;
+
+                    BEGIN TRANSACTION;
+
+                    ALTER TABLE medias RENAME TO old_medias;
+
+                    CREATE TABLE medias (
+                        id INTEGER NOT NULL,
+                        media_id INTEGER,
+                        post_id INTEGER NOT NULL,
+                        link VARCHAR,
+                        directory VARCHAR,
+                        filename VARCHAR,
+                        size INTEGER,
+                        api_type VARCHAR,
+                        media_type VARCHAR,
+                        preview INTEGER,
+                        linked VARCHAR,
+                        downloaded INTEGER,
+                        created_at TIMESTAMP,
+                        PRIMARY KEY(id),
+                        UNIQUE(media_id, api_type)
+                    );
+
+                    INSERT INTO medias SELECT * FROM old_medias;
+
+                    DROP TABLE old_medias;
+
+                    COMMIT;
+
+                    PRAGMA foreign_keys=on;", connection))
                 {
                     await cmd.ExecuteNonQueryAsync();
                 }
@@ -301,7 +348,16 @@ namespace OF_DL.Helpers
             {
                 using SqliteConnection connection = new($"Data Source={folder}/Metadata/user_data.db");
                 connection.Open();
-                using SqliteCommand cmd = new($"SELECT COUNT(*) FROM medias WHERE media_id={media_id}", connection);
+
+                StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM medias WHERE media_id=@media_id");
+                if (downloadConfig.DownloadDuplicatedMedia)
+                {
+                    sql.Append(" and api_type=@api_type");
+                }
+
+                using SqliteCommand cmd = new(sql.ToString(), connection);
+                cmd.Parameters.AddWithValue("@media_id", media_id);
+                cmd.Parameters.AddWithValue("@api_type", api_type);
                 int count = Convert.ToInt32(cmd.ExecuteScalar());
                 if (count == 0)
                 {
@@ -324,15 +380,24 @@ namespace OF_DL.Helpers
         }
 
 
-        public async Task<bool> CheckDownloaded(string folder, long media_id)
+        public async Task<bool> CheckDownloaded(string folder, long media_id, string api_type)
         {
             try
             {
                 bool downloaded = false;
+
                 using (SqliteConnection connection = new($"Data Source={folder}/Metadata/user_data.db"))
                 {
+                    StringBuilder sql = new StringBuilder("SELECT downloaded FROM medias WHERE media_id=@media_id");
+                    if(downloadConfig.DownloadDuplicatedMedia)
+                    {
+                        sql.Append(" and api_type=@api_type");
+                    }
+
                     connection.Open();
-                    using SqliteCommand cmd = new($"SELECT downloaded FROM medias WHERE media_id={media_id}", connection);
+                    using SqliteCommand cmd = new (sql.ToString(), connection);
+                    cmd.Parameters.AddWithValue("@media_id", media_id);
+                    cmd.Parameters.AddWithValue("@api_type", api_type);
                     downloaded = Convert.ToBoolean(await cmd.ExecuteScalarAsync());
                 }
                 return downloaded;
@@ -352,16 +417,20 @@ namespace OF_DL.Helpers
         }
 
 
-        public async Task UpdateMedia(string folder, long media_id, string directory, string filename, long size, bool downloaded, DateTime created_at)
+        public async Task UpdateMedia(string folder, long media_id, string api_type, string directory, string filename, long size, bool downloaded, DateTime created_at)
         {
             using SqliteConnection connection = new($"Data Source={folder}/Metadata/user_data.db");
             connection.Open();
 
             // Construct the update command
-            string commandText = "UPDATE medias SET directory=@directory, filename=@filename, size=@size, downloaded=@downloaded, created_at=@created_at WHERE media_id=@media_id";
+            StringBuilder sql = new StringBuilder("UPDATE medias SET directory=@directory, filename=@filename, size=@size, downloaded=@downloaded, created_at=@created_at WHERE media_id=@media_id");
+            if (downloadConfig.DownloadDuplicatedMedia)
+            {
+                sql.Append(" and api_type=@api_type");
+            }
 
             // Create a new command object
-            using SqliteCommand command = new(commandText, connection);
+            using SqliteCommand command = new(sql.ToString(), connection);
             // Add parameters to the command object
             command.Parameters.AddWithValue("@directory", directory);
             command.Parameters.AddWithValue("@filename", filename);
@@ -369,19 +438,22 @@ namespace OF_DL.Helpers
             command.Parameters.AddWithValue("@downloaded", downloaded ? 1 : 0);
             command.Parameters.AddWithValue("@created_at", created_at);
             command.Parameters.AddWithValue("@media_id", media_id);
+            command.Parameters.AddWithValue("@api_type", api_type);
 
             // Execute the command
             await command.ExecuteNonQueryAsync();
         }
 
 
-        public async Task<long> GetStoredFileSize(string folder, long media_id)
+        public async Task<long> GetStoredFileSize(string folder, long media_id, string api_type)
         {
             long size;
             using (SqliteConnection connection = new($"Data Source={folder}/Metadata/user_data.db"))
             {
                 connection.Open();
-                using SqliteCommand cmd = new($"SELECT size FROM medias WHERE media_id={media_id}", connection);
+                using SqliteCommand cmd = new($"SELECT size FROM medias WHERE media_id=@media_id and api_type=@api_type", connection);
+                cmd.Parameters.AddWithValue("@media_id", media_id);
+                cmd.Parameters.AddWithValue("@api_type", api_type);
                 size = Convert.ToInt64(await cmd.ExecuteScalarAsync());
             }
             return size;
