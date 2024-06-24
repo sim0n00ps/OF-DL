@@ -845,8 +845,7 @@ public class DownloadHelper : IDownloadHelper
                 List<string> headerMD5Hashes = WidevineClient.Utils.CalculateFolderMD5(folder + headerpath);
 
                 Uri uri = new(headerUrl);
-                string filename = System.IO.Path.GetFileName(uri.LocalPath);
-                string destinationPath = $"{folder}{headerpath}/{filename}";
+                string destinationPath = $"{folder}{headerpath}/";
 
                 var client = new HttpClient();
 
@@ -876,7 +875,6 @@ public class DownloadHelper : IDownloadHelper
                     }
                     File.SetLastWriteTime(destinationPath, response.Content.Headers.LastModified?.LocalDateTime ?? DateTime.Now);
                 }
-
             }
         }
         catch (Exception ex)
