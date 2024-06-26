@@ -763,7 +763,7 @@ public class APIHelper : IAPIHelper
                     }
                     await m_DBHelper.AddPost(folder, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price != null ? purchase.price.ToString() : "0", purchase.price != null && purchase.isOpened ? true : false, purchase.isArchived.HasValue ? purchase.isArchived.Value : false, purchase.createdAt != null ? purchase.createdAt.Value : purchase.postedAt.Value);
                     paidPostCollection.PaidPostObjects.Add(purchase);
-                    foreach (Purchased.Medium medium in purchase.media)
+                    foreach (Messages.Medium medium in purchase.media)
                     {
                         if (!previewids.Contains(medium.id))
                         {
@@ -1648,7 +1648,7 @@ public class APIHelper : IAPIHelper
 
             if (message.media != null && message.media.Count > 0)
                 {
-                    foreach (SingleMessageMedium medium in message.media)
+                    foreach (Messages.Medium medium in message.media)
                     {
                         if (medium.canView && medium.source.source != null && !medium.source.source.Contains("upload"))
                         {
@@ -1673,10 +1673,10 @@ public class APIHelper : IAPIHelper
                             {
                                 await m_DBHelper.AddMedia(folder, medium.id, message.id, medium.source.source, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), messagePreviewIds.Contains(medium.id) ? true : false, false, null);
                                 paidMessageCollection.PaidMessages.Add(medium.id, medium.source.source.ToString());
-                                paidMessageCollection.PaidMessageMedia.Add(ConvertSingleMessageMediaToPurchaseMedia.Convert(medium));
+                                paidMessageCollection.PaidMessageMedia.Add(medium);
                             }
                         }
-                        else if (medium.canView)
+                        else if (medium.canView && medium.files != null && medium.files.drm != null)
                         {
                             if (medium.type == "photo" && !config.DownloadImages)
                             {
@@ -1698,15 +1698,15 @@ public class APIHelper : IAPIHelper
                             if (!paidMessageCollection.PaidMessages.ContainsKey(medium.id))
                             {
                                await m_DBHelper.AddMedia(folder, medium.id, message.id, medium.videoSources._720, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), messagePreviewIds.Contains(medium.id) ? true : false, false, null);
-                               //paidMessageCollection.PaidMessages.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{list.id}");
-                               paidMessageCollection.PaidMessageMedia.Add(ConvertSingleMessageMediaToPurchaseMedia.Convert(medium));
+                               paidMessageCollection.PaidMessages.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{message.id}");
+                               paidMessageCollection.PaidMessageMedia.Add(medium);
                             }
                         }
                     }
                 }
                 else if (messagePreviewIds.Count > 0)
                 {
-                    foreach(SingleMessageMedium medium in message.media)
+                    foreach(Messages.Medium medium in message.media)
                     {
                         if (medium.canView && medium.source.source != null && !medium.source.source.Contains("upload") && messagePreviewIds.Contains(medium.id))
                         {
@@ -1730,35 +1730,34 @@ public class APIHelper : IAPIHelper
                             {
                                 await m_DBHelper.AddMedia(folder, medium.id, message.id, medium.source.source, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), messagePreviewIds.Contains(medium.id) ? true : false, false, null);
                                 paidMessageCollection.PaidMessages.Add(medium.id, medium.source.source.ToString());
-                                paidMessageCollection.PaidMessageMedia.Add(ConvertSingleMessageMediaToPurchaseMedia.Convert(medium));
+                                paidMessageCollection.PaidMessageMedia.Add(medium);
                         }
                     }
-                        /*
-                        else if (medium.canView && medium.files != null && medium.files.drm != null && messagePreviewIds.Contains(medium.id))
+                    else if (medium.canView && medium.files != null && medium.files.drm != null && messagePreviewIds.Contains(medium.id))
+                    {
+                        if (medium.type == "photo" && !config.DownloadImages)
                         {
-                            if (medium.type == "photo" && !config.DownloadImages)
-                            {
-                                continue;
-                            }
-                            if (medium.type == "video" && !config.DownloadVideos)
-                            {
-                                continue;
-                            }
-                            if (medium.type == "gif" && !config.DownloadVideos)
-                            {
-                                continue;
-                            }
-                            if (medium.type == "audio" && !config.DownloadAudios)
-                            {
-                                continue;
-                            }
-                            if (!messageCollection.Messages.ContainsKey(medium.id))
-                            {
-                                await m_DBHelper.AddMedia(folder, medium.id, list.id, medium.files.drm.manifest.dash, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), messagePreviewIds.Contains(medium.id) ? true : false, false, null);
-                                messageCollection.Messages.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{list.id}");
-                                messageCollection.MessageMedia.Add(medium);
-                            }
-                        }*/
+                            continue;
+                        }
+                        if (medium.type == "video" && !config.DownloadVideos)
+                        {
+                            continue;
+                        }
+                        if (medium.type == "gif" && !config.DownloadVideos)
+                        {
+                            continue;
+                        }
+                        if (medium.type == "audio" && !config.DownloadAudios)
+                        {
+                            continue;
+                        }
+                        if (!paidMessageCollection.PaidMessages.ContainsKey(medium.id))
+                        {
+                            await m_DBHelper.AddMedia(folder, medium.id, message.id, medium.files.drm.manifest.dash, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), messagePreviewIds.Contains(medium.id) ? true : false, false, null);
+                            paidMessageCollection.PaidMessages.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{message.id}");
+                            paidMessageCollection.PaidMessageMedia.Add(medium);
+                        }
+                    }
                     }
                 }            
 
@@ -1867,7 +1866,7 @@ public class APIHelper : IAPIHelper
                             }
                         }
 
-                        foreach (Purchased.Medium medium in purchase.media)
+                        foreach (Messages.Medium medium in purchase.media)
                         {
                             if (previewids.Count > 0)
                             {
@@ -2275,7 +2274,7 @@ public class APIHelper : IAPIHelper
                                 }
                                 await m_DBHelper.AddPost(path, purchase.id, purchase.text != null ? purchase.text : string.Empty, purchase.price != null ? purchase.price.ToString() : "0", purchase.price != null && purchase.isOpened ? true : false, purchase.isArchived.HasValue ? purchase.isArchived.Value : false, purchase.createdAt != null ? purchase.createdAt.Value : purchase.postedAt.Value);
                                 purchasedTabCollection.PaidPosts.PaidPostObjects.Add(purchase);
-                                foreach (Purchased.Medium medium in purchase.media)
+                                foreach (Messages.Medium medium in purchase.media)
                                 {
                                     if (medium.type == "photo" && !config.DownloadImages)
                                     {
@@ -2375,7 +2374,7 @@ public class APIHelper : IAPIHelper
                                         }
                                     }
 
-                                    foreach (Purchased.Medium medium in purchase.media)
+                                    foreach (Messages.Medium medium in purchase.media)
                                     {
                                         if (paidMessagePreviewids.Count > 0)
                                         {

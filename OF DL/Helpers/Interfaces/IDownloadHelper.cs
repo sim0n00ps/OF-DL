@@ -5,6 +5,7 @@ using OF_DL.Entities.Post;
 using OF_DL.Entities.Purchased;
 using OF_DL.Entities.Streams;
 using Spectre.Console;
+using static OF_DL.Entities.Messages.Messages;
 
 namespace OF_DL.Helpers
 {
@@ -20,10 +21,10 @@ namespace OF_DL.Helpers
         Task<bool> DownloadPostDRMVideo(string policy, string signature, string kvp, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, string api_type, ProgressTask task, string filenameFormat, Post.List postInfo, Post.Medium postMedia, Post.Author author, Dictionary<string, int> users);
         Task<bool> DownloadPostMedia(string url, string folder, long media_id, string api_type, ProgressTask task, string? filenameFormat, Post.List? postInfo, Post.Medium? postMedia, Post.Author? author, Dictionary<string, int> users);
         Task<bool> DownloadPostMedia(string url, string folder, long media_id, string api_type, ProgressTask task, string? filenameFormat, SinglePost? postInfo, SinglePost.Medium? postMedia, SinglePost.Author? author, Dictionary<string, int> users);
-        Task<bool> DownloadPurchasedMedia(string url, string folder, long media_id, string api_type, ProgressTask task, string filenameFormat, Purchased.List messageInfo, Purchased.Medium messageMedia, Purchased.FromUser fromUser, Dictionary<string, int> users);
-        Task<bool> DownloadPurchasedMessageDRMVideo(string policy, string signature, string kvp, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, string api_type, ProgressTask task, string filenameFormat, Purchased.List messageInfo, Purchased.Medium messageMedia, Purchased.FromUser fromUser, Dictionary<string, int> users);
-        Task<bool> DownloadPurchasedPostDRMVideo(string policy, string signature, string kvp, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, string api_type, ProgressTask task, string filenameFormat, Purchased.List postInfo, Purchased.Medium postMedia, Purchased.FromUser fromUser, Dictionary<string, int> users);
-        Task<bool> DownloadPurchasedPostMedia(string url, string folder, long media_id, string api_type, ProgressTask task, string filenameFormat, Purchased.List messageInfo, Purchased.Medium messageMedia, Purchased.FromUser fromUser, Dictionary<string, int> users);
+        Task<bool> DownloadPurchasedMedia(string url, string folder, long media_id, string api_type, ProgressTask task, string filenameFormat, Purchased.List messageInfo, Medium messageMedia, Purchased.FromUser fromUser, Dictionary<string, int> users);
+        Task<bool> DownloadPurchasedMessageDRMVideo(string policy, string signature, string kvp, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, string api_type, ProgressTask task, string filenameFormat, Purchased.List messageInfo, Medium messageMedia, Purchased.FromUser fromUser, Dictionary<string, int> users);
+        Task<bool> DownloadPurchasedPostDRMVideo(string policy, string signature, string kvp, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, string api_type, ProgressTask task, string filenameFormat, Purchased.List postInfo, Medium postMedia, Purchased.FromUser fromUser, Dictionary<string, int> users);
+        Task<bool> DownloadPurchasedPostMedia(string url, string folder, long media_id, string api_type, ProgressTask task, string filenameFormat, Purchased.List messageInfo, Medium messageMedia, Purchased.FromUser fromUser, Dictionary<string, int> users);
         Task<bool> DownloadStoryMedia(string url, string folder, long media_id, string api_type, ProgressTask task);
         Task<bool> DownloadStreamMedia(string url, string folder, long media_id, string api_type, ProgressTask task, string? filenameFormat, Streams.List? streamInfo, Streams.Medium? streamMedia, Streams.Author? author, Dictionary<string, int> users);
         Task<bool> DownloadStreamsDRMVideo(string policy, string signature, string kvp, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, string api_type, ProgressTask task, string filenameFormat, Streams.List streamInfo, Streams.Medium streamMedia, Streams.Author author, Dictionary<string, int> users);

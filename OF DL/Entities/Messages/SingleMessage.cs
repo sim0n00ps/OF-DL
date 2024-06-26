@@ -51,7 +51,7 @@ namespace OF_DL.Entities.Messages
         public object subscribedOnExpiredNow { get; set; }
         public object subscribedOnDuration { get; set; }
         public int callPrice { get; set; }
-        public DateTime lastSeen { get; set; }
+        public DateTime? lastSeen { get; set; }
         public bool canReport { get; set; }
     }
 
@@ -77,25 +77,6 @@ namespace OF_DL.Entities.Messages
         public string cannotAddUserReason { get; set; }
     }
 
-    public class SingleMessageMedium
-    {
-        public long id { get; set; }
-        public bool canView { get; set; }
-        public string type { get; set; }
-        public string src { get; set; }
-        public string preview { get; set; }
-        public string thumb { get; set; }
-        public object locked { get; set; }
-        public int duration { get; set; }
-        public bool hasError { get; set; }
-        public string squarePreview { get; set; }
-        public bool hasCustomPreview { get; set; }
-        public Video video { get; set; }
-        public VideoSources videoSources { get; set; }
-        public Source source { get; set; }
-        public Info info { get; set; }
-    }
-
     public class Preview
     {
         public int width { get; set; }
@@ -113,7 +94,7 @@ namespace OF_DL.Entities.Messages
         public double price { get; set; }
         public bool isMediaReady { get; set; }
         public int mediaCount { get; set; }
-        public List<SingleMessageMedium> media { get; set; }
+        public List<Medium> media { get; set; }
         public List<object> previews { get; set; }
         public bool isTip { get; set; }
         public bool isReportedByMe { get; set; }
@@ -135,3 +116,4 @@ namespace OF_DL.Entities.Messages
     }
 
 }
+

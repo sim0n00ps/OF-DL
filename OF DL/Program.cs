@@ -13,6 +13,7 @@ using Spectre.Console;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using static OF_DL.Entities.Messages.Messages;
 
 namespace OF_DL;
 
@@ -735,7 +736,7 @@ public class Program
                             }
 
 
-                            Purchased.Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
+                            Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
                             Purchased.List? messageInfo = paidMessageCollection.PaidMessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
                             isNew = await downloadContext.DownloadHelper.DownloadPurchasedMessageDRMVideo(
@@ -767,7 +768,7 @@ public class Program
                     }
                     else
                     {
-                        Purchased.Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
+                        Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
                         Purchased.List messageInfo = paidMessageCollection.PaidMessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
                         isNew = await downloadContext.DownloadHelper.DownloadPurchasedMedia(
@@ -1364,7 +1365,7 @@ public class Program
                     {
                         decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                     }
-                    Purchased.Medium? mediaInfo = purchasedPosts.PaidPostMedia.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
+                    Medium? mediaInfo = purchasedPosts.PaidPostMedia.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
                     Purchased.List? postInfo = purchasedPosts.PaidPostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
                     isNew = await downloadContext.DownloadHelper.DownloadPurchasedPostDRMVideo(
@@ -1394,7 +1395,7 @@ public class Program
                 }
                 else
                 {
-                    Purchased.Medium mediaInfo = purchasedPosts.PaidPostMedia.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
+                    Medium mediaInfo = purchasedPosts.PaidPostMedia.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
                     Purchased.List postInfo = purchasedPosts.PaidPostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
                     isNew = await downloadContext.DownloadHelper.DownloadPurchasedPostMedia(
@@ -1484,7 +1485,7 @@ public class Program
                     {
                         decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                     }
-                    Purchased.Medium? mediaInfo = purchasedPosts?.PaidPostMedia?.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
+                    Medium? mediaInfo = purchasedPosts?.PaidPostMedia?.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
                     Purchased.List? postInfo = mediaInfo != null ? purchasedPosts?.PaidPostObjects?.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true) : null;
 
                     isNew = await downloadContext.DownloadHelper.DownloadPurchasedPostDRMVideo(
@@ -1514,7 +1515,7 @@ public class Program
                 }
                 else
                 {
-                    Purchased.Medium? mediaInfo = purchasedPosts?.PaidPostMedia?.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
+                    Medium? mediaInfo = purchasedPosts?.PaidPostMedia?.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
                     Purchased.List? postInfo = mediaInfo != null ? purchasedPosts?.PaidPostObjects?.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true) : null;
 
                     isNew = await downloadContext.DownloadHelper.DownloadPurchasedPostMedia(
@@ -1598,8 +1599,7 @@ public class Program
                                 decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
                             }
 
-
-                            Purchased.Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
+                            Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
                             Purchased.List? messageInfo = paidMessageCollection.PaidMessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
                             isNew = await downloadContext.DownloadHelper.DownloadPurchasedMessageDRMVideo(
@@ -1631,7 +1631,7 @@ public class Program
                     }
                     else
                     {
-                        Purchased.Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
+                        Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
                         Purchased.List messageInfo = paidMessageCollection.PaidMessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
                         isNew = await downloadContext.DownloadHelper.DownloadPurchasedMedia(
@@ -1857,8 +1857,7 @@ public class Program
                                 decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
                             }
 
-
-                            Purchased.Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
+                            Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
                             Purchased.List? messageInfo = paidMessageCollection.PaidMessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
                             isNew = await downloadContext.DownloadHelper.DownloadPurchasedMessageDRMVideo(
@@ -1890,7 +1889,7 @@ public class Program
                     }
                     else
                     {
-                        Purchased.Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
+                        Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
                         Purchased.List messageInfo = paidMessageCollection.PaidMessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
                         isNew = await downloadContext.DownloadHelper.DownloadPurchasedMedia(

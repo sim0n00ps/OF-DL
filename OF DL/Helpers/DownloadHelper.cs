@@ -22,6 +22,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static OF_DL.Entities.Lists.UserList;
+using static OF_DL.Entities.Messages.Messages;
 
 namespace OF_DL.Helpers;
 
@@ -736,7 +737,7 @@ public class DownloadHelper : IDownloadHelper
         return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, api_type, task, filename, filename);
     }
 
-    public async Task<bool> DownloadPurchasedMedia(string url, string folder, long media_id, string api_type, ProgressTask task, string? filenameFormat, Purchased.List? messageInfo, Purchased.Medium? messageMedia, Purchased.FromUser? fromUser, Dictionary<string, int> users)
+    public async Task<bool> DownloadPurchasedMedia(string url, string folder, long media_id, string api_type, ProgressTask task, string? filenameFormat, Purchased.List? messageInfo, Medium? messageMedia, Purchased.FromUser? fromUser, Dictionary<string, int> users)
     {
         string path;
         if (downloadConfig.FolderPerPaidMessage && messageInfo != null && messageInfo?.id is not null && messageInfo?.createdAt is not null)
@@ -760,7 +761,7 @@ public class DownloadHelper : IDownloadHelper
                                                        ProgressTask task,
                                                        string? filenameFormat,
                                                        Purchased.List? messageInfo,
-                                                       Purchased.Medium? messageMedia,
+                                                        Medium? messageMedia,
                                                        Purchased.FromUser? fromUser,
                                                        Dictionary<string, int> users)
     {
@@ -974,7 +975,7 @@ public class DownloadHelper : IDownloadHelper
     }
 
 
-    public async Task<bool> DownloadPurchasedMessageDRMVideo(string policy, string signature, string kvp, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, string api_type, ProgressTask task, string? filenameFormat, Purchased.List? messageInfo, Purchased.Medium? messageMedia, Purchased.FromUser? fromUser, Dictionary<string, int> users)
+    public async Task<bool> DownloadPurchasedMessageDRMVideo(string policy, string signature, string kvp, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, string api_type, ProgressTask task, string? filenameFormat, Purchased.List? messageInfo, Medium? messageMedia, Purchased.FromUser? fromUser, Dictionary<string, int> users)
     {
         try
         {
@@ -1301,7 +1302,7 @@ public class DownloadHelper : IDownloadHelper
         return false;
     }
 
-    public async Task<bool> DownloadPurchasedPostDRMVideo(string policy, string signature, string kvp, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, string api_type, ProgressTask task, string? filenameFormat, Purchased.List? postInfo, Purchased.Medium? postMedia, Purchased.FromUser? fromUser, Dictionary<string, int> users)
+    public async Task<bool> DownloadPurchasedPostDRMVideo(string policy, string signature, string kvp, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, string api_type, ProgressTask task, string? filenameFormat, Purchased.List? postInfo, Medium? postMedia, Purchased.FromUser? fromUser, Dictionary<string, int> users)
     {
         try
         {

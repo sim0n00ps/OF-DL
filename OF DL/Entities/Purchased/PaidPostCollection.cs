@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using static OF_DL.Entities.Messages.Messages;
 
 namespace OF_DL.Entities.Purchased
 {
@@ -10,6 +6,6 @@ namespace OF_DL.Entities.Purchased
     {
         public Dictionary<long, string> PaidPosts = new Dictionary<long, string>();
         public List<Purchased.List> PaidPostObjects = new List<Purchased.List>();
-        public List<Purchased.Medium> PaidPostMedia = new List<Purchased.Medium>();
+        public List<Medium> PaidPostMedia = new List<Medium>();
     }
 }

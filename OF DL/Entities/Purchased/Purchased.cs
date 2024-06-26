@@ -12,28 +12,9 @@ namespace OF_DL.Entities.Purchased
     {
         public List<List> list { get; set; }
         public bool hasMore { get; set; }
-        public class Dash
-        {
-            [JsonProperty("CloudFront-Policy")]
-            public string CloudFrontPolicy { get; set; }
 
-            [JsonProperty("CloudFront-Signature")]
-            public string CloudFrontSignature { get; set; }
 
-            [JsonProperty("CloudFront-Key-Pair-Id")]
-            public string CloudFrontKeyPairId { get; set; }
-        }
-
-        public class Drm
-        {
-            public Manifest manifest { get; set; }
-            public Signature signature { get; set; }
-        }
-
-        public class Files
-        {
-            public Drm drm { get; set; }
-        }
+  
 
         public class FromUser
         {
@@ -58,11 +39,6 @@ namespace OF_DL.Entities.Purchased
             public string CloudFrontKeyPairId { get; set; }
         }
 
-        public class Info
-        {
-            public Source source { get; set; }
-            public Preview preview { get; set; }
-        }
 
         public class List
         {
@@ -106,58 +82,9 @@ namespace OF_DL.Entities.Purchased
             public string dash { get; set; }
         }
 
-        public class Medium
-        {
-            public long id { get; set; }
-            public bool canView { get; set; }
-            public string type { get; set; }
-            public string src { get; set; }
-            public string preview { get; set; }
-            public string thumb { get; set; }
-            public object locked { get; set; }
-            public int? duration { get; set; }
-            public bool? hasError { get; set; }
-            public string squarePreview { get; set; }
-            public VideoSources videoSources { get; set; }
-            public Source source { get; set; }
-            public Info info { get; set; }
-            public Video video { get; set; }
-            public Files files { get; set; }
-        }
+   
 
-        public class Preview
-        {
-            public int? width { get; set; }
-            public int? height { get; set; }
-            public int? size { get; set; }
-        }
 
-        public class Signature
-        {
-            public Hls hls { get; set; }
-            public Dash dash { get; set; }
-        }
 
-        public class Source
-        {
-            public string source { get; set; }
-            public int? width { get; set; }
-            public int? height { get; set; }
-            public int? size { get; set; }
-        }
-
-        public class Video
-        {
-            public string mp4 { get; set; }
-        }
-
-        public class VideoSources
-        {
-            [JsonProperty("720")]
-            public string _720 { get; set; }
-
-            [JsonProperty("240")]
-            public string _240 { get; set; }
-        }
     }
 }
