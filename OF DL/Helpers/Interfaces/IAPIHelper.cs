@@ -15,8 +15,8 @@ namespace OF_DL.Helpers
         Task<string> GetDecryptionKeyNew(Dictionary<string, string> drmHeaders, string licenceURL, string pssh);
         Task<DateTime> GetDRMMPDLastModified(string mpdUrl, string policy, string signature, string kvp);
         Task<string> GetDRMMPDPSSH(string mpdUrl, string policy, string signature, string kvp);
-        Task<Dictionary<string, int>> GetLists(string endpoint);
-        Task<List<string>> GetListUsers(string endpoint);
+        Task<Dictionary<string, int>> GetLists(string endpoint, IDownloadConfig config);
+        Task<List<string>> GetListUsers(string endpoint, IDownloadConfig config);
         Task<Dictionary<long, string>> GetMedia(MediaType mediatype, string endpoint, string? username, string folder, IDownloadConfig config, List<long> paid_post_ids);
         Task<PaidPostCollection> GetPaidPosts(string endpoint, string folder, string username, IDownloadConfig config, List<long> paid_post_ids);
         Task<PostCollection> GetPosts(string endpoint, string folder, IDownloadConfig config, List<long> paid_post_ids);
@@ -30,7 +30,7 @@ namespace OF_DL.Helpers
         Task<User> GetUserInfo(string endpoint);
         Task<JObject> GetUserInfoById(string endpoint);
         Dictionary<string, string> GetDynamicHeaders(string path, string queryParam);
-        Task<Dictionary<string, int>> GetActiveSubscriptions(string endpoint, bool includeRestrictedSubscriptions);
-        Task<Dictionary<string, int>> GetExpiredSubscriptions(string endpoint, bool includeRestrictedSubscriptions);
+        Task<Dictionary<string, int>> GetActiveSubscriptions(string endpoint, bool includeRestrictedSubscriptions, IDownloadConfig config);
+        Task<Dictionary<string, int>> GetExpiredSubscriptions(string endpoint, bool includeRestrictedSubscriptions, IDownloadConfig config);
     }
 }

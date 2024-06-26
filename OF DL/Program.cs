@@ -12,7 +12,6 @@ using Spectre.Console;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
-using static OF_DL.Entities.Lists.UserList;
 
 namespace OF_DL;
 
@@ -23,6 +22,8 @@ public class Program
 
     private static bool clientIdBlobMissing = false;
     private static bool devicePrivateKeyMissing = false;
+    private static Config? config = null;
+    private static Auth? auth = null;
 
     public async static Task Main(string[] args)
     {
@@ -38,8 +39,7 @@ public class Program
 
             AnsiConsole.Write(new FigletText("Welcome to OF-DL").Color(Color.Red));
 
-            Auth? auth = null;
-            Config? config = null;
+
 
             if (args is not null && args.Length > 0)
             {
@@ -287,11 +287,14 @@ public class Program
     {
         DBHelper dBHelper = new DBHelper(Config);
 
+        if (Config.EnableDebugLogs)
+            Log.Debug("Calling DownloadAllData");
+
         do
         {
             DateTime startTime = DateTime.Now;
             Dictionary<string, int> users = new();
-            Dictionary<string, int> activeSubs = await m_ApiHelper.GetActiveSubscriptions("/subscriptions/subscribes", Config.IncludeRestrictedSubscriptions);
+            Dictionary<string, int> activeSubs = await m_ApiHelper.GetActiveSubscriptions("/subscriptions/subscribes", Config.IncludeRestrictedSubscriptions, Config);
             foreach (KeyValuePair<string, int> activeSub in activeSubs)
             {
                 if (!users.ContainsKey(activeSub.Key))
@@ -301,7 +304,7 @@ public class Program
             }
             if (Config!.IncludeExpiredSubscriptions)
             {
-                Dictionary<string, int> expiredSubs = await m_ApiHelper.GetExpiredSubscriptions("/subscriptions/subscribes", Config.IncludeRestrictedSubscriptions);
+                Dictionary<string, int> expiredSubs = await m_ApiHelper.GetExpiredSubscriptions("/subscriptions/subscribes", Config.IncludeRestrictedSubscriptions, Config);
                 foreach (KeyValuePair<string, int> expiredSub in expiredSubs)
                 {
                     if (!users.ContainsKey(expiredSub.Key))
@@ -311,7 +314,7 @@ public class Program
                 }
             }
             await dBHelper.CreateUsersDB(users);
-            Dictionary<string, int> lists = await m_ApiHelper.GetLists("/lists");
+            Dictionary<string, int> lists = await m_ApiHelper.GetLists("/lists", Config);
             KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP;
             if(Config.NonInteractiveMode && Config.NonInteractiveModePurchasedTab)
             {
@@ -325,7 +328,7 @@ public class Program
             {
                 List<string> listUsernames = new();
                 int listId = lists[Config.NonInteractiveModeListName];
-                List<string> usernames = await m_ApiHelper.GetListUsers($"/lists/{listId}/users");
+                List<string> usernames = await m_ApiHelper.GetListUsers($"/lists/{listId}/users", Config);
                 foreach (string user in usernames)
                 {
                     listUsernames.Add(user);
@@ -613,6 +616,9 @@ public class Program
 
     private static async Task<int> DownloadPaidMessages(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int paidMessagesCount, string path)
     {
+        if (config.EnableDebugLogs)
+            Log.Debug("Calling DownloadPaidMessages - " + user.Key);
+
         AnsiConsole.Markup($"[red]Getting Paid Messages\n[/]");
         //Dictionary<long, string> purchased = await apiHelper.GetMedia(MediaType.PaidMessages, "/posts/paid", user.Key, path, auth, paid_post_ids);
         PaidMessageCollection paidMessageCollection = await downloadContext.ApiHelper.GetPaidMessages("/posts/paid", path, user.Key, downloadContext.DownloadConfig!);
@@ -738,6 +744,9 @@ public class Program
 
     private static async Task<int> DownloadMessages(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int messagesCount, string path)
     {
+        if (config.EnableDebugLogs)
+            Log.Debug("Calling DownloadMessages - " + user.Key);
+
         AnsiConsole.Markup($"[red]Getting Messages\n[/]");
         //Dictionary<long, string> messages = await apiHelper.GetMedia(MediaType.Messages, $"/chats/{user.Value}/messages", null, path, auth, paid_post_ids);
         MessageCollection messages = await downloadContext.ApiHelper.GetMessages($"/chats/{user.Value}/messages", path, downloadContext.DownloadConfig!);
@@ -863,6 +872,9 @@ public class Program
 
     private static async Task<int> DownloadHighlights(IDownloadContext downloadContext, KeyValuePair<string, int> user, int highlightsCount, string path)
     {
+        if (config.EnableDebugLogs)
+            Log.Debug("Calling DownloadHighlights - " + user.Key);
+
         AnsiConsole.Markup($"[red]Getting Highlights\n[/]");
         Dictionary<long, string> highlights = await downloadContext.ApiHelper.GetMedia(MediaType.Highlights, $"/users/{user.Value}/stories/highlights", null, path, downloadContext.DownloadConfig!, paid_post_ids);
         int oldHighlightsCount = 0;
@@ -914,6 +926,9 @@ public class Program
 
     private static async Task<int> DownloadStories(IDownloadContext downloadContext, KeyValuePair<string, int> user, int storiesCount, string path)
     {
+        if (config.EnableDebugLogs)
+            Log.Debug("Calling DownloadStories - " + user.Key);
+
         AnsiConsole.Markup($"[red]Getting Stories\n[/]");
         Dictionary<long, string> stories = await downloadContext.ApiHelper.GetMedia(MediaType.Stories, $"/users/{user.Value}/stories", null, path, downloadContext.DownloadConfig!, paid_post_ids);
         int oldStoriesCount = 0;
@@ -965,6 +980,9 @@ public class Program
 
     private static async Task<int> DownloadArchived(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int archivedCount, string path)
     {
+        if (config.EnableDebugLogs)
+            Log.Debug("Calling DownloadArchived - " + user.Key);
+
         AnsiConsole.Markup($"[red]Getting Archived Posts\n[/]");
         //Dictionary<long, string> archived = await apiHelper.GetMedia(MediaType.Archived, $"/users/{user.Value}/posts", null, path, auth, paid_post_ids);
         ArchivedCollection archived = await downloadContext.ApiHelper.GetArchived($"/users/{user.Value}/posts", path, downloadContext.DownloadConfig!);
@@ -1089,6 +1107,9 @@ public class Program
 
     private static async Task<int> DownloadFreePosts(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int postCount, string path)
     {
+        if (config.EnableDebugLogs)
+            Log.Debug("Calling DownloadFreePosts - " + user.Key);
+
         AnsiConsole.Markup($"[red]Getting Posts\n[/]");
         //Dictionary<long, string> posts = await apiHelper.GetMedia(MediaType.Posts, $"/users/{user.Value}/posts", null, path, auth, paid_post_ids);
         PostCollection posts = await downloadContext.ApiHelper.GetPosts($"/users/{user.Value}/posts", path, downloadContext.DownloadConfig!, paid_post_ids);
@@ -1219,6 +1240,10 @@ public class Program
     private static async Task<int> DownloadPaidPosts(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int paidPostCount, string path)
     {
         AnsiConsole.Markup($"[red]Getting Paid Posts\n[/]");
+
+        if (config.EnableDebugLogs)
+            Log.Debug("Calling DownloadPaidPosts - " + user.Key);
+
         //Dictionary<long, string> purchasedPosts = await apiHelper.GetMedia(MediaType.PaidPosts, "/posts/paid", user.Key, path, auth, paid_post_ids);
         PaidPostCollection purchasedPosts = await downloadContext.ApiHelper.GetPaidPosts("/posts/paid", path, user.Key, downloadContext.DownloadConfig!, paid_post_ids);
         int oldPaidPostCount = 0;
@@ -1583,6 +1608,9 @@ public class Program
 
     private static async Task<int> DownloadStreams(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int streamsCount, string path)
     {
+        if (config.EnableDebugLogs)
+            Log.Debug("Calling DownloadStreams - " + user.Key);
+
         AnsiConsole.Markup($"[red]Getting Streams\n[/]");
         StreamsCollection streams = await downloadContext.ApiHelper.GetStreams($"/users/{user.Value}/posts/streams", path, downloadContext.DownloadConfig!, paid_post_ids);
         int oldStreamsCount = 0;
@@ -1711,9 +1739,11 @@ public class Program
 
     private static async Task DownloadSinglePost(IDownloadContext downloadContext, long post_id, string path, Dictionary<string, int> users)
     {
+        if (config.EnableDebugLogs)
+            Log.Debug("Calling DownloadSinglePost - " + post_id.ToString());
+
         AnsiConsole.Markup($"[red]Getting Post\n[/]");
         SinglePostCollection post = await downloadContext.ApiHelper.GetPost($"/posts/{post_id.ToString()}", path, downloadContext.DownloadConfig!);
-
         if (post == null)
         {
             AnsiConsole.Markup($"[red]Couldn't find post\n[/]");
@@ -1868,7 +1898,7 @@ public class Program
                             foreach (var item in listSelection)
                             {
                                 int listId = lists[item.Replace("[red]", "").Replace("[/]", "")];
-                                List<string> usernames = await apiHelper.GetListUsers($"/lists/{listId}/users");
+                                List<string> usernames = await apiHelper.GetListUsers($"/lists/{listId}/users", config);
                                 foreach (string user in usernames)
                                 {
                                     listUsernames.Add(user);
