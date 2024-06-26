@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using OF_DL.Entities;
 using OF_DL.Entities.Archived;
 using OF_DL.Entities.Messages;
@@ -464,6 +465,66 @@ public class Program
                 DateTime endTime = DateTime.Now;
                 TimeSpan totalTime = endTime - startTime;
                 AnsiConsole.Markup($"[green]Scrape Completed in {totalTime.TotalMinutes:0.00} minutes\n[/]");
+            }
+            else if (hasSelectedUsersKVP.Key && hasSelectedUsersKVP.Value != null && hasSelectedUsersKVP.Value.ContainsKey("SingleMessage"))
+            {
+                //https://onlyfans.com/my/chats/chat/70196897/?firstId=3127582635776
+
+                string messageUrl = AnsiConsole.Prompt(
+                    new TextPrompt<string>("[red]Please enter a post URL: [/]")
+                        .ValidationErrorMessage("[red]Please enter a valid post URL[/]")
+                        .Validate(url =>
+                        {
+                            Regex regex = new Regex("https://onlyfans\\.com/my/chats/chat/[0-9]+/\\?firstId=[0-9]+$", RegexOptions.IgnoreCase);
+                            if (regex.IsMatch(url))
+                            {
+                                return ValidationResult.Success();
+                            }
+                            return ValidationResult.Error("[red]Please enter a valid message URL[/]");
+                        }));
+
+
+                long message_id = Convert.ToInt64(messageUrl.Split("?firstId=")[1]);
+                long user_id = Convert.ToInt64(messageUrl.Split("/")[6]);
+                JObject user = await m_ApiHelper.GetUserInfoById($"/users/list?x[]={user_id.ToString()}");
+                string username = string.Empty;
+
+                if (user is null)
+                {
+                    username = $"Deleted User - " + user_id.ToString();
+                    Log.Information("Content creator not longer exists - ", user_id.ToString());
+                }
+                else if (!string.IsNullOrEmpty(user[user_id.ToString()]["username"].ToString()))
+                {
+                    username = user[user_id.ToString()]["username"].ToString();
+                }
+
+                string path = "";
+                if (!string.IsNullOrEmpty(Config.DownloadPath))
+                {
+                    path = System.IO.Path.Combine(Config.DownloadPath, username);
+                }
+                else
+                {
+                    path = $"__user_data__/sites/OnlyFans/{username}"; // specify the path for the new folder
+                }
+
+                if (!Directory.Exists(path)) // check if the folder already exists
+                {
+                    Directory.CreateDirectory(path); // create the new folder
+                    AnsiConsole.Markup($"[red]Created folder for {username}\n[/]");
+                }
+                else
+                {
+                    AnsiConsole.Markup($"[red]Folder for {username} already created\n[/]");
+                }
+
+                await dBHelper.CreateDB(path);
+
+                var downloadContext = new DownloadContext(Auth, Config, GetCreatorFileNameFormatConfig(Config, username), m_ApiHelper, dBHelper);
+
+                await DownloadSinglePaidMessage(downloadContext, user_id, message_id, path, users);
+
             }
             else if (hasSelectedUsersKVP.Key && !hasSelectedUsersKVP.Value.ContainsKey("ConfigChanged"))
             {
@@ -1737,6 +1798,120 @@ public class Program
         return streamsCount;
     }
 
+    private static async Task DownloadSinglePaidMessage(IDownloadContext downloadContext, long user_id, long message_id, string path, Dictionary<string, int> users)
+    {
+        AnsiConsole.Markup($"[red]Getting Message\n[/]");
+        Messages message = await downloadContext.ApiHelper.GetPaidMessage($"/messages/{message_id.ToString()}", path, downloadContext.DownloadConfig!);
+
+        if (message == null)
+        {
+            AnsiConsole.Markup($"[red]Couldn't find message\n[/]");
+            return;
+        }
+
+        long totalSize = 0;
+        if (downloadContext.DownloadConfig.ShowScrapeSize)
+        {
+            totalSize = 0;//await downloadContext.DownloadHelper.CalculateTotalFileSize(message.list..PaidMessages.Values.ToList());
+        }
+        else
+        {
+            totalSize = 0;//post.SinglePosts.Count;
+        }
+        bool isNew = false;
+        await AnsiConsole.Progress()
+        .Columns(GetProgressColumns(downloadContext.DownloadConfig.ShowScrapeSize))
+        .StartAsync(async ctx =>
+        {
+            var task = ctx.AddTask($"[red]Downloading Post[/]", autoStart: false);
+            task.MaxValue = totalSize;
+            task.StartTask();
+            /*
+            foreach (KeyValuePair<long, string> postKVP in message.list)
+            {
+                if (postKVP.Value.Contains("cdn3.onlyfans.com/dash/files"))
+                {
+                    string[] messageUrlParsed = postKVP.Value.Split(',');
+                    string mpdURL = messageUrlParsed[0];
+                    string policy = messageUrlParsed[1];
+                    string signature = messageUrlParsed[2];
+                    string kvp = messageUrlParsed[3];
+                    string mediaId = messageUrlParsed[4];
+                    string postId = messageUrlParsed[5];
+                    string? licenseURL = null;
+                    string? pssh = await downloadContext.ApiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp);
+                    if (pssh == null)
+                    {
+                        continue;
+                    }
+
+                    DateTime lastModified = await downloadContext.ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
+                    Dictionary<string, string> drmHeaders = downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
+                    string decryptionKey;
+                    if (clientIdBlobMissing || devicePrivateKeyMissing)
+                    {
+                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
+                    }
+                    else
+                    {
+                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
+                    }
+                    SinglePost.Medium mediaInfo = post.SinglePostMedia.FirstOrDefault(m => m.id == postKVP.Key);
+                    SinglePost postInfo = post.SinglePostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
+
+                    isNew = await downloadContext.DownloadHelper.DownloadPostDRMVideo(
+                        policy: policy,
+                        signature: signature,
+                        kvp: kvp,
+                        url: mpdURL,
+                        decryptionKey: decryptionKey,
+                        folder: path,
+                        lastModified: lastModified,
+                        media_id: postKVP.Key,
+                        task: task,
+                        filenameFormat: downloadContext.FileNameFormatConfig.PostFileNameFormat ?? string.Empty,
+                        postInfo: postInfo,
+                        postMedia: mediaInfo,
+                        author: postInfo?.author,
+                        users: users);
+                }
+                else
+                {
+                    try
+                    {
+                        SinglePost.Medium? mediaInfo = post.SinglePostMedia.FirstOrDefault(m => (m?.id == postKVP.Key) == true);
+                        SinglePost? postInfo = post.SinglePostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
+
+                        isNew = await downloadContext.DownloadHelper.DownloadPostMedia(
+                            url: postKVP.Value,
+                            folder: path,
+                            media_id: postKVP.Key,
+                            task: task,
+                            filenameFormat: downloadContext.FileNameFormatConfig.PostFileNameFormat ?? string.Empty,
+                            postInfo: postInfo,
+                            postMedia: mediaInfo,
+                            author: postInfo?.author,
+                            users: users);
+                    }
+                    catch
+                    {
+                        Console.WriteLine("Media was null");
+                    }
+                }
+            }*/
+            task.StopTask();
+        });
+        if (isNew)
+        {
+            AnsiConsole.Markup($"[red]Message {message_id} downloaded\n[/]");
+        }
+        else
+        {
+            AnsiConsole.Markup($"[red]Message {message_id} already downloaded\n[/]");
+        }
+    }
+
+
     private static async Task DownloadSinglePost(IDownloadContext downloadContext, long post_id, string path, Dictionary<string, int> users)
     {
         if (config.EnableDebugLogs)
@@ -1938,6 +2113,8 @@ public class Program
                     break;
                 case "[red]Download Single Post[/]":
                     return (true, new Dictionary<string, int> { { "SinglePost", 0 } }, currentConfig);
+                case "[red]Download Single Message[/]":
+                    return (true, new Dictionary<string, int> { { "SingleMessage", 0 } }, currentConfig);
                 case "[red]Download Purchased Tab[/]":
                     return (true, new Dictionary<string, int> { { "PurchasedTab", 0 } }, currentConfig);
                 case "[red]Edit config.json[/]":
@@ -2034,6 +2211,7 @@ public class Program
                 "[red]List[/]",
                 "[red]Custom[/]",
                 "[red]Download Single Post[/]",
+                "[red]Download Single Message[/]",
                 "[red]Download Purchased Tab[/]",
                 "[red]Edit config.json[/]",
                 "[red]Exit[/]"
@@ -2046,6 +2224,7 @@ public class Program
                 "[red]Select All[/]",
                 "[red]Custom[/]",
                 "[red]Download Single Post[/]",
+                "[red]Download Single Message[/]",
                 "[red]Download Purchased Tab[/]",
                 "[red]Edit config.json[/]",
                 "[red]Exit[/]"
