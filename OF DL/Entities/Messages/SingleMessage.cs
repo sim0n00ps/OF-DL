@@ -1,9 +1,5 @@
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using static OF_DL.Entities.Messages.Messages;
 
 namespace OF_DL.Entities.Messages
 {
@@ -69,12 +65,6 @@ namespace OF_DL.Entities.Messages
     {
         public string w480 { get; set; }
         public string w760 { get; set; }
-    }
-
-    public class Info
-    {
-        public Source source { get; set; }
-        public Preview preview { get; set; }
     }
 
     public class ListsState
@@ -143,29 +133,5 @@ namespace OF_DL.Entities.Messages
         public bool canPurchase { get; set; }
         public bool canReport { get; set; }
     }
-
-    public class Source
-    {
-        public string source { get; set; }
-        public int width { get; set; }
-        public int height { get; set; }
-        public int size { get; set; }
-    }
-
-    public class Video
-    {
-        public string mp4 { get; set; }
-    }
-
-    public class VideoSources
-    {
-        [JsonProperty("720")]
-        public string _720 { get; set; }
-
-        [JsonProperty("240")]
-        public string _240 { get; set; }
-    }
-
-
 
 }

@@ -523,7 +523,7 @@ public class Program
 
                 var downloadContext = new DownloadContext(Auth, Config, GetCreatorFileNameFormatConfig(Config, username), m_ApiHelper, dBHelper);
 
-                await DownloadSinglePaidMessage(downloadContext, user_id, message_id, path, users);
+                await DownloadPaidMessage(downloadContext, hasSelectedUsersKVP, username, 1, path, message_id);
 
             }
             else if (hasSelectedUsersKVP.Key && !hasSelectedUsersKVP.Value.ContainsKey("ConfigChanged"))
@@ -1798,119 +1798,133 @@ public class Program
         return streamsCount;
     }
 
-    private static async Task DownloadSinglePaidMessage(IDownloadContext downloadContext, long user_id, long message_id, string path, Dictionary<string, int> users)
+    private static async Task<int> DownloadPaidMessage(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, string username, int paidMessagesCount, string path, long message_id)
     {
-        AnsiConsole.Markup($"[red]Getting Message\n[/]");
-        Messages message = await downloadContext.ApiHelper.GetPaidMessage($"/messages/{message_id.ToString()}", path, downloadContext.DownloadConfig!);
+        if (config.EnableDebugLogs)
+            Log.Debug("Calling DownloadPaidMessage - " + username);
 
-        if (message == null)
+        AnsiConsole.Markup($"[red]Getting Paid Message\n[/]");
+        
+        PaidMessageCollection paidMessageCollection = await downloadContext.ApiHelper.GetPaidMessage($"/messages/{message_id.ToString()}", path, downloadContext.DownloadConfig!);
+        int oldPaidMessagesCount = 0;
+        int newPaidMessagesCount = 0;
+        if (paidMessageCollection != null && paidMessageCollection.PaidMessages.Count > 0)
         {
-            AnsiConsole.Markup($"[red]Couldn't find message\n[/]");
-            return;
-        }
-
-        long totalSize = 0;
-        if (downloadContext.DownloadConfig.ShowScrapeSize)
-        {
-            totalSize = 0;//await downloadContext.DownloadHelper.CalculateTotalFileSize(message.list..PaidMessages.Values.ToList());
-        }
-        else
-        {
-            totalSize = 0;//post.SinglePosts.Count;
-        }
-        bool isNew = false;
-        await AnsiConsole.Progress()
-        .Columns(GetProgressColumns(downloadContext.DownloadConfig.ShowScrapeSize))
-        .StartAsync(async ctx =>
-        {
-            var task = ctx.AddTask($"[red]Downloading Post[/]", autoStart: false);
-            task.MaxValue = totalSize;
-            task.StartTask();
-            /*
-            foreach (KeyValuePair<long, string> postKVP in message.list)
+            AnsiConsole.Markup($"[red]Found {paidMessageCollection.PaidMessages.Count} Paid Messages\n[/]");
+            paidMessagesCount = paidMessageCollection.PaidMessages.Count;
+            long totalSize = 0;
+            if (downloadContext.DownloadConfig.ShowScrapeSize)
             {
-                if (postKVP.Value.Contains("cdn3.onlyfans.com/dash/files"))
+                totalSize = await downloadContext.DownloadHelper.CalculateTotalFileSize(paidMessageCollection.PaidMessages.Values.ToList());
+            }
+            else
+            {
+                totalSize = paidMessagesCount;
+            }
+            await AnsiConsole.Progress()
+            .Columns(GetProgressColumns(downloadContext.DownloadConfig.ShowScrapeSize))
+            .StartAsync(async ctx =>
+            {
+                // Define tasks
+                var task = ctx.AddTask($"[red]Downloading {paidMessageCollection.PaidMessages.Count} Paid Messages[/]", autoStart: false);
+                task.MaxValue = totalSize;
+                task.StartTask();
+                foreach (KeyValuePair<long, string> paidMessageKVP in paidMessageCollection.PaidMessages)
                 {
-                    string[] messageUrlParsed = postKVP.Value.Split(',');
-                    string mpdURL = messageUrlParsed[0];
-                    string policy = messageUrlParsed[1];
-                    string signature = messageUrlParsed[2];
-                    string kvp = messageUrlParsed[3];
-                    string mediaId = messageUrlParsed[4];
-                    string postId = messageUrlParsed[5];
-                    string? licenseURL = null;
-                    string? pssh = await downloadContext.ApiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp);
-                    if (pssh == null)
+                    bool isNew;
+                    if (paidMessageKVP.Value.Contains("cdn3.onlyfans.com/dash/files"))
                     {
-                        continue;
-                    }
+                        string[] messageUrlParsed = paidMessageKVP.Value.Split(',');
+                        string mpdURL = messageUrlParsed[0];
+                        string policy = messageUrlParsed[1];
+                        string signature = messageUrlParsed[2];
+                        string kvp = messageUrlParsed[3];
+                        string mediaId = messageUrlParsed[4];
+                        string messageId = messageUrlParsed[5];
+                        string? licenseURL = null;
+                        string? pssh = await downloadContext.ApiHelper.GetDRMMPDPSSH(mpdURL, policy, signature, kvp);
+                        if (pssh != null)
+                        {
+                            DateTime lastModified = await downloadContext.ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
+                            Dictionary<string, string> drmHeaders = downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/message/{messageId}", "?type=widevine");
+                            string decryptionKey;
+                            if (clientIdBlobMissing || devicePrivateKeyMissing)
+                            {
+                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
+                            }
+                            else
+                            {
+                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
+                            }
 
-                    DateTime lastModified = await downloadContext.ApiHelper.GetDRMMPDLastModified(mpdURL, policy, signature, kvp);
-                    Dictionary<string, string> drmHeaders = downloadContext.ApiHelper.GetDynamicHeaders($"/api2/v2/users/media/{mediaId}/drm/post/{postId}", "?type=widevine");
-                    string decryptionKey;
-                    if (clientIdBlobMissing || devicePrivateKeyMissing)
-                    {
-                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
+
+                            Purchased.Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
+                            Purchased.List? messageInfo = paidMessageCollection.PaidMessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
+
+                            isNew = await downloadContext.DownloadHelper.DownloadPurchasedMessageDRMVideo(
+                                policy: policy,
+                                signature: signature,
+                                kvp: kvp,
+                                url: mpdURL,
+                                decryptionKey: decryptionKey,
+                                folder: path,
+                                lastModified: lastModified,
+                                media_id: paidMessageKVP.Key,
+                                api_type: "Messages",
+                                task: task,
+                                filenameFormat: downloadContext.FileNameFormatConfig.PaidMessageFileNameFormat ?? string.Empty,
+                                messageInfo: messageInfo,
+                                messageMedia: mediaInfo,
+                                fromUser: messageInfo?.fromUser,
+                                users: hasSelectedUsersKVP.Value);
+
+                            if (isNew)
+                            {
+                                newPaidMessagesCount++;
+                            }
+                            else
+                            {
+                                oldPaidMessagesCount++;
+                            }
+                        }
                     }
                     else
                     {
-                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
-                    }
-                    SinglePost.Medium mediaInfo = post.SinglePostMedia.FirstOrDefault(m => m.id == postKVP.Key);
-                    SinglePost postInfo = post.SinglePostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
+                        Purchased.Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
+                        Purchased.List messageInfo = paidMessageCollection.PaidMessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
-                    isNew = await downloadContext.DownloadHelper.DownloadPostDRMVideo(
-                        policy: policy,
-                        signature: signature,
-                        kvp: kvp,
-                        url: mpdURL,
-                        decryptionKey: decryptionKey,
-                        folder: path,
-                        lastModified: lastModified,
-                        media_id: postKVP.Key,
-                        task: task,
-                        filenameFormat: downloadContext.FileNameFormatConfig.PostFileNameFormat ?? string.Empty,
-                        postInfo: postInfo,
-                        postMedia: mediaInfo,
-                        author: postInfo?.author,
-                        users: users);
-                }
-                else
-                {
-                    try
-                    {
-                        SinglePost.Medium? mediaInfo = post.SinglePostMedia.FirstOrDefault(m => (m?.id == postKVP.Key) == true);
-                        SinglePost? postInfo = post.SinglePostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
-
-                        isNew = await downloadContext.DownloadHelper.DownloadPostMedia(
-                            url: postKVP.Value,
+                        isNew = await downloadContext.DownloadHelper.DownloadPurchasedMedia(
+                            url: paidMessageKVP.Value,
                             folder: path,
-                            media_id: postKVP.Key,
+                            media_id: paidMessageKVP.Key,
+                            api_type: "Messages",
                             task: task,
-                            filenameFormat: downloadContext.FileNameFormatConfig.PostFileNameFormat ?? string.Empty,
-                            postInfo: postInfo,
-                            postMedia: mediaInfo,
-                            author: postInfo?.author,
-                            users: users);
-                    }
-                    catch
-                    {
-                        Console.WriteLine("Media was null");
+                            filenameFormat: downloadContext.FileNameFormatConfig.PaidMessageFileNameFormat ?? string.Empty,
+                            messageInfo: messageInfo,
+                            messageMedia: mediaInfo,
+                            fromUser: messageInfo?.fromUser,
+                            users: hasSelectedUsersKVP.Value);
+                        if (isNew)
+                        {
+                            newPaidMessagesCount++;
+                        }
+                        else
+                        {
+                            oldPaidMessagesCount++;
+                        }
                     }
                 }
-            }*/
-            task.StopTask();
-        });
-        if (isNew)
-        {
-            AnsiConsole.Markup($"[red]Message {message_id} downloaded\n[/]");
+                task.StopTask();
+            });
+            AnsiConsole.Markup($"[red]Paid Messages Already Downloaded: {oldPaidMessagesCount} New Paid Messages Downloaded: {newPaidMessagesCount}[/]\n");
         }
         else
         {
-            AnsiConsole.Markup($"[red]Message {message_id} already downloaded\n[/]");
+            AnsiConsole.Markup($"[red]Found 0 Paid Messages\n[/]");
         }
-    }
 
+        return paidMessagesCount;
+    }
 
     private static async Task DownloadSinglePost(IDownloadContext downloadContext, long post_id, string path, Dictionary<string, int> users)
     {
