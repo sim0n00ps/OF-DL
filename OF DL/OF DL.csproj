@@ -7,7 +7,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <ApplicationIcon>Icon\download.ico</ApplicationIcon>
-    <Version>1.7.61</Version>
   </PropertyGroup>
 
   <ItemGroup>
