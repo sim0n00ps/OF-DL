@@ -37,6 +37,7 @@ namespace OF_DL.Entities
         public bool IncludeRestrictedSubscriptions { get; set; }
         [ToggleableConfig]
         public bool SkipAds { get; set; } = false;
+
         public string? DownloadPath { get; set; } = string.Empty;
         public string? PaidPostFileNameFormat { get; set; } = string.Empty;
         public string? PostFileNameFormat { get; set; } = string.Empty;
@@ -88,6 +89,8 @@ namespace OF_DL.Entities
 
         [ToggleableConfig]
         public bool DownloadDuplicatedMedia { get; set; } = false;
+        [ToggleableConfig]
+        public bool EnableDebugLogs { get; set; } = false;
     }
 
     public class CreatorConfig : IFileNameFormatConfig

@@ -13,6 +13,7 @@ using OF_DL.Entities.Streams;
 using OF_DL.Enumurations;
 using Org.BouncyCastle.Asn1.Cmp;
 using Serilog;
+using System.Dynamic;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
@@ -76,12 +77,14 @@ public class APIHelper : IAPIHelper
     }
 
 
-    private async Task<string?> BuildHeaderAndExecuteRequests(Dictionary<string, string> getParams, string endpoint, HttpClient client)
+    private async Task<string?> BuildHeaderAndExecuteRequests(Dictionary<string, string> getParams, string endpoint, HttpClient client, bool logResponse)
     {
         HttpRequestMessage request = await BuildHttpRequestMessage(getParams, endpoint);
         using var response = await client.SendAsync(request);
         response.EnsureSuccessStatusCode();
         string body = await response.Content.ReadAsStringAsync();
+        if (logResponse)
+            Log.Debug(body);
         return body;
     }
 
@@ -265,14 +268,17 @@ public class APIHelper : IAPIHelper
     }
 
 
-    public async Task<Dictionary<string, int>?> GetAllSubscriptions(Dictionary<string, string> getParams, string endpoint, bool includeRestricted)
+    public async Task<Dictionary<string, int>?> GetAllSubscriptions(Dictionary<string, string> getParams, string endpoint, bool includeRestricted, IDownloadConfig config)
     {
         try
         {
             Dictionary<string, int> users = new();
             Subscriptions subscriptions = new();
 
-            string? body = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient());
+            if (config.EnableDebugLogs)
+                Log.Debug("Calling GetAllSubscrptions");
+
+            string? body = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient(), config.EnableDebugLogs);
 
             subscriptions = JsonConvert.DeserializeObject<Subscriptions>(body);
             if (subscriptions != null && subscriptions.hasMore)
@@ -282,7 +288,7 @@ public class APIHelper : IAPIHelper
                 while (true)
                 {
                     Subscriptions newSubscriptions = new();
-                    string? loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient());
+                    string? loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient(), config.EnableDebugLogs);
 
                     if (!string.IsNullOrEmpty(loopbody) && loopbody.Trim() != "[]")
                     {
@@ -328,7 +334,7 @@ public class APIHelper : IAPIHelper
         return null;
     }
 
-    public async Task<Dictionary<string, int>?> GetActiveSubscriptions(string endpoint, bool includeRestricted)
+    public async Task<Dictionary<string, int>?> GetActiveSubscriptions(string endpoint, bool includeRestricted, IDownloadConfig config)
     {
         Dictionary<string, string> getParams = new()
         {
@@ -338,11 +344,11 @@ public class APIHelper : IAPIHelper
             { "format", "infinite"}
         };
 
-        return await GetAllSubscriptions(getParams, endpoint, includeRestricted);
+        return await GetAllSubscriptions(getParams, endpoint, includeRestricted, config);
     }
 
 
-    public async Task<Dictionary<string, int>?> GetExpiredSubscriptions(string endpoint, bool includeRestricted)
+    public async Task<Dictionary<string, int>?> GetExpiredSubscriptions(string endpoint, bool includeRestricted, IDownloadConfig config)
     {
 
         Dictionary<string, string> getParams = new()
@@ -353,12 +359,18 @@ public class APIHelper : IAPIHelper
             { "format", "infinite"}
         };
 
-        return await GetAllSubscriptions(getParams, endpoint, includeRestricted);
+        if (config.EnableDebugLogs)
+            Log.Debug("Calling GetExpiredSubscriptions - " + endpoint);
+
+        return await GetAllSubscriptions(getParams, endpoint, includeRestricted, config);
     }
 
 
-    public async Task<Dictionary<string, int>> GetLists(string endpoint)
+    public async Task<Dictionary<string, int>> GetLists(string endpoint, IDownloadConfig config)
     {
+        if (config.EnableDebugLogs)
+            Log.Debug("Calling GetLists");
+
         try
         {
             int offset = 0;
@@ -372,7 +384,7 @@ public class APIHelper : IAPIHelper
             Dictionary<string, int> lists = new();
             while (true)
             {
-                string? body = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient());
+                string? body = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient(), config.EnableDebugLogs);
 
                 if (body == null)
                 {
@@ -421,8 +433,11 @@ public class APIHelper : IAPIHelper
     }
 
 
-    public async Task<List<string>?> GetListUsers(string endpoint)
+    public async Task<List<string>?> GetListUsers(string endpoint, IDownloadConfig config)
     {
+        if (config.EnableDebugLogs)
+            Log.Debug("Calling GetListUsers - " + endpoint);
+
         try
         {
             int offset = 0;
@@ -435,7 +450,7 @@ public class APIHelper : IAPIHelper
 
             while (true)
             {
-                var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient());
+                var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient(), config.EnableDebugLogs);
                 if (body == null)
                 {
                     break;
@@ -486,6 +501,10 @@ public class APIHelper : IAPIHelper
                                                          IDownloadConfig config,
                                                          List<long> paid_post_ids)
     {
+
+        if (config.EnableDebugLogs)
+            Log.Debug("Calling GetMedia - " + username);
+
         try
         {
             Dictionary<long, string> return_urls = new();
@@ -515,11 +534,14 @@ public class APIHelper : IAPIHelper
                     break;
             }
 
-            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient());
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient(), config.EnableDebugLogs);
 
 
             if (mediatype == MediaType.Stories)
             {
+                if (config.EnableDebugLogs)
+                    Log.Debug("Media Stories - " + endpoint);
+
                 var stories = JsonConvert.DeserializeObject<List<Stories>>(body, m_JsonSerializerSettings) ?? new List<Stories>();
                 stories = stories.OrderByDescending(x => x.createdAt).ToList();
 
@@ -578,7 +600,10 @@ public class APIHelper : IAPIHelper
                     {
                         Highlights newhighlights = new();
 
-                        var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
+                        if (config.EnableDebugLogs)
+                            Log.Debug("Media Highlights - " + endpoint);
+
+                        var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config), config.EnableDebugLogs);
                         newhighlights = JsonConvert.DeserializeObject<Highlights>(loopbody, m_JsonSerializerSettings);
 
                         highlights.list.AddRange(newhighlights.list);
@@ -672,6 +697,9 @@ public class APIHelper : IAPIHelper
 
     public async Task<PaidPostCollection> GetPaidPosts(string endpoint, string folder, string username, IDownloadConfig config, List<long> paid_post_ids)
     {
+        if (config.EnableDebugLogs)
+            Log.Debug("Calling GetPaidPosts - " + username);
+
         try
         {
             Purchased paidPosts = new();
@@ -685,7 +713,7 @@ public class APIHelper : IAPIHelper
                 { "user_id", username }
             };
 
-            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config), config.EnableDebugLogs);
             paidPosts = JsonConvert.DeserializeObject<Purchased>(body, m_JsonSerializerSettings);
             if (paidPosts != null && paidPosts.hasMore)
             {
@@ -695,7 +723,7 @@ public class APIHelper : IAPIHelper
 
                     Purchased newPaidPosts = new();
 
-                    var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
+                    var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config), config.EnableDebugLogs);
                     newPaidPosts = JsonConvert.DeserializeObject<Purchased>(loopbody, m_JsonSerializerSettings);
 
                     paidPosts.list.AddRange(newPaidPosts.list);
@@ -826,6 +854,9 @@ public class APIHelper : IAPIHelper
 
     public async Task<PostCollection> GetPosts(string endpoint, string folder, IDownloadConfig config, List<long> paid_post_ids)
     {
+        if (config.EnableDebugLogs)
+            Log.Debug("Calling GetPosts - " + endpoint);
+
         try
         {
             Post posts = new();
@@ -861,7 +892,7 @@ public class APIHelper : IAPIHelper
                 ref getParams,
                 downloadAsOf);
 
-            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient());
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient(), config.EnableDebugLogs);
             posts = JsonConvert.DeserializeObject<Post>(body, m_JsonSerializerSettings);
             if (posts != null && posts.hasMore)
             {
@@ -875,7 +906,7 @@ public class APIHelper : IAPIHelper
                 {
                     Post newposts = new();
 
-                    var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
+                    var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config), config.EnableDebugLogs);
                     newposts = JsonConvert.DeserializeObject<Post>(loopbody, m_JsonSerializerSettings);
 
                     posts.list.AddRange(newposts.list);
@@ -1003,6 +1034,9 @@ public class APIHelper : IAPIHelper
     }
     public async Task<SinglePostCollection> GetPost(string endpoint, string folder, IDownloadConfig config)
     {
+        if (config.EnableDebugLogs)
+            Log.Debug("Calling GetPost - " + folder);
+
         try
         {
             SinglePost singlePost = new();
@@ -1012,7 +1046,7 @@ public class APIHelper : IAPIHelper
                 { "skip_users", "all" }
             };
 
-            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient());
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient(), config.EnableDebugLogs);
             singlePost = JsonConvert.DeserializeObject<SinglePost>(body, m_JsonSerializerSettings);
 
             if (singlePost != null)
@@ -1114,7 +1148,10 @@ public class APIHelper : IAPIHelper
 
     public async Task<StreamsCollection> GetStreams(string endpoint, string folder, IDownloadConfig config, List<long> paid_post_ids)
     {
-        try
+        if (config.EnableDebugLogs)
+            Log.Debug("Calling GetStreams - " + endpoint);
+
+            try
         {
             Streams streams = new();
             StreamsCollection streamsCollection = new();
@@ -1137,7 +1174,7 @@ public class APIHelper : IAPIHelper
                 ref getParams,
                 config.CustomDate);
 
-            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient());
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient(), config.EnableDebugLogs);
             streams = JsonConvert.DeserializeObject<Streams>(body, m_JsonSerializerSettings);
             if (streams != null && streams.hasMore)
             {
@@ -1151,7 +1188,7 @@ public class APIHelper : IAPIHelper
                 {
                     Streams newstreams = new();
 
-                    var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
+                    var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config), config.EnableDebugLogs);
                     newstreams = JsonConvert.DeserializeObject<Streams>(loopbody, m_JsonSerializerSettings);
 
                     streams.list.AddRange(newstreams.list);
@@ -1254,6 +1291,9 @@ public class APIHelper : IAPIHelper
 
     public async Task<ArchivedCollection> GetArchived(string endpoint, string folder, IDownloadConfig config)
     {
+        if (config.EnableDebugLogs)
+            Log.Debug("Calling GetArchived - " + endpoint);
+
         try
         {
             Archived archived = new();
@@ -1280,7 +1320,7 @@ public class APIHelper : IAPIHelper
                 ref getParams,
                 config.CustomDate);
 
-            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config), config.EnableDebugLogs);
             archived = JsonConvert.DeserializeObject<Archived>(body, m_JsonSerializerSettings);
             if (archived != null && archived.hasMore)
             {
@@ -1292,7 +1332,7 @@ public class APIHelper : IAPIHelper
                 {
                     Archived newarchived = new();
 
-                    var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
+                    var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config), config.EnableDebugLogs);
                     newarchived = JsonConvert.DeserializeObject<Archived>(loopbody, m_JsonSerializerSettings);
 
                     archived.list.AddRange(newarchived.list);
@@ -1386,6 +1426,9 @@ public class APIHelper : IAPIHelper
 
     public async Task<MessageCollection> GetMessages(string endpoint, string folder, IDownloadConfig config)
     {
+        if (config.EnableDebugLogs)
+            Log.Debug("Calling GetMessages - " + endpoint);
+
         try
         {
             Messages messages = new();
@@ -1397,7 +1440,7 @@ public class APIHelper : IAPIHelper
                 { "order", "desc" }
             };
 
-            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config), config.EnableDebugLogs);
             messages = JsonConvert.DeserializeObject<Messages>(body, m_JsonSerializerSettings);
             if (messages.hasMore)
             {
@@ -1406,7 +1449,7 @@ public class APIHelper : IAPIHelper
                 {
                     Messages newmessages = new();
 
-                    var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
+                    var loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config), config.EnableDebugLogs);
                     newmessages = JsonConvert.DeserializeObject<Messages>(loopbody, m_JsonSerializerSettings);
 
                     messages.list.AddRange(newmessages.list);
@@ -1573,6 +1616,9 @@ public class APIHelper : IAPIHelper
 
     public async Task<PaidMessageCollection> GetPaidMessages(string endpoint, string folder, string username, IDownloadConfig config)
     {
+        if (config.EnableDebugLogs)
+            Log.Debug("Calling GetPaidMessages - " + username);
+
         try
         {
             Purchased paidMessages = new();
@@ -1586,7 +1632,7 @@ public class APIHelper : IAPIHelper
                 { "user_id", username }
             };
 
-            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config), config.EnableDebugLogs);
             paidMessages = JsonConvert.DeserializeObject<Purchased>(body, m_JsonSerializerSettings);
             if (paidMessages != null && paidMessages.hasMore)
             {
@@ -1788,6 +1834,9 @@ public class APIHelper : IAPIHelper
 
     public async Task<Dictionary<string, int>> GetPurchasedTabUsers(string endpoint, IDownloadConfig config, Dictionary<string, int> users)
     {
+        if (config.EnableDebugLogs)
+            Log.Debug("Calling GetPurchasedTabUsers - " + endpoint);
+
         try
         {
             Dictionary<string, int> purchasedTabUsers = new();
@@ -1800,7 +1849,7 @@ public class APIHelper : IAPIHelper
                 { "format", "infinite" }
             };
 
-            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config), config.EnableDebugLogs);
             purchased = JsonConvert.DeserializeObject<Purchased>(body, m_JsonSerializerSettings);
             if (purchased != null && purchased.hasMore)
             {
@@ -1952,6 +2001,9 @@ public class APIHelper : IAPIHelper
 
     public async Task<List<PurchasedTabCollection>> GetPurchasedTab(string endpoint, string folder, IDownloadConfig config, Dictionary<string, int> users)
     {
+        if (config.EnableDebugLogs)
+            Log.Debug("Calling GetPurchasedTab - " + endpoint);
+
         try
         {
             Dictionary<long, List<Purchased.List>> userPurchases = new Dictionary<long, List<Purchased.List>>();
@@ -1965,7 +2017,7 @@ public class APIHelper : IAPIHelper
                 { "format", "infinite" }
             };
 
-            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
+            var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config), config.EnableDebugLogs);
             purchased = JsonConvert.DeserializeObject<Purchased>(body, m_JsonSerializerSettings);
             if (purchased != null && purchased.hasMore)
             {
