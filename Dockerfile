@@ -9,7 +9,7 @@ COPY ["OF DL", "/src/OF DL"]
 WORKDIR "/src"
 
 # Build release
-RUN dotnet publish -p Version=$VERSION -c Release -o out
+RUN dotnet publish -p:Version=$VERSION -c Release --self-contained true -p:PublishSingleFile=true -o out
 
 
 FROM mcr.microsoft.com/dotnet/runtime:7.0-jammy
