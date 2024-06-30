@@ -70,9 +70,9 @@ public class DownloadHelper : IDownloadHelper
         try
         {
             string customFileName = string.Empty;
-            if (!Directory.Exists(folder + path)) // check if the folder already exists
+            if (!Directory.Exists(folder + path)) 
             {
-                Directory.CreateDirectory(folder + path); // create the new folder
+                Directory.CreateDirectory(folder + path); 
             }
             string extension = Path.GetExtension(url.Split("?")[0]);
 
@@ -785,19 +785,19 @@ public class DownloadHelper : IDownloadHelper
     {
         try
         {
-            string path = $"/Profile"; // specify the path for the new folder
+            string path = $"/Profile"; 
 
-            if (!Directory.Exists(folder + path)) // check if the folder already exists
+            if (!Directory.Exists(folder + path)) 
             {
-                Directory.CreateDirectory(folder + path); // create the new folder
+                Directory.CreateDirectory(folder + path); 
             }
 
             if (!string.IsNullOrEmpty(avatarUrl))
             {
                 string avatarpath = $"{path}/Avatars";
-                if (!Directory.Exists(folder + avatarpath)) // check if the folder already exists
+                if (!Directory.Exists(folder + avatarpath)) 
                 {
-                    Directory.CreateDirectory(folder + avatarpath); // create the new folder
+                    Directory.CreateDirectory(folder + avatarpath); 
                 }
 
                 List<string> avatarMD5Hashes = WidevineClient.Utils.CalculateFolderMD5(folder + avatarpath);
@@ -838,9 +838,9 @@ public class DownloadHelper : IDownloadHelper
             if (!string.IsNullOrEmpty(headerUrl))
             {
                 string headerpath = $"{path}/Headers";
-                if (!Directory.Exists(folder + headerpath)) // check if the folder already exists
+                if (!Directory.Exists(folder + headerpath)) 
                 {
-                    Directory.CreateDirectory(folder + headerpath); // create the new folder
+                    Directory.CreateDirectory(folder + headerpath); 
                 }
 
                 List<string> headerMD5Hashes = WidevineClient.Utils.CalculateFolderMD5(folder + headerpath);
@@ -907,9 +907,9 @@ public class DownloadHelper : IDownloadHelper
             {
                 path = "/Messages/Free/Videos";
             }
-            if (!Directory.Exists(folder + path)) // check if the folder already exists
+            if (!Directory.Exists(folder + path)) 
             {
-                Directory.CreateDirectory(folder + path); // create the new folder
+                Directory.CreateDirectory(folder + path); 
             }
 
 
@@ -991,9 +991,9 @@ public class DownloadHelper : IDownloadHelper
             {
                 path = "/Messages/Paid/Videos";
             }
-            if (!Directory.Exists(folder + path)) // check if the folder already exists
+            if (!Directory.Exists(folder + path)) 
             {
-                Directory.CreateDirectory(folder + path); // create the new folder
+                Directory.CreateDirectory(folder + path); 
             }
 
             if (!string.IsNullOrEmpty(filenameFormat) && messageInfo != null && messageMedia != null)
@@ -1074,9 +1074,9 @@ public class DownloadHelper : IDownloadHelper
             {
                 path = "/Posts/Free/Videos";
             }
-            if (!Directory.Exists(folder + path)) // check if the folder already exists
+            if (!Directory.Exists(folder + path)) 
             {
-                Directory.CreateDirectory(folder + path); // create the new folder
+                Directory.CreateDirectory(folder + path); 
             }
 
             if (!string.IsNullOrEmpty(filenameFormat) && postInfo != null && postMedia != null)
@@ -1155,9 +1155,9 @@ public class DownloadHelper : IDownloadHelper
             {
                 path = "/Posts/Free/Videos";
             }
-            if (!Directory.Exists(folder + path)) // check if the folder already exists
+            if (!Directory.Exists(folder + path)) 
             {
-                Directory.CreateDirectory(folder + path); // create the new folder
+                Directory.CreateDirectory(folder + path); 
             }
 
             if (!string.IsNullOrEmpty(filenameFormat) && postInfo != null && postMedia != null)
@@ -1318,9 +1318,9 @@ public class DownloadHelper : IDownloadHelper
             {
                 path = "/Posts/Paid/Videos";
             }
-            if (!Directory.Exists(folder + path)) // check if the folder already exists
+            if (!Directory.Exists(folder + path)) 
             {
-                Directory.CreateDirectory(folder + path); // create the new folder
+                Directory.CreateDirectory(folder + path); 
             }
 
 
@@ -1394,9 +1394,9 @@ public class DownloadHelper : IDownloadHelper
             Uri uri = new(url);
             string filename = System.IO.Path.GetFileName(uri.LocalPath).Split(".")[0];
             string path = "/Archived/Posts/Free/Videos";
-            if (!Directory.Exists(folder + path)) // check if the folder already exists
+            if (!Directory.Exists(folder + path)) 
             {
-                Directory.CreateDirectory(folder + path); // create the new folder
+                Directory.CreateDirectory(folder + path); 
             }
 
             if (!string.IsNullOrEmpty(filenameFormat) && postInfo != null && postMedia != null)

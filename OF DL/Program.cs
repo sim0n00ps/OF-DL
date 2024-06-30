@@ -377,12 +377,12 @@ public class Program
                     }
                     else
                     {
-                        path = $"__user_data__/sites/OnlyFans/{username}"; // specify the path for the new folder
+                        path = $"__user_data__/sites/OnlyFans/{username}"; 
                     }
 
-                    if (!Directory.Exists(path)) // check if the folder already exists
+                    if (!Directory.Exists(path)) 
                     {
-                        Directory.CreateDirectory(path); // create the new folder
+                        Directory.CreateDirectory(path); 
                         AnsiConsole.Markup($"[red]Created folder for {username}\n[/]");
                     }
                     else
@@ -450,7 +450,7 @@ public class Program
                     }
                     else
                     {
-                        path = $"__user_data__/sites/OnlyFans/{purchasedTabCollection.Username}"; // specify the path for the new folder
+                        path = $"__user_data__/sites/OnlyFans/{purchasedTabCollection.Username}"; 
                     }
 
                     var downloadContext = new DownloadContext(Auth, Config, GetCreatorFileNameFormatConfig(Config, purchasedTabCollection.Username), m_ApiHelper, dBHelper);
@@ -476,8 +476,8 @@ public class Program
                 //https://onlyfans.com/my/chats/chat/70196897/?firstId=3127582635776
 
                 string messageUrl = AnsiConsole.Prompt(
-                    new TextPrompt<string>("[red]Please enter a post URL: [/]")
-                        .ValidationErrorMessage("[red]Please enter a valid post URL[/]")
+                    new TextPrompt<string>("[red]Please enter a message URL: [/]")
+                        .ValidationErrorMessage("[red]Please enter a valid message URL[/]")
                         .Validate(url =>
                         {
                             Regex regex = new Regex("https://onlyfans\\.com/my/chats/chat/[0-9]+/\\?firstId=[0-9]+$", RegexOptions.IgnoreCase);
@@ -511,12 +511,12 @@ public class Program
                 }
                 else
                 {
-                    path = $"__user_data__/sites/OnlyFans/{username}"; // specify the path for the new folder
+                    path = $"__user_data__/sites/OnlyFans/{username}"; 
                 }
 
-                if (!Directory.Exists(path)) // check if the folder already exists
+                if (!Directory.Exists(path)) 
                 {
-                    Directory.CreateDirectory(path); // create the new folder
+                    Directory.CreateDirectory(path); 
                     AnsiConsole.Markup($"[red]Created folder for {username}\n[/]");
                 }
                 else
@@ -553,14 +553,14 @@ public class Program
                     }
                     else
                     {
-                        path = $"__user_data__/sites/OnlyFans/{user.Key}"; // specify the path for the new folder
+                        path = $"__user_data__/sites/OnlyFans/{user.Key}"; 
                     }
 
                     await dBHelper.CheckUsername(user, path);
 
-                    if (!Directory.Exists(path)) // check if the folder already exists
+                    if (!Directory.Exists(path)) 
                     {
-                        Directory.CreateDirectory(path); // create the new folder
+                        Directory.CreateDirectory(path); 
                         AnsiConsole.Markup($"[red]Created folder for {user.Key}\n[/]");
                     }
                     else
