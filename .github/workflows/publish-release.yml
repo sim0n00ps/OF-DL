@@ -57,3 +57,5 @@ jobs:
           asset_path: ./OFDLV${{ steps.version.outputs.version }}.zip
           asset_name: OFDLV${{ steps.version.outputs.version }}.zip
           asset_content_type: application/zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
