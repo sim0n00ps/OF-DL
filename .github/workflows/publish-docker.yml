@@ -1,4 +1,4 @@
-﻿name: Publish Docker image
+name: Publish Docker image
 
 on:
   push:
@@ -16,7 +16,6 @@ jobs:
           VERSION="${GITHUB_REF_NAME#OFDLV}"
           echo "Version: $VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -42,3 +41,5 @@ jobs:
           tags: |
             ghcr.io/${{ github.actor }}/of-dl:latest
             ghcr.io/${{ github.actor }}/of-dl:${{ steps.version.outputs.version }}
+          build-args: |
+            VERSION=${{ steps.version.outputs.version }}
