@@ -1,5 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:7.0 as build
 
+ARG VERSION
+
 # Copy source code
 COPY ["OF DL.sln", "/src/OF DL.sln"]
 COPY ["OF DL", "/src/OF DL"]
@@ -7,7 +9,7 @@ COPY ["OF DL", "/src/OF DL"]
 WORKDIR "/src"
 
 # Build release
-RUN dotnet publish -c Release -o out
+RUN dotnet publish -p Version=$VERSION -c Release -o out
 
 
 FROM mcr.microsoft.com/dotnet/runtime:7.0-jammy

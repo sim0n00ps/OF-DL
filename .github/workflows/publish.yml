@@ -39,6 +39,8 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
+          build-args: |
+            VERSION=${{ steps.version.outputs.version }}
           tags: |
             ghcr.io/${{ github.actor }}/of-dl:latest
             ghcr.io/${{ github.actor }}/of-dl:${{ steps.version.outputs.version }}

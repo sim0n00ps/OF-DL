@@ -41,7 +41,11 @@ public class Program
 
             AnsiConsole.Write(new FigletText("Welcome to OF-DL").Color(Color.Red));
 
-
+            var version = Assembly.GetEntryAssembly()?.GetName().Version;
+            if (version != null)
+            {
+                AnsiConsole.Markup("[green]Version: " + $"{version.Major}.{version.Minor}.{version.Build}\n[/]");
+            }
 
             if (args is not null && args.Length > 0)
             {
