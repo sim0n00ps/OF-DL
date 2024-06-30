@@ -1,4 +1,4 @@
-name: Publish Docker image
+name: Publish release zip
 
 on:
   push:
@@ -6,40 +6,56 @@ on:
       - 'OFDLV*'
 
 jobs:
-  push_to_registry:
-    name: Push docker image to registry
+  build:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup dotnet 7.x
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 7.x
+
+      - name: Display dotnet version
+        run: dotnet --version
+
       - name: Extract version
         id: version
         run: |
           VERSION="${GITHUB_REF_NAME#OFDLV}"
           echo "Version: $VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-      - name: Checkout
-        uses: actions/checkout@v4
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      - name: Run build
+        run: |
+          dotnet publish -p:Version=${{ steps.version.outputs.version }} -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o outwin
+          dotnet publish -p:Version=${{ steps.version.outputs.version }} -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -o outlin
+          cp ./OF\ DL/rules.json outwin/
+          chmod +x ./outlin/OF\ DL
+          cd outwin
+          ../outlin/OF\ DL --non-interactive || true
+          ../outlin/OF\ DL --non-interactive || true
+          mkdir -p cdm/devices/chrome_1610
+          zip ../OFDLV${{ steps.version.outputs.version }}.zip OF\ DL.exe e_sqlite3.dll rules.json config.json auth.json cdm
+          cd ..
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to ghcr
-        uses: docker/login-action@v3
+      - name: Create release
+        uses: actions/create-release@v1
+        id: create_release
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          draft: true
+          prerelease: false
+          release_name: ${{ steps.version.outputs.version }}
+          tag_name: ${{ github.ref }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+      - name: Upload Windows zip
+        uses: actions/upload-release-asset@v1
         with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ghcr.io/${{ github.actor }}/of-dl:latest
-            ghcr.io/${{ github.actor }}/of-dl:${{ steps.version.outputs.version }}
-          build-args: |
-            VERSION=${{ steps.version.outputs.version }}
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./OFDLV${{ steps.version.outputs.version }}.zip
+          asset_name: OFDLV${{ steps.version.outputs.version }}.zip
+          asset_content_type: application/zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
