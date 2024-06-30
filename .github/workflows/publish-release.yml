@@ -1,4 +1,4 @@
-﻿name: Publish release zip
+name: Publish release zip
 
 on:
   push:
@@ -11,12 +11,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup dotnet 8.x
+      - name: Setup dotnet 7.x
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: 8.x
+          dotnet-version: 7.x
 
-      # You can test your matrix by printing the current dotnet version
       - name: Display dotnet version
         run: dotnet --version
 
@@ -29,8 +28,8 @@ jobs:
 
       - name: Run build
         run: |
-          dotnet publish -p Version=${{ steps.version.outputs.version }} --property WarningLevel=0 -c Release -r win10-x64 -o outwin
-          dotnet publish -p Version=${{ steps.version.outputs.version }} --property WarningLevel=0 -c Release -r linux-x64 -o outlin
+          dotnet publish -p:Version=${{ steps.version.outputs.version }} -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o outwin
+          dotnet publish -p:Version=${{ steps.version.outputs.version }} -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -o outlin
           cp ./OF\ DL/rules.json outwin/
           chmod +x ./outlin/OF\ DL
           cd outwin
@@ -40,7 +39,7 @@ jobs:
           zip ../OFDLV${{ steps.version.outputs.version }}.zip OF\ DL.exe e_sqlite3.dll rules.json config.json auth.json cdm
           cd ..
 
-      - name: release
+      - name: Create release
         uses: actions/create-release@v1
         id: create_release
         with:
@@ -49,12 +48,10 @@ jobs:
           release_name: ${{ steps.version.outputs.version }}
           tag_name: ${{ github.ref }}
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: upload Windows zip
+      - name: Upload Windows zip
         uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./OFDLV${{ steps.version.outputs.version }}.zip
