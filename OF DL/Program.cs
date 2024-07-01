@@ -1055,6 +1055,7 @@ public class Program
         if (highlights != null && highlights.Count > 0)
         {
             AnsiConsole.Markup($"[red]Found {highlights.Count} Highlights\n[/]");
+            Log.Debug($"Found {highlights.Count} Highlights");
             highlightsCount = highlights.Count;
             long totalSize = 0;
             if (downloadContext.DownloadConfig.ShowScrapeSize)
@@ -1071,6 +1072,7 @@ public class Program
             {
                 // Define tasks
                 var task = ctx.AddTask($"[red]Downloading {highlights.Count} Highlights[/]", autoStart: false);
+                Log.Debug($"Downloading {highlights.Count} Highlights");
                 task.MaxValue = totalSize;
                 task.StartTask();
                 foreach (KeyValuePair<long, string> highlightKVP in highlights)
@@ -1088,10 +1090,12 @@ public class Program
                 task.StopTask();
             });
             AnsiConsole.Markup($"[red]Highlights Already Downloaded: {oldHighlightsCount} New Highlights Downloaded: {newHighlightsCount}[/]\n");
+            Log.Debug($"Highlights Already Downloaded: {oldHighlightsCount} New Highlights Downloaded: {newHighlightsCount}");
         }
         else
         {
             AnsiConsole.Markup($"[red]Found 0 Highlights\n[/]");
+            Log.Debug($"Found 0 Highlights");
         }
 
         return highlightsCount;
@@ -1108,6 +1112,7 @@ public class Program
         if (stories != null && stories.Count > 0)
         {
             AnsiConsole.Markup($"[red]Found {stories.Count} Stories\n[/]");
+            Log.Debug($"Found {stories.Count} Stories");
             storiesCount = stories.Count;
             long totalSize = 0;
             if (downloadContext.DownloadConfig.ShowScrapeSize)
@@ -1124,6 +1129,7 @@ public class Program
             {
                 // Define tasks
                 var task = ctx.AddTask($"[red]Downloading {stories.Count} Stories[/]", autoStart: false);
+                Log.Debug($"Downloading {stories.Count} Stories");
                 task.MaxValue = totalSize;
                 task.StartTask();
                 foreach (KeyValuePair<long, string> storyKVP in stories)
@@ -1141,10 +1147,12 @@ public class Program
                 task.StopTask();
             });
             AnsiConsole.Markup($"[red]Stories Already Downloaded: {oldStoriesCount} New Stories Downloaded: {newStoriesCount}[/]\n");
+            Log.Debug($"Stories Already Downloaded: {oldStoriesCount} New Stories Downloaded: {newStoriesCount}");
         }
         else
         {
             AnsiConsole.Markup($"[red]Found 0 Stories\n[/]");
+            Log.Debug($"Found 0 Stories");
         }
 
         return storiesCount;
@@ -1290,10 +1298,12 @@ public class Program
         if (posts == null || posts.Posts.Count <= 0)
         {
             AnsiConsole.Markup($"[red]Found 0 Posts\n[/]");
+            Log.Debug($"Found 0 Posts");
             return 0;
         }
 
         AnsiConsole.Markup($"[red]Found {posts.Posts.Count} Posts\n[/]");
+        Log.Debug($"Found {posts.Posts.Count} Posts");
         postCount = posts.Posts.Count;
         long totalSize = 0;
         if (downloadContext.DownloadConfig.ShowScrapeSize)
@@ -1309,6 +1319,7 @@ public class Program
         .StartAsync(async ctx =>
         {
             var task = ctx.AddTask($"[red]Downloading {posts.Posts.Count} Posts[/]", autoStart: false);
+            Log.Debug($"Downloading {posts.Posts.Count} Posts");
             task.MaxValue = totalSize;
             task.StartTask();
             foreach (KeyValuePair<long, string> postKVP in posts.Posts)
@@ -1405,6 +1416,7 @@ public class Program
             task.StopTask();
         });
         AnsiConsole.Markup($"[red]Posts Already Downloaded: {oldPostCount} New Posts Downloaded: {newPostCount}[/]\n");
+        Log.Debug("Posts Already Downloaded: {oldPostCount} New Posts Downloaded: {newPostCount}");
 
         return postCount;
     }
@@ -2325,6 +2337,9 @@ public class Program
                         string newConfigString = JsonConvert.SerializeObject(newConfig, Formatting.Indented);
                         File.WriteAllText("config.json", newConfigString);
 
+                        Log.Debug($"Config changed:");
+                        Log.Debug(newConfigString);
+
                         currentConfig = newConfig;
                         if (configChanged)
                         {
@@ -2366,6 +2381,8 @@ public class Program
                         levelOption = levelOption.Replace("[red]", "").Replace("[/]", "");
                         LoggingLevel newLogLevel = (LoggingLevel)Enum.Parse(typeof(LoggingLevel), levelOption, true);
                         levelSwitch.MinimumLevel = (LogEventLevel)newLogLevel;
+
+                        Log.Debug($"Logging level changed to: {levelOption}");
 
                         bool configChanged = false;
 
