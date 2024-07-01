@@ -89,8 +89,8 @@ namespace OF_DL.Entities
 
         [ToggleableConfig]
         public bool DownloadDuplicatedMedia { get; set; } = false;
-        [ToggleableConfig]
-        public bool EnableDebugLogs { get; set; } = false;
+        [JsonConverter(typeof(StringEnumConverter))]
+        public LoggingLevel LoggingLevel { get; set; } = LoggingLevel.Error;
     }
 
     public class CreatorConfig : IFileNameFormatConfig

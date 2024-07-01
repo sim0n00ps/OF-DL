@@ -35,6 +35,9 @@
     <None Update="auth.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="config.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="rules.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
