@@ -258,6 +258,9 @@ public class Program
             //Check if auth is valid
             var apiHelper = new APIHelper(auth, config);
 
+            //set actual logging level
+            levelSwitch.MinimumLevel = (LogEventLevel)config.LoggingLevel;
+
             Entities.User validate = await apiHelper.GetUserInfo($"/users/me");
             if (validate?.name == null && validate?.username == null)
             {
