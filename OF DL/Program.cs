@@ -6,9 +6,12 @@ using OF_DL.Entities.Messages;
 using OF_DL.Entities.Post;
 using OF_DL.Entities.Purchased;
 using OF_DL.Entities.Streams;
+using OF_DL.Enumerations;
 using OF_DL.Enumurations;
 using OF_DL.Helpers;
 using Serilog;
+using Serilog.Core;
+using Serilog.Events;
 using Spectre.Console;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -26,6 +29,7 @@ public class Program
     private static bool devicePrivateKeyMissing = false;
     private static Config? config = null;
     private static Auth? auth = null;
+    private static LoggingLevelSwitch levelSwitch = new LoggingLevelSwitch();
 
     public async static Task Main(string[] args)
     {
@@ -33,11 +37,12 @@ public class Program
 
         try
         {
+            levelSwitch.MinimumLevel = LogEventLevel.Error; //set initial level (until we've read from config)
+
             Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
+                .MinimumLevel.ControlledBy(levelSwitch)
                 .WriteTo.File("logs/OFDL.txt", rollingInterval: RollingInterval.Day)
                 .CreateLogger();
-
 
             AnsiConsole.Write(new FigletText("Welcome to OF-DL").Color(Color.Red));
 
@@ -293,8 +298,7 @@ public class Program
     {
         DBHelper dBHelper = new DBHelper(Config);
 
-        if (Config.EnableDebugLogs)
-            Log.Debug("Calling DownloadAllData");
+        Log.Debug("Calling DownloadAllData");
 
         do
         {
@@ -682,8 +686,7 @@ public class Program
 
     private static async Task<int> DownloadPaidMessages(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int paidMessagesCount, string path)
     {
-        if (config.EnableDebugLogs)
-            Log.Debug("Calling DownloadPaidMessages - " + user.Key);
+        Log.Debug("Calling DownloadPaidMessages - " + user.Key);
 
         AnsiConsole.Markup($"[red]Getting Paid Messages\n[/]");
         //Dictionary<long, string> purchased = await apiHelper.GetMedia(MediaType.PaidMessages, "/posts/paid", user.Key, path, auth, paid_post_ids);
@@ -810,8 +813,7 @@ public class Program
 
     private static async Task<int> DownloadMessages(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int messagesCount, string path)
     {
-        if (config.EnableDebugLogs)
-            Log.Debug("Calling DownloadMessages - " + user.Key);
+        Log.Debug("Calling DownloadMessages - " + user.Key);
 
         AnsiConsole.Markup($"[red]Getting Messages\n[/]");
         //Dictionary<long, string> messages = await apiHelper.GetMedia(MediaType.Messages, $"/chats/{user.Value}/messages", null, path, auth, paid_post_ids);
@@ -938,8 +940,7 @@ public class Program
 
     private static async Task<int> DownloadHighlights(IDownloadContext downloadContext, KeyValuePair<string, int> user, int highlightsCount, string path)
     {
-        if (config.EnableDebugLogs)
-            Log.Debug("Calling DownloadHighlights - " + user.Key);
+        Log.Debug("Calling DownloadHighlights - " + user.Key);
 
         AnsiConsole.Markup($"[red]Getting Highlights\n[/]");
         Dictionary<long, string> highlights = await downloadContext.ApiHelper.GetMedia(MediaType.Highlights, $"/users/{user.Value}/stories/highlights", null, path, downloadContext.DownloadConfig!, paid_post_ids);
@@ -992,8 +993,7 @@ public class Program
 
     private static async Task<int> DownloadStories(IDownloadContext downloadContext, KeyValuePair<string, int> user, int storiesCount, string path)
     {
-        if (config.EnableDebugLogs)
-            Log.Debug("Calling DownloadStories - " + user.Key);
+        Log.Debug("Calling DownloadStories - " + user.Key);
 
         AnsiConsole.Markup($"[red]Getting Stories\n[/]");
         Dictionary<long, string> stories = await downloadContext.ApiHelper.GetMedia(MediaType.Stories, $"/users/{user.Value}/stories", null, path, downloadContext.DownloadConfig!, paid_post_ids);
@@ -1046,8 +1046,7 @@ public class Program
 
     private static async Task<int> DownloadArchived(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int archivedCount, string path)
     {
-        if (config.EnableDebugLogs)
-            Log.Debug("Calling DownloadArchived - " + user.Key);
+        Log.Debug("Calling DownloadArchived - " + user.Key);
 
         AnsiConsole.Markup($"[red]Getting Archived Posts\n[/]");
         //Dictionary<long, string> archived = await apiHelper.GetMedia(MediaType.Archived, $"/users/{user.Value}/posts", null, path, auth, paid_post_ids);
@@ -1173,8 +1172,7 @@ public class Program
 
     private static async Task<int> DownloadFreePosts(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int postCount, string path)
     {
-        if (config.EnableDebugLogs)
-            Log.Debug("Calling DownloadFreePosts - " + user.Key);
+        Log.Debug("Calling DownloadFreePosts - " + user.Key);
 
         AnsiConsole.Markup($"[red]Getting Posts\n[/]");
         //Dictionary<long, string> posts = await apiHelper.GetMedia(MediaType.Posts, $"/users/{user.Value}/posts", null, path, auth, paid_post_ids);
@@ -1307,8 +1305,7 @@ public class Program
     {
         AnsiConsole.Markup($"[red]Getting Paid Posts\n[/]");
 
-        if (config.EnableDebugLogs)
-            Log.Debug("Calling DownloadPaidPosts - " + user.Key);
+        Log.Debug("Calling DownloadPaidPosts - " + user.Key);
 
         //Dictionary<long, string> purchasedPosts = await apiHelper.GetMedia(MediaType.PaidPosts, "/posts/paid", user.Key, path, auth, paid_post_ids);
         PaidPostCollection purchasedPosts = await downloadContext.ApiHelper.GetPaidPosts("/posts/paid", path, user.Key, downloadContext.DownloadConfig!, paid_post_ids);
@@ -1673,8 +1670,7 @@ public class Program
 
     private static async Task<int> DownloadStreams(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int streamsCount, string path)
     {
-        if (config.EnableDebugLogs)
-            Log.Debug("Calling DownloadStreams - " + user.Key);
+        Log.Debug("Calling DownloadStreams - " + user.Key);
 
         AnsiConsole.Markup($"[red]Getting Streams\n[/]");
         StreamsCollection streams = await downloadContext.ApiHelper.GetStreams($"/users/{user.Value}/posts/streams", path, downloadContext.DownloadConfig!, paid_post_ids);
@@ -1804,8 +1800,7 @@ public class Program
 
     private static async Task<int> DownloadPaidMessage(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, string username, int paidMessagesCount, string path, long message_id)
     {
-        if (config.EnableDebugLogs)
-            Log.Debug("Calling DownloadPaidMessage - " + username);
+        Log.Debug("Calling DownloadPaidMessage - " + username);
 
         AnsiConsole.Markup($"[red]Getting Paid Message\n[/]");
         
@@ -1931,8 +1926,7 @@ public class Program
 
     private static async Task DownloadSinglePost(IDownloadContext downloadContext, long post_id, string path, Dictionary<string, int> users)
     {
-        if (config.EnableDebugLogs)
-            Log.Debug("Calling DownloadSinglePost - " + post_id.ToString());
+        Log.Debug("Calling DownloadSinglePost - " + post_id.ToString());
 
         AnsiConsole.Markup($"[red]Getting Post\n[/]");
         SinglePostCollection post = await downloadContext.ApiHelper.GetPost($"/posts/{post_id.ToString()}", path, downloadContext.DownloadConfig!);
@@ -2210,6 +2204,61 @@ public class Program
                         break;
                     }
                     break;
+                case "[red]Change logging level[/]":
+                    while (true)
+                    {
+                        var choices = new List<(string choice, bool isSelected)>
+                        {
+                            ("[red]Go Back[/]", false)
+                        };
+
+                        foreach (string name in typeof(LoggingLevel).GetEnumNames())
+                        {
+                                string itemLabel = $"[red]{name}[/]";
+                                choices.Add(new(itemLabel, name == levelSwitch.MinimumLevel.ToString()));
+                        }
+
+                        SelectionPrompt<string> selectionPrompt = new SelectionPrompt<string>()
+                            .Title("[red]Select logging level[/]")
+                            .PageSize(25);
+
+                        foreach (var choice in choices)
+                        {
+                            selectionPrompt.AddChoice(choice.choice);
+                        }
+
+                        string levelOption = AnsiConsole.Prompt(selectionPrompt);
+
+                        if (levelOption.Contains("[red]Go Back[/]"))
+                        {
+                            break;
+                        }
+
+                        levelOption = levelOption.Replace("[red]", "").Replace("[/]", "");
+                        LoggingLevel newLogLevel = (LoggingLevel)Enum.Parse(typeof(LoggingLevel), levelOption, true);
+                        levelSwitch.MinimumLevel = (LogEventLevel)newLogLevel;
+
+                        bool configChanged = false;
+
+                        Config newConfig = new Config();
+
+                        newConfig = currentConfig;
+
+                        newConfig.LoggingLevel = newLogLevel;
+
+                        currentConfig = newConfig;
+
+                        string newConfigString = JsonConvert.SerializeObject(newConfig, Formatting.Indented);
+                        File.WriteAllText("config.json", newConfigString);
+
+                        if (configChanged)
+                        {
+                            return (true, new Dictionary<string, int> { { "ConfigChanged", 0 } }, currentConfig);
+                        }
+
+                        break;
+                    }
+                    break;
                 case "[red]Exit[/]":
                     return (false, null, currentConfig); // Return false to indicate exit
             }
@@ -2231,6 +2280,7 @@ public class Program
                 "[red]Download Single Message[/]",
                 "[red]Download Purchased Tab[/]",
                 "[red]Edit config.json[/]",
+                "[red]Change logging level[/]",
                 "[red]Exit[/]"
             };
         }
@@ -2244,6 +2294,7 @@ public class Program
                 "[red]Download Single Message[/]",
                 "[red]Download Purchased Tab[/]",
                 "[red]Edit config.json[/]",
+                "[red]Change logging level[/]",
                 "[red]Exit[/]"
             };
         }
