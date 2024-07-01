@@ -137,6 +137,7 @@ namespace OF_DL.Helpers
             try
             {
                 using SqliteConnection connection = new($"Data Source={Directory.GetCurrentDirectory()}/users.db");
+                Log.Debug("Database data source: " + connection.DataSource);
 
                 connection.Open();
 
@@ -145,6 +146,7 @@ namespace OF_DL.Helpers
                     await cmd.ExecuteNonQueryAsync();
                 }
 
+                Log.Debug("Adding missing creators");
                 foreach (KeyValuePair<string, int> user in users)
                 {
                     using (SqliteCommand checkCmd = new($"SELECT user_id, username FROM users WHERE user_id = @userId;", connection))
@@ -159,7 +161,12 @@ namespace OF_DL.Helpers
                                     insertCmd.Parameters.AddWithValue("@userId", user.Value);
                                     insertCmd.Parameters.AddWithValue("@username", user.Key);
                                     await insertCmd.ExecuteNonQueryAsync();
+                                    Log.Debug("Inserted new creator: " + user.Key);
                                 }
+                            }
+                            else
+                            {
+                                Log.Debug("Creator " + user.Key + " already exists");
                             }
                         }
                     }
