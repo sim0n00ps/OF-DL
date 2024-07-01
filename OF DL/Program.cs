@@ -13,6 +13,7 @@ using Serilog;
 using Serilog.Core;
 using Serilog.Events;
 using Spectre.Console;
+using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -51,16 +52,69 @@ public class Program
             {
                 AnsiConsole.Markup("[green]Version: " + $"{version.Major}.{version.Minor}.{version.Build}\n[/]");
             }
+            //I dont like it... but I needed to move config here, otherwise the logging level gets changed too late after we missed a whole bunch of important info
+            if (File.Exists("config.json"))
+            {
+                AnsiConsole.Markup("[green]config.json located successfully!\n[/]");
+                try
+                {
+                    config = JsonConvert.DeserializeObject<Config>(File.ReadAllText("config.json"))!;
+                    levelSwitch.MinimumLevel = (LogEventLevel)config.LoggingLevel;      //set the logging level based on config
+                    Log.Debug("Configuration:");
+                    string configString = JsonConvert.SerializeObject(config, Formatting.Indented);
+                    Log.Debug(configString);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    AnsiConsole.MarkupLine($"\n[red]config.json is not valid, check your JSON syntax![/]\n");
+                    AnsiConsole.MarkupLine($"[red]If you are struggling to get the JSON syntax correct, it is safe to paste this file's contents into a JSON validator like the one located here:[/]\n");
+                    AnsiConsole.MarkupLine($"[link]https://jsonlint.com/[/]\n");
+                    AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
+                    Log.Error("config.json processing failed.", e.Message);
+
+                    if (!cliNonInteractive)
+                    {
+                        Console.ReadKey();
+                    }
+                    Environment.Exit(3);
+                }
+            }
+            else
+            {
+                File.WriteAllText("config.json", JsonConvert.SerializeObject(new Config()));
+                AnsiConsole.Markup("[red]config.json does not exist, a default file has been created in the folder you are running the program from[/]");
+                Log.Error("config.json does not exist");
+
+                if (!cliNonInteractive)
+                {
+                    Console.ReadKey();
+                }
+                Environment.Exit(3);
+            }
+
 
             if (args is not null && args.Length > 0)
             {
                 const string NON_INTERACTIVE_ARG = "--non-interactive";
 
                 if (args.Any(a => NON_INTERACTIVE_ARG.Equals(NON_INTERACTIVE_ARG, StringComparison.OrdinalIgnoreCase)))
+                {
                     cliNonInteractive = true;
+                    Log.Debug("NonInteractiveMode set via command line");
+                }
+
+                Log.Debug("Additional arguments:");
+                foreach (string argument in args)
+                {
+                    Log.Debug(argument);
+                }
             }
 
             var os = Environment.OSVersion;
+
+            Log.Debug($"Operating system information: {os.VersionString}");
+
             if (os.Platform == PlatformID.Win32NT)
             {
                 // check if this is windows 10+
@@ -89,6 +143,7 @@ public class Program
                 try
                 {
                     auth = JsonConvert.DeserializeObject<Auth>(File.ReadAllText("auth.json"));
+                    Log.Debug("Auth file found and deserialized");
                 }
                 catch (Exception e)
                 {
@@ -97,7 +152,7 @@ public class Program
                     AnsiConsole.MarkupLine($"[red]If you are struggling with this file, you may want to try the browser extension which is documented here:[/]\n");
                     AnsiConsole.MarkupLine($"[link]https://of-dl.gitbook.io/of-dl/auth#browser-extension[/]\n");
                     AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
-                    Log.Error("auth.json processing failed.");
+                    Log.Error("auth.json processing failed.", e.Message);
 
                     if (!cliNonInteractive)
                     {
@@ -119,51 +174,42 @@ public class Program
                 Environment.Exit(2);
             }
 
-            if (File.Exists("config.json"))
+            if (File.Exists("rules.json"))
             {
-                AnsiConsole.Markup("[green]config.json located successfully!\n[/]");
+                AnsiConsole.Markup("[green]rules.json located successfully!\n[/]");
                 try
                 {
-                    config = JsonConvert.DeserializeObject<Config>(File.ReadAllText("config.json"))!;
+                    JsonConvert.DeserializeObject<DynamicRules>(File.ReadAllText("rules.json"));
+                    Log.Debug($"Rules.json: ");
+                    Log.Debug(JsonConvert.SerializeObject(File.ReadAllText("rules.json"), Formatting.Indented));
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine(e);
-                    AnsiConsole.MarkupLine($"\n[red]config.json is not valid, check your JSON syntax![/]\n");
-                    AnsiConsole.MarkupLine($"[red]If you are struggling to get the JSON syntax correct, it is safe to paste this file's contents into a JSON validator like the one located here:[/]\n");
-                    AnsiConsole.MarkupLine($"[link]https://jsonlint.com/[/]\n");
+                    AnsiConsole.MarkupLine($"\n[red]rules.json is not valid, check your JSON syntax![/]\n");
+                    AnsiConsole.MarkupLine($"[red]Please ensure you are using the latest version of the software.[/]\n");
                     AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
-                    Log.Error("config.json processing failed.");
+                    Log.Error("rules.json processing failed.", e.Message);
 
                     if (!cliNonInteractive)
                     {
                         Console.ReadKey();
                     }
-                    Environment.Exit(3);
+                    Environment.Exit(2);
                 }
-            }
-            else
-            {
-                File.WriteAllText("config.json", JsonConvert.SerializeObject(new Config()));
-                AnsiConsole.Markup("[red]config.json does not exist, a default file has been created in the folder you are running the program from[/]");
-                Log.Error("config.json does not exist");
-
-                if (!cliNonInteractive)
-                {
-                    Console.ReadKey();
-                }
-                Environment.Exit(3);
             }
 
             if(cliNonInteractive)
             {
                 // CLI argument overrides configuration
                 config!.NonInteractiveMode = true;
+                Log.Debug("NonInteractiveMode = true");
             }
 
             if(config!.NonInteractiveMode)
             {
                 cliNonInteractive = true; // If it was set in the config, reset the cli value so exception handling works
+                Log.Debug("NonInteractiveMode = true (set via config)");
             }
 
             var ffmpegFound = false;
@@ -172,12 +218,16 @@ public class Program
             {
                 // FFmpeg path is set in config.json and is valid
                 ffmpegFound = true;
+                Log.Debug($"FFMPEG found: {config.FFmpegPath}");
+                Log.Debug("FFMPEG path set in config.json");
             }
             else if (!string.IsNullOrEmpty(auth!.FFMPEG_PATH) && ValidateFilePath(auth.FFMPEG_PATH))
             {
                 // FFmpeg path is set in auth.json and is valid (config.json takes precedence and auth.json is only available for backward compatibility)
                 ffmpegFound = true;
                 config.FFmpegPath = auth.FFMPEG_PATH;
+                Log.Debug($"FFMPEG found: {config.FFmpegPath}");
+                Log.Debug("FFMPEG path set in auth.json");
             }
             else if (string.IsNullOrEmpty(config.FFmpegPath))
             {
@@ -189,6 +239,8 @@ public class Program
                     ffmpegFound = true;
                     pathAutoDetected = true;
                     config.FFmpegPath = ffmpegPath;
+                    Log.Debug($"FFMPEG found: {ffmpegPath}");
+                    Log.Debug("FFMPEG path found via PATH or current directory");
                 }
                 else
                 {
@@ -200,6 +252,8 @@ public class Program
                         ffmpegFound = true;
                         pathAutoDetected = true;
                         config.FFmpegPath = ffmpegPath;
+                        Log.Debug($"FFMPEG found: {ffmpegPath}");
+                        Log.Debug("FFMPEG path found in windows excutable directory");
                     }
                 }
             }
@@ -235,19 +289,23 @@ public class Program
             if (!File.Exists(Path.Join(WidevineClient.Widevine.Constants.DEVICES_FOLDER, WidevineClient.Widevine.Constants.DEVICE_NAME, "device_client_id_blob")))
             {
                 clientIdBlobMissing = true;
+                Log.Debug("clientIdBlobMissing missing");
             }
             else
             {
                 AnsiConsole.Markup($"[green]device_client_id_blob located successfully![/]\n");
+                Log.Debug("clientIdBlobMissing found: " + File.Exists(Path.Join(WidevineClient.Widevine.Constants.DEVICES_FOLDER, WidevineClient.Widevine.Constants.DEVICE_NAME, "device_client_id_blob")));
             }
 
             if (!File.Exists(Path.Join(WidevineClient.Widevine.Constants.DEVICES_FOLDER, WidevineClient.Widevine.Constants.DEVICE_NAME, "device_private_key")))
             {
                 devicePrivateKeyMissing = true;
+                Log.Debug("devicePrivateKeyMissing missing");
             }
             else
             {
                 AnsiConsole.Markup($"[green]device_private_key located successfully![/]\n");
+                Log.Debug("devicePrivateKeyMissing found: " + File.Exists(Path.Join(WidevineClient.Widevine.Constants.DEVICES_FOLDER, WidevineClient.Widevine.Constants.DEVICE_NAME, "device_private_key")));
             }
 
             if (clientIdBlobMissing || devicePrivateKeyMissing)
@@ -257,9 +315,6 @@ public class Program
 
             //Check if auth is valid
             var apiHelper = new APIHelper(auth, config);
-
-            //set actual logging level
-            levelSwitch.MinimumLevel = (LogEventLevel)config.LoggingLevel;
 
             Entities.User validate = await apiHelper.GetUserInfo($"/users/me");
             if (validate?.name == null && validate?.username == null)
@@ -308,21 +363,28 @@ public class Program
             DateTime startTime = DateTime.Now;
             Dictionary<string, int> users = new();
             Dictionary<string, int> activeSubs = await m_ApiHelper.GetActiveSubscriptions("/subscriptions/subscribes", Config.IncludeRestrictedSubscriptions, Config);
+
+            Log.Debug("Subscriptions: ");
+
             foreach (KeyValuePair<string, int> activeSub in activeSubs)
             {
                 if (!users.ContainsKey(activeSub.Key))
                 {
                     users.Add(activeSub.Key, activeSub.Value);
+                    Log.Debug($"Name: {activeSub.Key} ID: {activeSub.Value}");
                 }
             }
             if (Config!.IncludeExpiredSubscriptions)
             {
+                Log.Debug("Inactive Subscriptions: ");
+
                 Dictionary<string, int> expiredSubs = await m_ApiHelper.GetExpiredSubscriptions("/subscriptions/subscribes", Config.IncludeRestrictedSubscriptions, Config);
                 foreach (KeyValuePair<string, int> expiredSub in expiredSubs)
                 {
                     if (!users.ContainsKey(expiredSub.Key))
                     {
                         users.Add(expiredSub.Key, expiredSub.Value);
+                        Log.Debug($"Name: {expiredSub.Key} ID: {expiredSub.Value}");
                     }
                 }
             }
@@ -364,16 +426,21 @@ public class Program
                             .ValidationErrorMessage("[red]Please enter a valid post URL[/]")
                             .Validate(url =>
                             {
+                                Log.Debug($"Single Post URL: {url}");
                                 Regex regex = new Regex("https://onlyfans\\.com/[0-9]+/[A-Za-z0-9]+", RegexOptions.IgnoreCase);
                                 if (regex.IsMatch(url))
                                 {
                                     return ValidationResult.Success();
                                 }
+                                Log.Error("Post URL invalid");
                                 return ValidationResult.Error("[red]Please enter a valid post URL[/]");
                             }));
 
                 long post_id = Convert.ToInt64(postUrl.Split("/")[3]);
                 string username = postUrl.Split("/")[4];
+
+                Log.Debug($"Single Post ID: {post_id.ToString()}");
+                Log.Debug($"Single Post Creator: {username}");
 
                 if (users.ContainsKey(username))
                 {
@@ -384,13 +451,16 @@ public class Program
                     }
                     else
                     {
-                        path = $"__user_data__/sites/OnlyFans/{username}"; 
+                        path = $"__user_data__/sites/OnlyFans/{username}";
                     }
+
+                    Log.Debug($"Download path: {path}");
 
                     if (!Directory.Exists(path)) 
                     {
                         Directory.CreateDirectory(path); 
                         AnsiConsole.Markup($"[red]Created folder for {username}\n[/]");
+                        Log.Debug($"Created folder for {username}");
                     }
                     else
                     {
@@ -420,16 +490,20 @@ public class Program
                         path = $"__user_data__/sites/OnlyFans/{user.Key}";
                     }
 
+                    Log.Debug($"Download path: {path}");
+
                     await dBHelper.CheckUsername(user, path);
 
                     if (!Directory.Exists(path))
                     {
                         Directory.CreateDirectory(path);
                         AnsiConsole.Markup($"[red]Created folder for {user.Key}\n[/]");
+                        Log.Debug($"Created folder for {user.Key}");
                     }
                     else
                     {
                         AnsiConsole.Markup($"[red]Folder for {user.Key} already created\n[/]");
+                        Log.Debug($"Folder for {user.Key} already created");
                     }
 
                     Entities.User user_info = await m_ApiHelper.GetUserInfo($"/users/{user.Key}");
@@ -446,6 +520,9 @@ public class Program
                 {
                     p = $"__user_data__/sites/OnlyFans/";
                 }
+
+                Log.Debug($"Download path: {p}");
+
                 List<PurchasedTabCollection> purchasedTabCollections = await m_ApiHelper.GetPurchasedTab("/posts/paid", p, Config, users);
                 foreach(PurchasedTabCollection purchasedTabCollection in purchasedTabCollections)
                 {
@@ -459,6 +536,9 @@ public class Program
                     {
                         path = $"__user_data__/sites/OnlyFans/{purchasedTabCollection.Username}"; 
                     }
+
+
+                    Log.Debug($"Download path: {path}");
 
                     var downloadContext = new DownloadContext(Auth, Config, GetCreatorFileNameFormatConfig(Config, purchasedTabCollection.Username), m_ApiHelper, dBHelper);
 
@@ -477,21 +557,22 @@ public class Program
                 DateTime endTime = DateTime.Now;
                 TimeSpan totalTime = endTime - startTime;
                 AnsiConsole.Markup($"[green]Scrape Completed in {totalTime.TotalMinutes:0.00} minutes\n[/]");
+                Log.Debug($"Scrape Completed in {totalTime.TotalMinutes:0.00} minutes");
             }
             else if (hasSelectedUsersKVP.Key && hasSelectedUsersKVP.Value != null && hasSelectedUsersKVP.Value.ContainsKey("SingleMessage"))
             {
-                //https://onlyfans.com/my/chats/chat/70196897/?firstId=3127582635776
-
                 string messageUrl = AnsiConsole.Prompt(
                     new TextPrompt<string>("[red]Please enter a message URL: [/]")
                         .ValidationErrorMessage("[red]Please enter a valid message URL[/]")
                         .Validate(url =>
                         {
+                            Log.Debug($"Single Message URL: {url}");
                             Regex regex = new Regex("https://onlyfans\\.com/my/chats/chat/[0-9]+/\\?firstId=[0-9]+$", RegexOptions.IgnoreCase);
                             if (regex.IsMatch(url))
                             {
                                 return ValidationResult.Success();
                             }
+                            Log.Error("Message URL invalid");
                             return ValidationResult.Error("[red]Please enter a valid message URL[/]");
                         }));
 
@@ -501,14 +582,18 @@ public class Program
                 JObject user = await m_ApiHelper.GetUserInfoById($"/users/list?x[]={user_id.ToString()}");
                 string username = string.Empty;
 
+                Log.Debug($"Message ID: {message_id}");
+                Log.Debug($"User ID: {user_id}");
+
                 if (user is null)
                 {
-                    username = $"Deleted User - " + user_id.ToString();
-                    Log.Information("Content creator not longer exists - ", user_id.ToString());
+                    username = $"Deleted User - {user_id.ToString()}";
+                    Log.Debug("Content creator not longer exists - ", user_id.ToString());
                 }
                 else if (!string.IsNullOrEmpty(user[user_id.ToString()]["username"].ToString()))
                 {
                     username = user[user_id.ToString()]["username"].ToString();
+                    Log.Debug("Content creator: ", username);
                 }
 
                 string path = "";
@@ -521,14 +606,18 @@ public class Program
                     path = $"__user_data__/sites/OnlyFans/{username}"; 
                 }
 
+                Log.Debug("Download path: ", path);
+
                 if (!Directory.Exists(path)) 
                 {
                     Directory.CreateDirectory(path); 
                     AnsiConsole.Markup($"[red]Created folder for {username}\n[/]");
+                    Log.Debug($"Created folder for {username}");
                 }
                 else
                 {
                     AnsiConsole.Markup($"[red]Folder for {username} already created\n[/]");
+                    Log.Debug($"Folder for {username} already created");
                 }
 
                 await dBHelper.CreateDB(path);
@@ -553,6 +642,8 @@ public class Program
                     int paidMessagesCount = 0;
                     AnsiConsole.Markup($"[red]\nScraping Data for {user.Key}\n[/]");
 
+                    Log.Debug($"Scraping Data for {user.Key}");
+
                     string path = "";
                     if (!string.IsNullOrEmpty(Config.DownloadPath))
                     {
@@ -563,16 +654,20 @@ public class Program
                         path = $"__user_data__/sites/OnlyFans/{user.Key}"; 
                     }
 
+                    Log.Debug("Download path: ", path);
+
                     await dBHelper.CheckUsername(user, path);
 
                     if (!Directory.Exists(path)) 
                     {
                         Directory.CreateDirectory(path); 
                         AnsiConsole.Markup($"[red]Created folder for {user.Key}\n[/]");
+                        Log.Debug($"Created folder for {user.Key}");
                     }
                     else
                     {
                         AnsiConsole.Markup($"[red]Folder for {user.Key} already created\n[/]");
+                        Log.Debug($"Folder for {user.Key} already created");
                     }
 
                     await dBHelper.CreateDB(path);
@@ -684,12 +779,17 @@ public class Program
         combinedConfig.MessageFileNameFormat = func(combinedConfig.MessageFileNameFormat, config.MessageFileNameFormat);
         combinedConfig.PaidPostFileNameFormat = func(combinedConfig.PaidPostFileNameFormat, config.PaidPostFileNameFormat);
 
+        Log.Debug($"PaidMessageFilenameFormat: {combinedConfig.PaidMessageFileNameFormat}");
+        Log.Debug($"PostFileNameFormat: {combinedConfig.PostFileNameFormat}");
+        Log.Debug($"MessageFileNameFormat: {combinedConfig.MessageFileNameFormat}");
+        Log.Debug($"PaidPostFileNameFormatt: {combinedConfig.PaidPostFileNameFormat}");
+
         return combinedConfig;
     }
 
     private static async Task<int> DownloadPaidMessages(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int paidMessagesCount, string path)
     {
-        Log.Debug("Calling DownloadPaidMessages - " + user.Key);
+        Log.Debug($"Calling DownloadPaidMessages - {user.Key}");
 
         AnsiConsole.Markup($"[red]Getting Paid Messages\n[/]");
         //Dictionary<long, string> purchased = await apiHelper.GetMedia(MediaType.PaidMessages, "/posts/paid", user.Key, path, auth, paid_post_ids);
@@ -699,6 +799,7 @@ public class Program
         if (paidMessageCollection != null && paidMessageCollection.PaidMessages.Count > 0)
         {
             AnsiConsole.Markup($"[red]Found {paidMessageCollection.PaidMessages.Count} Paid Messages\n[/]");
+            Log.Debug($"Found {paidMessageCollection.PaidMessages.Count} Paid Messages");
             paidMessagesCount = paidMessageCollection.PaidMessages.Count;
             long totalSize = 0;
             if (downloadContext.DownloadConfig.ShowScrapeSize)
@@ -715,6 +816,7 @@ public class Program
             {
                 // Define tasks
                 var task = ctx.AddTask($"[red]Downloading {paidMessageCollection.PaidMessages.Count} Paid Messages[/]", autoStart: false);
+                Log.Debug($"Downloading {paidMessageCollection.PaidMessages.Count} Paid Messages");
                 task.MaxValue = totalSize;
                 task.StartTask();
                 foreach (KeyValuePair<long, string> paidMessageKVP in paidMessageCollection.PaidMessages)
@@ -816,16 +918,16 @@ public class Program
 
     private static async Task<int> DownloadMessages(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int messagesCount, string path)
     {
-        Log.Debug("Calling DownloadMessages - " + user.Key);
+        Log.Debug($"Calling DownloadMessages - {user.Key}");
 
         AnsiConsole.Markup($"[red]Getting Messages\n[/]");
-        //Dictionary<long, string> messages = await apiHelper.GetMedia(MediaType.Messages, $"/chats/{user.Value}/messages", null, path, auth, paid_post_ids);
         MessageCollection messages = await downloadContext.ApiHelper.GetMessages($"/chats/{user.Value}/messages", path, downloadContext.DownloadConfig!);
         int oldMessagesCount = 0;
         int newMessagesCount = 0;
         if (messages != null && messages.Messages.Count > 0)
         {
             AnsiConsole.Markup($"[red]Found {messages.Messages.Count} Messages\n[/]");
+            Log.Debug($"[red]Found {messages.Messages.Count} Messages");
             messagesCount = messages.Messages.Count;
             long totalSize = 0;
             if (downloadContext.DownloadConfig.ShowScrapeSize)
@@ -842,6 +944,7 @@ public class Program
             {
                 // Define tasks
                 var task = ctx.AddTask($"[red]Downloading {messages.Messages.Count} Messages[/]", autoStart: false);
+                Log.Debug($"Downloading {messages.Messages.Count} Messages");
                 task.MaxValue = totalSize;
                 task.StartTask();
                 foreach (KeyValuePair<long, string> messageKVP in messages.Messages)
@@ -943,7 +1046,7 @@ public class Program
 
     private static async Task<int> DownloadHighlights(IDownloadContext downloadContext, KeyValuePair<string, int> user, int highlightsCount, string path)
     {
-        Log.Debug("Calling DownloadHighlights - " + user.Key);
+        Log.Debug($"Calling DownloadHighlights - {user.Key}");
 
         AnsiConsole.Markup($"[red]Getting Highlights\n[/]");
         Dictionary<long, string> highlights = await downloadContext.ApiHelper.GetMedia(MediaType.Highlights, $"/users/{user.Value}/stories/highlights", null, path, downloadContext.DownloadConfig!, paid_post_ids);
@@ -996,7 +1099,7 @@ public class Program
 
     private static async Task<int> DownloadStories(IDownloadContext downloadContext, KeyValuePair<string, int> user, int storiesCount, string path)
     {
-        Log.Debug("Calling DownloadStories - " + user.Key);
+        Log.Debug($"Calling DownloadStories - {user.Key}");
 
         AnsiConsole.Markup($"[red]Getting Stories\n[/]");
         Dictionary<long, string> stories = await downloadContext.ApiHelper.GetMedia(MediaType.Stories, $"/users/{user.Value}/stories", null, path, downloadContext.DownloadConfig!, paid_post_ids);
@@ -1049,7 +1152,7 @@ public class Program
 
     private static async Task<int> DownloadArchived(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int archivedCount, string path)
     {
-        Log.Debug("Calling DownloadArchived - " + user.Key);
+        Log.Debug($"Calling DownloadArchived - {user.Key}");
 
         AnsiConsole.Markup($"[red]Getting Archived Posts\n[/]");
         //Dictionary<long, string> archived = await apiHelper.GetMedia(MediaType.Archived, $"/users/{user.Value}/posts", null, path, auth, paid_post_ids);
@@ -1059,6 +1162,7 @@ public class Program
         if (archived != null && archived.ArchivedPosts.Count > 0)
         {
             AnsiConsole.Markup($"[red]Found {archived.ArchivedPosts.Count} Archived Posts\n[/]");
+            Log.Debug($"Found {archived.ArchivedPosts.Count} Archived Posts");
             archivedCount = archived.ArchivedPosts.Count;
             long totalSize = 0;
             if (downloadContext.DownloadConfig.ShowScrapeSize)
@@ -1075,6 +1179,7 @@ public class Program
             {
                 // Define tasks
                 var task = ctx.AddTask($"[red]Downloading {archived.ArchivedPosts.Count} Archived Posts[/]", autoStart: false);
+                Log.Debug($"Downloading {archived.ArchivedPosts.Count} Archived Posts");
                 task.MaxValue = totalSize;
                 task.StartTask();
                 foreach (KeyValuePair<long, string> archivedKVP in archived.ArchivedPosts)
@@ -1175,7 +1280,7 @@ public class Program
 
     private static async Task<int> DownloadFreePosts(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int postCount, string path)
     {
-        Log.Debug("Calling DownloadFreePosts - " + user.Key);
+        Log.Debug($"Calling DownloadFreePosts - {user.Key}");
 
         AnsiConsole.Markup($"[red]Getting Posts\n[/]");
         //Dictionary<long, string> posts = await apiHelper.GetMedia(MediaType.Posts, $"/users/{user.Value}/posts", null, path, auth, paid_post_ids);
@@ -1308,7 +1413,7 @@ public class Program
     {
         AnsiConsole.Markup($"[red]Getting Paid Posts\n[/]");
 
-        Log.Debug("Calling DownloadPaidPosts - " + user.Key);
+        Log.Debug($"Calling DownloadPaidPosts - {user.Key}");
 
         //Dictionary<long, string> purchasedPosts = await apiHelper.GetMedia(MediaType.PaidPosts, "/posts/paid", user.Key, path, auth, paid_post_ids);
         PaidPostCollection purchasedPosts = await downloadContext.ApiHelper.GetPaidPosts("/posts/paid", path, user.Key, downloadContext.DownloadConfig!, paid_post_ids);
@@ -1317,10 +1422,12 @@ public class Program
         if (purchasedPosts == null || purchasedPosts.PaidPosts.Count <= 0)
         {
             AnsiConsole.Markup($"[red]Found 0 Paid Posts\n[/]");
+            Log.Debug("Found 0 Paid Posts");
             return 0;
         }
 
         AnsiConsole.Markup($"[red]Found {purchasedPosts.PaidPosts.Count} Paid Posts\n[/]");
+        Log.Debug($"ound {purchasedPosts.PaidPosts.Count} Paid Posts");
         paidPostCount = purchasedPosts.PaidPosts.Count;
         long totalSize = 0;
         if (downloadContext.DownloadConfig.ShowScrapeSize)
@@ -1337,6 +1444,7 @@ public class Program
         {
             // Define tasks
             var task = ctx.AddTask($"[red]Downloading {purchasedPosts.PaidPosts.Count} Paid Posts[/]", autoStart: false);
+            Log.Debug($"Downloading {purchasedPosts.PaidPosts.Count} Paid Posts");
             task.MaxValue = totalSize;
             task.StartTask();
             foreach (KeyValuePair<long, string> purchasedPostKVP in purchasedPosts.PaidPosts)
@@ -1426,7 +1534,7 @@ public class Program
             task.StopTask();
         });
         AnsiConsole.Markup($"[red]Paid Posts Already Downloaded: {oldPaidPostCount} New Paid Posts Downloaded: {newPaidPostCount}[/]\n");
-
+        Log.Debug($"Paid Posts Already Downloaded: {oldPaidPostCount} New Paid Posts Downloaded: {newPaidPostCount}");
         return paidPostCount;
     }
 
@@ -1437,10 +1545,13 @@ public class Program
         if (purchasedPosts == null || purchasedPosts.PaidPosts.Count <= 0)
         {
             AnsiConsole.Markup($"[red]Found 0 Paid Posts\n[/]");
+            Log.Debug("Found 0 Paid Posts");
             return 0;
         }
 
         AnsiConsole.Markup($"[red]Found {purchasedPosts.PaidPosts.Count} Paid Posts\n[/]");
+        Log.Debug($"Found {purchasedPosts.PaidPosts.Count} Paid Posts");
+
         paidPostCount = purchasedPosts.PaidPosts.Count;
         long totalSize = 0;
         if (downloadContext.DownloadConfig.ShowScrapeSize)
@@ -1457,6 +1568,7 @@ public class Program
         {
             // Define tasks
             var task = ctx.AddTask($"[red]Downloading {purchasedPosts.PaidPosts.Count} Paid Posts[/]", autoStart: false);
+            Log.Debug($"Downloading {purchasedPosts.PaidPosts.Count} Paid Posts");
             task.MaxValue = totalSize;
             task.StartTask();
             foreach (KeyValuePair<long, string> purchasedPostKVP in purchasedPosts.PaidPosts)
@@ -1546,7 +1658,7 @@ public class Program
             task.StopTask();
         });
         AnsiConsole.Markup($"[red]Paid Posts Already Downloaded: {oldPaidPostCount} New Paid Posts Downloaded: {newPaidPostCount}[/]\n");
-
+        Log.Debug($"Paid Posts Already Downloaded: {oldPaidPostCount} New Paid Posts Downloaded: {newPaidPostCount}");
         return paidPostCount;
     }
 
@@ -1557,6 +1669,7 @@ public class Program
         if (paidMessageCollection != null && paidMessageCollection.PaidMessages.Count > 0)
         {
             AnsiConsole.Markup($"[red]Found {paidMessageCollection.PaidMessages.Count} Paid Messages\n[/]");
+            Log.Debug($"Found {paidMessageCollection.PaidMessages.Count} Paid Messages");
             paidMessagesCount = paidMessageCollection.PaidMessages.Count;
             long totalSize = 0;
             if (downloadContext.DownloadConfig.ShowScrapeSize)
@@ -1573,6 +1686,7 @@ public class Program
             {
                 // Define tasks
                 var task = ctx.AddTask($"[red]Downloading {paidMessageCollection.PaidMessages.Count} Paid Messages[/]", autoStart: false);
+                Log.Debug($"Downloading {paidMessageCollection.PaidMessages.Count} Paid Messages");
                 task.MaxValue = totalSize;
                 task.StartTask();
                 foreach (KeyValuePair<long, string> paidMessageKVP in paidMessageCollection.PaidMessages)
@@ -1662,10 +1776,12 @@ public class Program
                 task.StopTask();
             });
             AnsiConsole.Markup($"[red]Paid Messages Already Downloaded: {oldPaidMessagesCount} New Paid Messages Downloaded: {newPaidMessagesCount}[/]\n");
+            Log.Debug($"[red]Paid Messages Already Downloaded: {oldPaidMessagesCount} New Paid Messages Downloaded: {newPaidMessagesCount}");
         }
         else
         {
             AnsiConsole.Markup($"[red]Found 0 Paid Messages\n[/]");
+            Log.Debug($"Found 0 Paid Messages");
         }
 
         return paidMessagesCount;
@@ -1673,7 +1789,7 @@ public class Program
 
     private static async Task<int> DownloadStreams(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int streamsCount, string path)
     {
-        Log.Debug("Calling DownloadStreams - " + user.Key);
+        Log.Debug($"Calling DownloadStreams - {user.Key}");
 
         AnsiConsole.Markup($"[red]Getting Streams\n[/]");
         StreamsCollection streams = await downloadContext.ApiHelper.GetStreams($"/users/{user.Value}/posts/streams", path, downloadContext.DownloadConfig!, paid_post_ids);
@@ -1682,10 +1798,12 @@ public class Program
         if (streams == null || streams.Streams.Count <= 0)
         {
             AnsiConsole.Markup($"[red]Found 0 Streams\n[/]");
+            Log.Debug($"Found 0 Streams");
             return 0;
         }
 
         AnsiConsole.Markup($"[red]Found {streams.Streams.Count} Streams\n[/]");
+        Log.Debug($"Found {streams.Streams.Count} Streams");
         streamsCount = streams.Streams.Count;
         long totalSize = 0;
         if (downloadContext.DownloadConfig.ShowScrapeSize)
@@ -1701,6 +1819,7 @@ public class Program
         .StartAsync(async ctx =>
         {
             var task = ctx.AddTask($"[red]Downloading {streams.Streams.Count} Streams[/]", autoStart: false);
+            Log.Debug($"Downloading {streams.Streams.Count} Streams");
             task.MaxValue = totalSize;
             task.StartTask();
             foreach (KeyValuePair<long, string> streamKVP in streams.Streams)
@@ -1797,13 +1916,13 @@ public class Program
             task.StopTask();
         });
         AnsiConsole.Markup($"[red]Streams Already Downloaded: {oldStreamsCount} New Streams Downloaded: {newStreamsCount}[/]\n");
-
+        Log.Debug($"Streams Already Downloaded: {oldStreamsCount} New Streams Downloaded: {newStreamsCount}");
         return streamsCount;
     }
 
     private static async Task<int> DownloadPaidMessage(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, string username, int paidMessagesCount, string path, long message_id)
     {
-        Log.Debug("Calling DownloadPaidMessage - " + username);
+        Log.Debug($"Calling DownloadPaidMessage - {username}");
 
         AnsiConsole.Markup($"[red]Getting Paid Message\n[/]");
         
@@ -1813,6 +1932,7 @@ public class Program
         if (paidMessageCollection != null && paidMessageCollection.PaidMessages.Count > 0)
         {
             AnsiConsole.Markup($"[red]Found {paidMessageCollection.PaidMessages.Count} Paid Messages\n[/]");
+            Log.Debug($"Found {paidMessageCollection.PaidMessages.Count} Paid Messages");
             paidMessagesCount = paidMessageCollection.PaidMessages.Count;
             long totalSize = 0;
             if (downloadContext.DownloadConfig.ShowScrapeSize)
@@ -1829,6 +1949,7 @@ public class Program
             {
                 // Define tasks
                 var task = ctx.AddTask($"[red]Downloading {paidMessageCollection.PaidMessages.Count} Paid Messages[/]", autoStart: false);
+                Log.Debug($"Downloading {paidMessageCollection.PaidMessages.Count} Paid Messages");
                 task.MaxValue = totalSize;
                 task.StartTask();
                 foreach (KeyValuePair<long, string> paidMessageKVP in paidMessageCollection.PaidMessages)
@@ -1918,10 +2039,12 @@ public class Program
                 task.StopTask();
             });
             AnsiConsole.Markup($"[red]Paid Messages Already Downloaded: {oldPaidMessagesCount} New Paid Messages Downloaded: {newPaidMessagesCount}[/]\n");
+            Log.Debug($"Paid Messages Already Downloaded: {oldPaidMessagesCount} New Paid Messages Downloaded: {newPaidMessagesCount}");
         }
         else
         {
             AnsiConsole.Markup($"[red]Found 0 Paid Messages\n[/]");
+            Log.Debug($"Found 0 Paid Messages");
         }
 
         return paidMessagesCount;
@@ -1929,13 +2052,14 @@ public class Program
 
     private static async Task DownloadSinglePost(IDownloadContext downloadContext, long post_id, string path, Dictionary<string, int> users)
     {
-        Log.Debug("Calling DownloadSinglePost - " + post_id.ToString());
+        Log.Debug($"Calling DownloadSinglePost - {post_id.ToString()}");
 
         AnsiConsole.Markup($"[red]Getting Post\n[/]");
         SinglePostCollection post = await downloadContext.ApiHelper.GetPost($"/posts/{post_id.ToString()}", path, downloadContext.DownloadConfig!);
         if (post == null)
         {
             AnsiConsole.Markup($"[red]Couldn't find post\n[/]");
+            Log.Debug($"Couldn't find post");
             return;
         }
 
@@ -2035,10 +2159,12 @@ public class Program
         if (isNew)
         {
             AnsiConsole.Markup($"[red]Post {post_id} downloaded\n[/]");
+            Log.Debug($"Post {post_id} downloaded");
         }
         else
         {
             AnsiConsole.Markup($"[red]Post {post_id} already downloaded\n[/]");
+            Log.Debug($"Post {post_id} already downloaded");
         }
     }
 
