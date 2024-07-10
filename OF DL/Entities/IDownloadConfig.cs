@@ -46,7 +46,7 @@ namespace OF_DL.Entities
         bool DownloadPostsIncrementally { get; set; }
 
         bool DownloadDuplicatedMedia { get; set; }
-        bool EnableDebugLogs { get; set; }
+        public LoggingLevel LoggingLevel { get; set; }
     }
 
 }
