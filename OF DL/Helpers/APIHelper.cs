@@ -909,7 +909,7 @@ public class APIHelper : IAPIHelper
                         continue;
                     }
 
-                    if (post.text != null && (post.text.Contains("#ad") || post.text.Contains("/trial/") || post.rawText.Contains("#announcement")))
+                    if (post.text != null && (post.text.Contains("#ad") || post.text.Contains("/trial/") || post.text.Contains("#announcement")))
                     {
                         continue;
                     }
