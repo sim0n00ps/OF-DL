@@ -1,4 +1,4 @@
-FROM alpine as build
+FROM alpine:3.20 AS build
 
 ARG VERSION
 
@@ -13,7 +13,6 @@ WORKDIR "/src"
 # Build release
 RUN dotnet publish -p:Version=$VERSION -c Release --self-contained true -p:PublishSingleFile=true -o out
 
-FROM alpine as final
 # Generate default auth.json and config.json files
 RUN /src/out/OF\ DL --non-interactive || true
 RUN /src/out/OF\ DL --non-interactive || true
@@ -26,6 +25,8 @@ RUN mv /src/updated_auth.json /src/auth.json
 RUN jq '.DownloadPath = "/data"' /src/config.json > /src/updated_config.json
 RUN mv /src/updated_config.json /src/config.json
 
+
+FROM alpine:3.20 AS final
 
 # Install dependencies
 RUN apk --repository community add ffmpeg bash dotnet8-runtime bash
