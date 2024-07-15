@@ -29,7 +29,7 @@ RUN mv /src/updated_config.json /src/config.json
 FROM alpine:3.20 AS final
 
 # Install dependencies
-RUN apk --repository community add ffmpeg bash dotnet8-runtime bash
+RUN apk --repository community add ffmpeg bash dotnet8-runtime tini
 
 # Copy release and entrypoint script
 COPY --from=build /src/out /app
@@ -45,5 +45,5 @@ COPY --from=build /src/config.json /default-config
 COPY --from=build /src/auth.json /default-config
 
 WORKDIR /config
-CMD /app/entrypoint.sh
+ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["/app/entrypoint.sh"]
