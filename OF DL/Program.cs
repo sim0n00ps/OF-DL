@@ -82,7 +82,7 @@ public class Program
             }
             else
             {
-                File.WriteAllText("config.json", JsonConvert.SerializeObject(new Config()));
+                File.WriteAllText("config.json", JsonConvert.SerializeObject(new Config(), Formatting.Indented));
                 AnsiConsole.Markup("[red]config.json does not exist, a default file has been created in the folder you are running the program from[/]");
                 Log.Error("config.json does not exist");
 
@@ -163,7 +163,7 @@ public class Program
             }
             else
             {
-                File.WriteAllText("auth.json", JsonConvert.SerializeObject(new Auth()));
+                File.WriteAllText("auth.json", JsonConvert.SerializeObject(new Auth(), Formatting.Indented));
                 AnsiConsole.Markup("[red]auth.json does not exist, a default file has been created in the folder you are running the program from[/]");
                 Log.Error("auth.json does not exist");
 
