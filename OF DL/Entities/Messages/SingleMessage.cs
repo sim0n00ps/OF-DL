@@ -35,7 +35,7 @@ namespace OF_DL.Entities.Messages
         public int tipsMax { get; set; }
         public bool canEarn { get; set; }
         public bool canAddSubscriber { get; set; }
-        public int subscribePrice { get; set; }
+        public string? subscribePrice { get; set; }
         public List<object> subscriptionBundles { get; set; }
         public bool isPaywallRequired { get; set; }
         public List<ListsState> listsStates { get; set; }
