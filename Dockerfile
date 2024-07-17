@@ -44,6 +44,7 @@ RUN mkdir /data /config /default-config
 # Copy default configuration files
 COPY --from=build /src/config.json /default-config
 COPY --from=build /src/auth.json /default-config
+COPY --from=build ["/src/OF DL/rules.json", "/default-config"]
 
 COPY docker/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
