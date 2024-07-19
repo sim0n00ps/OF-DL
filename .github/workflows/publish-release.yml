@@ -28,7 +28,7 @@ jobs:
 
       - name: Run build
         run: |
-          dotnet publish -p:Version=${{ steps.version.outputs.version }} -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o outwin
+          dotnet publish -p:Version=${{ steps.version.outputs.version }} -c Release -r win-x86 --self-contained true -p:PublishSingleFile=true -o outwin
           dotnet publish -p:Version=${{ steps.version.outputs.version }} -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -o outlin
           cp ./OF\ DL/rules.json outwin/
           chmod +x ./outlin/OF\ DL
