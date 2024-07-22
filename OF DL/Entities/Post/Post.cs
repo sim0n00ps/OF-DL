@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using OF_DL.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -74,7 +75,24 @@ public class Post
         public object expiredAt { get; set; }
         public Author author { get; set; }
         public string text { get; set; }
-        public string rawText { get; set; }
+
+        private string _rawText;
+        public string rawText
+        {
+            get
+            {
+                if(string.IsNullOrEmpty(_rawText))
+                {
+                    _rawText = XmlUtils.EvaluateInnerText(text);
+                }
+
+                return _rawText;
+            }
+            set
+            {
+                _rawText = value;
+            }
+        }
         public bool? lockedText { get; set; }
         public bool? isFavorite { get; set; }
         public bool? canReport { get; set; }
