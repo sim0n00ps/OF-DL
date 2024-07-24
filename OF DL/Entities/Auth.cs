@@ -12,6 +12,7 @@ namespace OF_DL.Entities
         public string? USER_AGENT { get; set; } = string.Empty;
         public string? X_BC { get; set; } = string.Empty;
         public string? COOKIE { get; set; } = string.Empty;
+        [JsonIgnore]
         public string? FFMPEG_PATH { get; set; } = string.Empty;
     }
 }
