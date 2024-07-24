@@ -8,33 +8,33 @@ namespace OF_DL.Entities
     public class Config : IDownloadConfig, IFileNameFormatConfig
     {
         [ToggleableConfig]
-        public bool DownloadAvatarHeaderPhoto { get; set; }
+        public bool DownloadAvatarHeaderPhoto { get; set; } = true;
         [ToggleableConfig]
-        public bool DownloadPaidPosts { get; set; }
+        public bool DownloadPaidPosts { get; set; } = true;
         [ToggleableConfig]
-        public bool DownloadPosts { get; set; }
+        public bool DownloadPosts { get; set; } = true;
         [ToggleableConfig]
-        public bool DownloadArchived { get; set; }
+        public bool DownloadArchived { get; set; } = true;
         [ToggleableConfig]
-        public bool DownloadStreams { get; set; }
+        public bool DownloadStreams { get; set; } = true;
         [ToggleableConfig]
-        public bool DownloadStories { get; set; }
+        public bool DownloadStories { get; set; } = true;
         [ToggleableConfig]
-        public bool DownloadHighlights { get; set; }
+        public bool DownloadHighlights { get; set; } = true;
         [ToggleableConfig]
-        public bool DownloadMessages { get; set; }
+        public bool DownloadMessages { get; set; } = true;
         [ToggleableConfig]
-        public bool DownloadPaidMessages { get; set; }
+        public bool DownloadPaidMessages { get; set; } = true;
         [ToggleableConfig]
-        public bool DownloadImages { get; set; }
+        public bool DownloadImages { get; set; } = true;
         [ToggleableConfig]
-        public bool DownloadVideos { get; set; }
+        public bool DownloadVideos { get; set; } = true;
         [ToggleableConfig]
-        public bool DownloadAudios { get; set; }
+        public bool DownloadAudios { get; set; } = true;
         [ToggleableConfig]
-        public bool IncludeExpiredSubscriptions { get; set; }
+        public bool IncludeExpiredSubscriptions { get; set; } = false;
         [ToggleableConfig]
-        public bool IncludeRestrictedSubscriptions { get; set; }
+        public bool IncludeRestrictedSubscriptions { get; set; } = false;
         [ToggleableConfig]
         public bool SkipAds { get; set; } = false;
 
