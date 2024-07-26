@@ -28,8 +28,8 @@ jobs:
 
       - name: Run build
         run: |
-          dotnet publish -p:Version=${{ steps.version.outputs.version }} -c Release -r win-x86 --self-contained true -p:PublishSingleFile=true -o outwin
-          dotnet publish -p:Version=${{ steps.version.outputs.version }} -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -o outlin
+          dotnet publish -p:Version=${{ steps.version.outputs.version }} -p:WarningLevel=0 -c Release -r win-x86 --self-contained true -p:PublishSingleFile=true -o outwin
+          dotnet publish -p:Version=${{ steps.version.outputs.version }} -p:WarningLevel=0 -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -o outlin
           cp ./OF\ DL/rules.json outwin/
           chmod +x ./outlin/OF\ DL
           cd outwin
@@ -37,6 +37,7 @@ jobs:
           ../outlin/OF\ DL --non-interactive || true
           mkdir -p cdm/devices/chrome_1610
           zip ../OFDLV${{ steps.version.outputs.version }}.zip OF\ DL.exe e_sqlite3.dll rules.json config.json auth.json cdm
+          zip ../Config-OFDLV${{ steps.version.outputs.version }}.zip *.json cdm
           cd ..
 
       - name: Create release
@@ -56,6 +57,16 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./OFDLV${{ steps.version.outputs.version }}.zip
           asset_name: OFDLV${{ steps.version.outputs.version }}.zip
+          asset_content_type: application/zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload config zip
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./Config-OFDLV${{ steps.version.outputs.version }}.zip
+          asset_name: Config-OFDLV${{ steps.version.outputs.version }}.zip
           asset_content_type: application/zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
