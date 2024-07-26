@@ -13,7 +13,7 @@ COPY ["OF DL", "/src/OF DL"]
 WORKDIR "/src"
 
 # Build release
-RUN dotnet publish -p:Version=$VERSION -c Release --self-contained true -p:PublishSingleFile=true -o out
+RUN dotnet publish -p:WarningLevel=0 -p:Version=$VERSION -c Release --self-contained true -p:PublishSingleFile=true -o out
 
 # Generate default auth.json and config.json files
 RUN /src/out/OF\ DL --non-interactive || true && \
