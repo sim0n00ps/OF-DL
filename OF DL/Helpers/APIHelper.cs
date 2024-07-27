@@ -296,8 +296,7 @@ public class APIHelper : IAPIHelper
 
             foreach (Subscriptions.List subscription in subscriptions.list)
             {
-
-                if ((!subscription.isRestricted ?? false || (subscription.isRestricted ?? false && includeRestricted))
+                if ((!(subscription.isRestricted ?? false) || ((subscription.isRestricted ?? false) && includeRestricted))
                     && !users.ContainsKey(subscription.username))
                 {
                     users.Add(subscription.username, subscription.id);
