@@ -71,7 +71,7 @@ namespace OF_DL.Entities
         public DateTime? CustomDate { get; set; } = null;
 
         [ToggleableConfig]
-        public bool ShowScrapeSize { get; set; } = true;
+        public bool ShowScrapeSize { get; set; } = false;
 
         [ToggleableConfig]
         public bool DownloadPostsIncrementally { get; set; } = false;
