@@ -89,6 +89,9 @@ namespace OF_DL.Entities
 
         [ToggleableConfig]
         public bool DownloadDuplicatedMedia { get; set; } = false;
+
+        public string IgnoredUsersListName { get; set; } = string.Empty;
+
         [JsonConverter(typeof(StringEnumConverter))]
         public LoggingLevel LoggingLevel { get; set; } = LoggingLevel.Error;
     }

@@ -388,8 +388,25 @@ public class Program
                     }
                 }
             }
-            await dBHelper.CreateUsersDB(users);
+
             Dictionary<string, int> lists = await m_ApiHelper.GetLists("/lists", Config);
+
+            // Remove users from the list if they are in the ignored list
+            if (!string.IsNullOrEmpty(Config.IgnoredUsersListName))
+            {
+                if (!lists.TryGetValue(Config.IgnoredUsersListName, out var ignoredUsersListId))
+                {
+                    AnsiConsole.Markup($"[red]Ignored users list '{Config.IgnoredUsersListName}' not found\n[/]");
+                    Log.Error($"Ignored users list '{Config.IgnoredUsersListName}' not found");
+                }
+                else
+                {
+                    var ignoredUsernames = await m_ApiHelper.GetListUsers($"/lists/{ignoredUsersListId}/users", Config) ?? [];
+                    users = users.Where(x => !ignoredUsernames.Contains(x.Key)).ToDictionary(x => x.Key, x => x.Value);
+                }
+            }
+
+            await dBHelper.CreateUsersDB(users);
             KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP;
             if(Config.NonInteractiveMode && Config.NonInteractiveModePurchasedTab)
             {
@@ -401,14 +418,9 @@ public class Program
             }
             else if (Config.NonInteractiveMode && !string.IsNullOrEmpty(Config.NonInteractiveModeListName))
             {
-                List<string> listUsernames = new();
-                int listId = lists[Config.NonInteractiveModeListName];
-                List<string> usernames = await m_ApiHelper.GetListUsers($"/lists/{listId}/users", Config);
-                foreach (string user in usernames)
-                {
-                    listUsernames.Add(user);
-                }
-                var selectedUsers = users.Where(x => listUsernames.Contains($"{x.Key}")).Distinct().ToDictionary(x => x.Key, x => x.Value);
+                var listId = lists[Config.NonInteractiveModeListName];
+                var listUsernames = await m_ApiHelper.GetListUsers($"/lists/{listId}/users", Config) ?? [];
+                var selectedUsers = users.Where(x => listUsernames.Contains(x.Key)).Distinct().ToDictionary(x => x.Key, x => x.Value);
                 hasSelectedUsersKVP = new KeyValuePair<bool, Dictionary<string, int>>(true, selectedUsers);
             }
             else
@@ -456,9 +468,9 @@ public class Program
 
                     Log.Debug($"Download path: {path}");
 
-                    if (!Directory.Exists(path)) 
+                    if (!Directory.Exists(path))
                     {
-                        Directory.CreateDirectory(path); 
+                        Directory.CreateDirectory(path);
                         AnsiConsole.Markup($"[red]Created folder for {username}\n[/]");
                         Log.Debug($"Created folder for {username}");
                     }
@@ -534,7 +546,7 @@ public class Program
                     }
                     else
                     {
-                        path = $"__user_data__/sites/OnlyFans/{purchasedTabCollection.Username}"; 
+                        path = $"__user_data__/sites/OnlyFans/{purchasedTabCollection.Username}";
                     }
 
 
@@ -603,14 +615,14 @@ public class Program
                 }
                 else
                 {
-                    path = $"__user_data__/sites/OnlyFans/{username}"; 
+                    path = $"__user_data__/sites/OnlyFans/{username}";
                 }
 
                 Log.Debug("Download path: ", path);
 
-                if (!Directory.Exists(path)) 
+                if (!Directory.Exists(path))
                 {
-                    Directory.CreateDirectory(path); 
+                    Directory.CreateDirectory(path);
                     AnsiConsole.Markup($"[red]Created folder for {username}\n[/]");
                     Log.Debug($"Created folder for {username}");
                 }
@@ -651,16 +663,16 @@ public class Program
                     }
                     else
                     {
-                        path = $"__user_data__/sites/OnlyFans/{user.Key}"; 
+                        path = $"__user_data__/sites/OnlyFans/{user.Key}";
                     }
 
                     Log.Debug("Download path: ", path);
 
                     await dBHelper.CheckUsername(user, path);
 
-                    if (!Directory.Exists(path)) 
+                    if (!Directory.Exists(path))
                     {
-                        Directory.CreateDirectory(path); 
+                        Directory.CreateDirectory(path);
                         AnsiConsole.Markup($"[red]Created folder for {user.Key}\n[/]");
                         Log.Debug($"Created folder for {user.Key}");
                     }
@@ -1937,7 +1949,7 @@ public class Program
         Log.Debug($"Calling DownloadPaidMessage - {username}");
 
         AnsiConsole.Markup($"[red]Getting Paid Message\n[/]");
-        
+
         PaidMessageCollection paidMessageCollection = await downloadContext.ApiHelper.GetPaidMessage($"/messages/{message_id.ToString()}", path, downloadContext.DownloadConfig!);
         int oldPaidMessagesCount = 0;
         int newPaidMessagesCount = 0;
