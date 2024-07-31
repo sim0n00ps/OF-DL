@@ -471,6 +471,17 @@ Allowed values: `true`, `false`
 
 Description: By default (or when set to `false`), the program will not download duplicated media. If set to `true`, duplicated media will be downloaded.
 
+## IgnoredUsersListName
+
+Type: `string`
+
+Default: `""`
+
+Allowed values: The name of a list of users you have created on OnlyFans or `""`
+
+Description: When set to the name of a list, users in the list will be ignored when scraping content.
+If set to `""` (or an invalid list name), no users will be ignored when scraping content.
+
 ## LoggingLevel
 
 Type: `string`
