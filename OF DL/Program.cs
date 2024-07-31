@@ -150,7 +150,7 @@ public class Program
                     Console.WriteLine(e);
                     AnsiConsole.MarkupLine($"\n[red]auth.json is not valid, check your JSON syntax![/]\n");
                     AnsiConsole.MarkupLine($"[red]If you are struggling with this file, you may want to try the browser extension which is documented here:[/]\n");
-                    AnsiConsole.MarkupLine($"[link]https://of-dl.gitbook.io/of-dl/auth#browser-extension[/]\n");
+                    AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth#browser-extension[/]\n");
                     AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
                     Log.Error("auth.json processing failed.", e.Message);
 
@@ -322,7 +322,7 @@ public class Program
                 AnsiConsole.MarkupLine($"[red]Auth failed, please check the values in auth.json are correct.[/]\n");
                 AnsiConsole.MarkupLine($"[red]If you have previously been able to auth successfully, the most likely cause of this is that your browser has updated, which will change the values of the USER_AGENT string. The version change to this string is usually very minor and easy to overlook, but even a slight difference will cause an authentication failure.[/]\n");
                 AnsiConsole.MarkupLine($"[red]If you are struggling to authenticate, you may want to try the browser extension which is documented here:[/]\n");
-                AnsiConsole.MarkupLine($"[link]https://of-dl.gitbook.io/of-dl/auth#browser-extension[/]\n");
+                AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth#browser-extension[/]\n");
                 AnsiConsole.Markup($"[red]Press any key to exit[/]");
                 Log.Error("Auth failed");
                 Console.ReadKey();
