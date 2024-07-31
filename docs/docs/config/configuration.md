@@ -167,6 +167,12 @@ Allowed values: Any valid path
 Description: If left blank then content will be downloaded to `__user_data__/sites/OnlyFans/{username}`.
 If you set the download path to `"S:/"`, then content will be downloaded to `S:/{username}`
 
+:::note
+
+If you are using a Windows path, you will need to escape the backslashes, e.g. `"C:\\Users\\user\\Downloads\\OnlyFans"`
+
+:::
+
 ## PaidPostFileNameFormat
 
 Type: `string`
@@ -375,7 +381,7 @@ Type: `string`
 
 Default: `""`
 
-Allowed values: The name of a list of users you have created on OnlyFans or `"""`
+Allowed values: The name of a list of users you have created on OnlyFans or `""`
 
 Description: When set to the name of a list, non-interactive mode will download media from the list of users instead of all
 users (when [NonInteractiveMode](#noninteractivemode) is set to `true`). If set to `""`, all users will be scraped
@@ -404,6 +410,12 @@ Allowed values: Any valid path or `""`
 Description: This is the path to the FFmpeg executable (`ffmpeg.exe` on Windows and `ffmpeg` on Linux/macOS).
 If the path is not set then the program will try to find it in both the same directory as the OF-DL executable as well
 as the PATH environment variable.
+
+:::note
+
+If you are using a Windows path, you will need to escape the backslashes, e.g. `"C:\\ffmpeg\\bin\\ffmpeg.exe"`
+
+:::
 
 ## BypassContentForCreatorsWhoNoLongerExist
 
