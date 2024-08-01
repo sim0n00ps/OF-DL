@@ -775,8 +775,9 @@ public class Program
                 return val1;
         };
 
-        if(config.CreatorConfigs.TryGetValue(userName, out var creatorConfig))
+        if(config.CreatorConfigs.ContainsKey(userName))
         {
+            CreatorConfig creatorConfig = config.CreatorConfigs[userName];
             if(creatorConfig != null)
             {
                 combinedConfig.PaidMessageFileNameFormat = creatorConfig.PaidMessageFileNameFormat;
@@ -1950,18 +1951,18 @@ public class Program
 
         AnsiConsole.Markup($"[red]Getting Paid Message\n[/]");
 
-        PaidMessageCollection paidMessageCollection = await downloadContext.ApiHelper.GetPaidMessage($"/messages/{message_id.ToString()}", path, downloadContext.DownloadConfig!);
+        SinglePaidMessageCollection singlePaidMessageCollection = await downloadContext.ApiHelper.GetPaidMessage($"/messages/{message_id.ToString()}", path, downloadContext.DownloadConfig!);
         int oldPaidMessagesCount = 0;
         int newPaidMessagesCount = 0;
-        if (paidMessageCollection != null && paidMessageCollection.PaidMessages.Count > 0)
+        if (singlePaidMessageCollection != null && singlePaidMessageCollection.SingleMessages.Count > 0)
         {
-            AnsiConsole.Markup($"[red]Found {paidMessageCollection.PaidMessages.Count} Paid Messages\n[/]");
-            Log.Debug($"Found {paidMessageCollection.PaidMessages.Count} Paid Messages");
-            paidMessagesCount = paidMessageCollection.PaidMessages.Count;
+            AnsiConsole.Markup($"[red]Found {singlePaidMessageCollection.SingleMessages.Count} Paid Messages\n[/]");
+            Log.Debug($"Found {singlePaidMessageCollection.SingleMessages.Count} Paid Messages");
+            paidMessagesCount = singlePaidMessageCollection.SingleMessages.Count;
             long totalSize = 0;
             if (downloadContext.DownloadConfig.ShowScrapeSize)
             {
-                totalSize = await downloadContext.DownloadHelper.CalculateTotalFileSize(paidMessageCollection.PaidMessages.Values.ToList());
+                totalSize = await downloadContext.DownloadHelper.CalculateTotalFileSize(singlePaidMessageCollection.SingleMessages.Values.ToList());
             }
             else
             {
@@ -1972,11 +1973,11 @@ public class Program
             .StartAsync(async ctx =>
             {
                 // Define tasks
-                var task = ctx.AddTask($"[red]Downloading {paidMessageCollection.PaidMessages.Count} Paid Messages[/]", autoStart: false);
-                Log.Debug($"Downloading {paidMessageCollection.PaidMessages.Count} Paid Messages");
+                var task = ctx.AddTask($"[red]Downloading {singlePaidMessageCollection.SingleMessages.Count} Paid Messages[/]", autoStart: false);
+                Log.Debug($"Downloading {singlePaidMessageCollection.SingleMessages.Count} Paid Messages");
                 task.MaxValue = totalSize;
                 task.StartTask();
-                foreach (KeyValuePair<long, string> paidMessageKVP in paidMessageCollection.PaidMessages)
+                foreach (KeyValuePair<long, string> paidMessageKVP in singlePaidMessageCollection.SingleMessages)
                 {
                     bool isNew;
                     if (paidMessageKVP.Value.Contains("cdn3.onlyfans.com/dash/files"))
@@ -2004,10 +2005,10 @@ public class Program
                                 decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
                             }
 
-                            Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
-                            Purchased.List? messageInfo = paidMessageCollection.PaidMessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
+                            Medium? mediaInfo = singlePaidMessageCollection.SingleMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
+                            SingleMessage? messageInfo = singlePaidMessageCollection.SingleMessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
-                            isNew = await downloadContext.DownloadHelper.DownloadPurchasedMessageDRMVideo(
+                            isNew = await downloadContext.DownloadHelper.DownloadSinglePurchasedMessageDRMVideo(
                                 policy: policy,
                                 signature: signature,
                                 kvp: kvp,
@@ -2036,10 +2037,10 @@ public class Program
                     }
                     else
                     {
-                        Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
-                        Purchased.List messageInfo = paidMessageCollection.PaidMessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
+                        Medium? mediaInfo = singlePaidMessageCollection.SingleMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
+                        SingleMessage? messageInfo = singlePaidMessageCollection.SingleMessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
 
-                        isNew = await downloadContext.DownloadHelper.DownloadPurchasedMedia(
+                        isNew = await downloadContext.DownloadHelper.DownloadSinglePurchasedMedia(
                             url: paidMessageKVP.Value,
                             folder: path,
                             media_id: paidMessageKVP.Key,

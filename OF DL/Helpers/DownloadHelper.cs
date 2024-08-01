@@ -754,6 +754,23 @@ public class DownloadHelper : IDownloadHelper
         return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, api_type, task, filename, resolvedFilename);
     }
 
+    public async Task<bool> DownloadSinglePurchasedMedia(string url, string folder, long media_id, string api_type, ProgressTask task, string? filenameFormat, SingleMessage? messageInfo, Medium? messageMedia, Entities.Messages.FromUser? fromUser, Dictionary<string, int> users)
+    {
+        string path;
+        if (downloadConfig.FolderPerPaidMessage && messageInfo != null && messageInfo?.id is not null && messageInfo?.createdAt is not null)
+        {
+            path = $"/Messages/Paid/{messageInfo.id} {messageInfo.createdAt.Value:yyyy-MM-dd HH-mm-ss}";
+        }
+        else
+        {
+            path = "/Messages/Paid";
+        }
+        Uri uri = new(url);
+        string filename = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
+        string resolvedFilename = await GenerateCustomFileName(filename, filenameFormat, messageInfo, messageMedia, fromUser, folder.Split("/")[^1], users, _FileNameHelper, CustomFileNameOption.ReturnOriginal);
+        return await CreateDirectoriesAndDownloadMedia(path, url, folder, media_id, api_type, task, filename, resolvedFilename);
+    }
+
     public async Task<bool> DownloadPurchasedPostMedia(string url,
                                                        string folder,
                                                        long media_id,
@@ -994,6 +1011,88 @@ public class DownloadHelper : IDownloadHelper
             if (!Directory.Exists(folder + path)) 
             {
                 Directory.CreateDirectory(folder + path); 
+            }
+
+            if (!string.IsNullOrEmpty(filenameFormat) && messageInfo != null && messageMedia != null)
+            {
+                List<string> properties = new();
+                string pattern = @"\{(.*?)\}";
+                MatchCollection matches = Regex.Matches(filenameFormat, pattern);
+                foreach (Match match in matches)
+                {
+                    properties.Add(match.Groups[1].Value);
+                }
+                Dictionary<string, string> values = await _FileNameHelper.GetFilename(messageInfo, messageMedia, fromUser, properties, folder.Split("/")[^1], users);
+                customFileName = await _FileNameHelper.BuildFilename(filenameFormat, values);
+            }
+
+            if (!await m_DBHelper.CheckDownloaded(folder, media_id, api_type))
+            {
+                if (!string.IsNullOrEmpty(customFileName) ? !File.Exists(folder + path + "/" + customFileName + ".mp4") : !File.Exists(folder + path + "/" + filename + "_source.mp4"))
+                {
+                    return await DownloadDrmMedia(auth.USER_AGENT, policy, signature, kvp, auth.COOKIE, url, decryptionKey, folder, lastModified, media_id, api_type, task, customFileName, filename, path);
+                }
+                else
+                {
+                    long fileSizeInBytes = new FileInfo(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + ".mp4" : folder + path + "/" + filename + "_source.mp4").Length;
+                    if (downloadConfig.ShowScrapeSize)
+                    {
+                        task.Increment(fileSizeInBytes);
+                    }
+                    else
+                    {
+                        task.Increment(1);
+                    }
+                    await m_DBHelper.UpdateMedia(folder, media_id, api_type, folder + path, !string.IsNullOrEmpty(customFileName) ? customFileName + "mp4" : filename + "_source.mp4", fileSizeInBytes, true, lastModified);
+                }
+            }
+            else
+            {
+                if (downloadConfig.ShowScrapeSize)
+                {
+                    long size = await m_DBHelper.GetStoredFileSize(folder, media_id, api_type);
+                    task.Increment(size);
+                }
+                else
+                {
+                    task.Increment(1);
+                }
+            }
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine("\nInner Exception:");
+                Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+            }
+        }
+        return false;
+    }
+
+    public async Task<bool> DownloadSinglePurchasedMessageDRMVideo(string policy, string signature, string kvp, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, string api_type, ProgressTask task, string? filenameFormat, SingleMessage? messageInfo, Medium? messageMedia, Entities.Messages.FromUser? fromUser, Dictionary<string, int> users)
+    {
+        try
+        {
+            string customFileName = string.Empty;
+            string path;
+            Uri uri = new(url);
+            string filename = System.IO.Path.GetFileName(uri.LocalPath).Split(".")[0];
+            if (downloadConfig.FolderPerPaidMessage && messageInfo != null && messageInfo?.id is not null && messageInfo?.createdAt is not null)
+            {
+                path = $"/Messages/Paid/{messageInfo.id} {messageInfo.createdAt.Value:yyyy-MM-dd HH-mm-ss}/Videos";
+            }
+            else
+            {
+                path = "/Messages/Paid/Videos";
+            }
+            if (!Directory.Exists(folder + path))
+            {
+                Directory.CreateDirectory(folder + path);
             }
 
             if (!string.IsNullOrEmpty(filenameFormat) && messageInfo != null && messageMedia != null)
