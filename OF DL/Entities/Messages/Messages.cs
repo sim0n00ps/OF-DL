@@ -29,12 +29,41 @@ namespace OF_DL.Entities.Messages
 			public Signature signature { get; set; }
 		}
 
-		public class Files
-		{
-			public Drm drm { get; set; }
-		}
+        public class Files
+        {
+            public Full full { get; set; }
+            public Thumb thumb { get; set; }
+            public Preview preview { get; set; }
+            public SquarePreview squarePreview { get; set; }
+            public Drm drm { get; set; }
+        }
 
-		public class FromUser
+        public class Full
+        {
+            public string url { get; set; }
+            public int width { get; set; }
+            public int height { get; set; }
+            public int size { get; set; }
+            public List<object> sources { get; set; }
+        }
+
+        public class SquarePreview
+        {
+            public string url { get; set; }
+            public int width { get; set; }
+            public int height { get; set; }
+            public int size { get; set; }
+        }
+
+        public class Thumb
+        {
+            public string url { get; set; }
+            public int width { get; set; }
+            public int height { get; set; }
+            public int size { get; set; }
+        }
+
+        public class FromUser
 		{
 			public int? id { get; set; }
 			public string _view { get; set; }

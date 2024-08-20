@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,10 +20,19 @@ namespace OF_DL.Entities.Stories
         public bool isLiked { get; set; }
         public class Files
         {
-            public Source source { get; set; }
+            public Full full { get; set; }
             public Thumb thumb { get; set; }
             public Preview preview { get; set; }
             public SquarePreview squarePreview { get; set; }
+        }
+
+        public class Full
+        {
+            public string url { get; set; }
+            public int width { get; set; }
+            public int height { get; set; }
+            public int size { get; set; }
+            public List<object> sources { get; set; }
         }
 
         public class Medium
