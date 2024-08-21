@@ -86,36 +86,23 @@ namespace OF_DL.Helpers
                 }
                 else if (propertyName.Contains("filename"))
                 {
-                    PropertyInfo property = Array.Find(properties2, p => p.Name.Equals("source", StringComparison.OrdinalIgnoreCase));
-                    if (property != null)
+                    string sourcePropertyPath = "files.full.url";
+                    object sourcePropertyValue = GetNestedPropertyValue(obj2, sourcePropertyPath);
+                    if (sourcePropertyValue != null)
                     {
-                        object propertyValue = property.GetValue(obj2);
-                        if (propertyValue != null)
+                        Uri uri = new(sourcePropertyValue.ToString());
+                        string filename = System.IO.Path.GetFileName(uri.LocalPath);
+                        values.Add(propertyName, filename.Split(".")[0]);
+                    }
+                    else
+                    {
+                        string propertyPath = "files.drm.manifest.dash";
+                        object nestedPropertyValue = GetNestedPropertyValue(obj2, propertyPath);
+                        if (nestedPropertyValue != null)
                         {
-                            Type sourceType = propertyValue.GetType();
-                            PropertyInfo[] sourceProperties = sourceType.GetProperties();
-                            PropertyInfo sourceProperty = Array.Find(sourceProperties, p => p.Name.Equals("source", StringComparison.OrdinalIgnoreCase));
-                            if(sourceProperty != null)
-                            {
-                                object sourcePropertyValue = sourceProperty.GetValue(propertyValue);
-                                if(sourcePropertyValue != null)
-                                {
-                                    Uri uri = new(sourcePropertyValue.ToString());
-                                    string filename = System.IO.Path.GetFileName(uri.LocalPath);
-                                    values.Add(propertyName, filename.Split(".")[0]);
-                                }
-                                else
-                                {
-                                    string propertyPath = "files.drm.manifest.dash";
-                                    object nestedPropertyValue = GetNestedPropertyValue(obj2, propertyPath);
-                                    if (nestedPropertyValue != null)
-                                    {
-                                        Uri uri = new(nestedPropertyValue.ToString());
-                                        string filename = System.IO.Path.GetFileName(uri.LocalPath);
-                                        values.Add(propertyName, filename.Split(".")[0] + "_source");
-                                    }
-                                }
-                            }
+                            Uri uri = new(nestedPropertyValue.ToString());
+                            string filename = System.IO.Path.GetFileName(uri.LocalPath);
+                            values.Add(propertyName, filename.Split(".")[0] + "_source");
                         }
                     }
                 }
