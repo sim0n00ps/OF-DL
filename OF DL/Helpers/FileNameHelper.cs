@@ -48,7 +48,7 @@ namespace OF_DL.Helpers
                     }
                     else if((fileProperty == null || drmProperty == null) && propertyName == "mediaCreatedAt")
                     {
-                        object source = GetNestedPropertyValue(obj2, "source.source");
+                        object source = GetNestedPropertyValue(obj2, "files.full.url");
                         if(source != null)
                         {
                             DateTime lastModified = await DownloadHelper.GetMediaLastModified(source.ToString());

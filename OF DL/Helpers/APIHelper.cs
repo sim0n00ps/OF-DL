@@ -1621,7 +1621,7 @@ public class APIHelper : IAPIHelper
                 {
                     foreach (Messages.Medium medium in message.media)
                     {
-                        if (medium.canView && medium.files != null && medium.files.full != null && !string.IsNullOrEmpty(medium.files.full.url) && !medium.files.full.url.Contains("upload"))
+                        if (!messagePreviewIds.Contains(medium.id) && medium.canView && medium.files != null && medium.files.full != null && !string.IsNullOrEmpty(medium.files.full.url) && !medium.files.full.url.Contains("upload"))
                         {
                             if (medium.type == "photo" && !config.DownloadImages)
                             {
@@ -1647,7 +1647,7 @@ public class APIHelper : IAPIHelper
                                 singlePaidMessageCollection.SingleMessageMedia.Add(medium);
                             }
                         }
-                        else if (medium.canView && medium.files != null && medium.files.drm != null)
+                        else if (!messagePreviewIds.Contains(medium.id) && medium.canView && medium.files != null && medium.files.drm != null)
                         {
                             if (medium.type == "photo" && !config.DownloadImages)
                             {
@@ -1668,69 +1668,13 @@ public class APIHelper : IAPIHelper
                             
                             if (!singlePaidMessageCollection.SingleMessages.ContainsKey(medium.id))
                             {
-                               await m_DBHelper.AddMedia(folder, medium.id, message.id, medium.videoSources._720, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), messagePreviewIds.Contains(medium.id) ? true : false, false, null);
+                               await m_DBHelper.AddMedia(folder, medium.id, message.id, medium.files.drm.manifest.dash, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), messagePreviewIds.Contains(medium.id) ? true : false, false, null);
                                 singlePaidMessageCollection.SingleMessages.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{message.id}");
                                 singlePaidMessageCollection.SingleMessageMedia.Add(medium);
                             }
                         }
                     }
-                }
-                else if (messagePreviewIds.Count > 0)
-                {
-                    foreach(Messages.Medium medium in message.media)
-                    {
-                        if (medium.canView && medium.files != null && medium.files.full != null && !string.IsNullOrEmpty(medium.files.full.url) && messagePreviewIds.Contains(medium.id))
-                        {
-                            if (medium.type == "photo" && !config.DownloadImages)
-                            {
-                                continue;
-                            }
-                            if (medium.type == "video" && !config.DownloadVideos)
-                            {
-                                continue;
-                            }
-                            if (medium.type == "gif" && !config.DownloadVideos)
-                            {
-                                continue;
-                            }
-                            if (medium.type == "audio" && !config.DownloadAudios)
-                            {
-                                continue;
-                            }
-                            if (!singlePaidMessageCollection.SingleMessages.ContainsKey(medium.id))
-                            {
-                                await m_DBHelper.AddMedia(folder, medium.id, message.id, medium.files.full.url, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), messagePreviewIds.Contains(medium.id) ? true : false, false, null);
-                                singlePaidMessageCollection.SingleMessages.Add(medium.id, medium.files.full.url);
-                                singlePaidMessageCollection.SingleMessageMedia.Add(medium);
-                        }
-                    }
-                    else if (medium.canView && medium.files != null && medium.files.drm != null && messagePreviewIds.Contains(medium.id))
-                    {
-                        if (medium.type == "photo" && !config.DownloadImages)
-                        {
-                            continue;
-                        }
-                        if (medium.type == "video" && !config.DownloadVideos)
-                        {
-                            continue;
-                        }
-                        if (medium.type == "gif" && !config.DownloadVideos)
-                        {
-                            continue;
-                        }
-                        if (medium.type == "audio" && !config.DownloadAudios)
-                        {
-                            continue;
-                        }
-                        if (!singlePaidMessageCollection.SingleMessages.ContainsKey(medium.id))
-                        {
-                            await m_DBHelper.AddMedia(folder, medium.id, message.id, medium.files.drm.manifest.dash, null, null, null, "Messages", medium.type == "photo" ? "Images" : (medium.type == "video" || medium.type == "gif" ? "Videos" : (medium.type == "audio" ? "Audios" : null)), messagePreviewIds.Contains(medium.id) ? true : false, false, null);
-                            singlePaidMessageCollection.SingleMessages.Add(medium.id, $"{medium.files.drm.manifest.dash},{medium.files.drm.signature.dash.CloudFrontPolicy},{medium.files.drm.signature.dash.CloudFrontSignature},{medium.files.drm.signature.dash.CloudFrontKeyPairId},{medium.id},{message.id}");
-                            singlePaidMessageCollection.SingleMessageMedia.Add(medium);
-                        }
-                    }
-                    }
-                }            
+                }  
 
             return singlePaidMessageCollection;
         }
