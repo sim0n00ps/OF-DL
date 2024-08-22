@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,7 +18,7 @@ namespace OF_DL.Entities.Highlights
 			public int coverStoryId { get; set; }
 			public string cover { get; set; }
 			public int storiesCount { get; set; }
-			public DateTime createdAt { get; set; }
+			public DateTime? createdAt { get; set; }
 		}
 	}
 }

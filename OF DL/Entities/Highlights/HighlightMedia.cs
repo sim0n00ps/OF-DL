@@ -15,7 +15,7 @@ namespace OF_DL.Entities.Highlights
 		public int coverStoryId { get; set; }
 		public string cover { get; set; }
 		public int storiesCount { get; set; }
-		public DateTime createdAt { get; set; }
+		public DateTime? createdAt { get; set; }
 		public List<Story> stories { get; set; }
 		public class Files
 		{
@@ -41,7 +41,7 @@ namespace OF_DL.Entities.Highlights
 			public bool convertedToVideo { get; set; }
 			public bool canView { get; set; }
 			public bool hasError { get; set; }
-			public DateTime createdAt { get; set; }
+			public DateTime? createdAt { get; set; }
 			public Files files { get; set; }
 		}
 
@@ -91,7 +91,7 @@ namespace OF_DL.Entities.Highlights
 			public bool isWatched { get; set; }
 			public bool isReady { get; set; }
 			public List<Medium> media { get; set; }
-			public DateTime createdAt { get; set; }
+			public DateTime? createdAt { get; set; }
 			public object question { get; set; }
 			public bool canLike { get; set; }
 			public bool isLiked { get; set; }

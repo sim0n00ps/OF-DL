@@ -17,6 +17,7 @@ using System.Text;
 using System.Text.Json;
 using System.Xml.Linq;
 using WidevineClient.Widevine;
+using static OF_DL.Entities.Highlights.HighlightMedia;
 using static WidevineClient.HttpUtil;
 
 namespace OF_DL.Helpers;
@@ -523,17 +524,20 @@ public class APIHelper : IAPIHelper
                 Log.Debug("Media Stories - " + endpoint);
 
                 var stories = JsonConvert.DeserializeObject<List<Stories>>(body, m_JsonSerializerSettings) ?? new List<Stories>();
-                stories = stories.OrderByDescending(x => x.createdAt).ToList();
 
                 foreach (Stories story in stories)
                 {
-                    if (story.createdAt != null)
+                    if (story.media[0].createdAt.HasValue)
                     {
-                        await m_DBHelper.AddStory(folder, story.id, string.Empty, "0", false, false, story.createdAt);
+                        await m_DBHelper.AddStory(folder, story.id, string.Empty, "0", false, false, story.media[0].createdAt.Value);
+                    }
+                    else if (story.createdAt.HasValue)
+                    {
+                        await m_DBHelper.AddStory(folder, story.id, string.Empty, "0", false, false, story.createdAt.Value);
                     }
                     else
                     {
-                        await m_DBHelper.AddStory(folder, story.id, string.Empty, "0", false, false, story.media[0].createdAt);
+                        await m_DBHelper.AddStory(folder, story.id, string.Empty, "0", false, false, DateTime.Now);
                     }
                     if (story.media != null && story.media.Count > 0)
                     {
@@ -624,7 +628,18 @@ public class APIHelper : IAPIHelper
                     {
                         foreach (HighlightMedia.Story item in highlightMedia.stories)
                         {
-                            await m_DBHelper.AddStory(folder, item.id, string.Empty, "0", false, false, item.createdAt);
+                            if (item.media[0].createdAt.HasValue)
+                            {
+                                await m_DBHelper.AddStory(folder, item.id, string.Empty, "0", false, false, item.media[0].createdAt.Value);
+                            }
+                            else if (item.createdAt.HasValue)
+                            {
+                                await m_DBHelper.AddStory(folder, item.id, string.Empty, "0", false, false, item.createdAt.Value);
+                            }
+                            else
+                            {
+                                await m_DBHelper.AddStory(folder, item.id, string.Empty, "0", false, false, DateTime.Now);
+                            }
                             if (item.media.Count > 0 && !item.media[0].files.full.url.Contains("upload"))
                             {
                                 foreach (HighlightMedia.Medium medium in item.media)

@@ -598,7 +598,7 @@ public class DownloadHelper : IDownloadHelper
         ProcessStartInfo ffmpegStartInfo = new()
         {
             FileName = downloadConfig.FFmpegPath,
-            Arguments = $"-cenc_decryption_key {decKey} -headers \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess}\r\nOrigin: https://onlyfans.com\r\nReferer: https://onlyfans.com\r\nUser-Agent: {user_agent}\r\n\r\n\" -y -i \"{url}\" -codec copy \"{tempFilename}\"",
+            Arguments = $"-cenc_decryption_key {decKey} -headers \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess} Origin: https://onlyfans.com Referer: https://onlyfans.com User-Agent: {user_agent}\" -y -i \"{url}\" -codec copy \"{tempFilename}\"",
             CreateNoWindow = true,
             UseShellExecute = false,
             RedirectStandardOutput = false,
