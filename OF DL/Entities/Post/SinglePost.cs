@@ -119,7 +119,7 @@ namespace OF_DL.Entities.Post
             public bool convertedToVideo { get; set; }
             public bool canView { get; set; }
             public bool hasError { get; set; }
-            public DateTime createdAt { get; set; }
+            public DateTime? createdAt { get; set; }
             public Info info { get; set; }
             public Source source { get; set; }
             public string squarePreview { get; set; }

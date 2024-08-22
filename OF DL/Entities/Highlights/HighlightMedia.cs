@@ -41,7 +41,7 @@ namespace OF_DL.Entities.Highlights
 			public bool convertedToVideo { get; set; }
 			public bool canView { get; set; }
 			public bool hasError { get; set; }
-			public DateTime createdAt { get; set; }
+			public DateTime? createdAt { get; set; }
 			public Files files { get; set; }
 		}
 

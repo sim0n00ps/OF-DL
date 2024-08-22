@@ -527,14 +527,8 @@ public class APIHelper : IAPIHelper
 
                 foreach (Stories story in stories)
                 {
-                    if (story.createdAt != null)
-                    {
-                        await m_DBHelper.AddStory(folder, story.id, string.Empty, "0", false, false, story.createdAt);
-                    }
-                    else
-                    {
-                        await m_DBHelper.AddStory(folder, story.id, string.Empty, "0", false, false, story.media[0].createdAt);
-                    }
+                    await m_DBHelper.AddStory(folder, story.id, string.Empty, "0", false, false, story.createdAt);
+                    
                     if (story.media != null && story.media.Count > 0)
                     {
                         foreach (Stories.Medium medium in story.media)
