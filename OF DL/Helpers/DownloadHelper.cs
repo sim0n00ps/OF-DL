@@ -21,6 +21,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Xabe.FFmpeg;
+using Xabe.FFmpeg.Exceptions;
 using static OF_DL.Entities.Lists.UserList;
 using static OF_DL.Entities.Messages.Messages;
 
@@ -586,59 +588,67 @@ public class DownloadHelper : IDownloadHelper
 
     private async Task<bool> DownloadDrmMedia(string user_agent, string policy, string signature, string kvp, string sess, string url, string decryptionKey, string folder, DateTime lastModified, long media_id, string api_type, ProgressTask task, string customFileName, string filename, string path)
     {
-        int pos1 = decryptionKey.IndexOf(':');
-        string decKey = "";
-        if (pos1 >= 0)
+        try
         {
-            decKey = decryptionKey.Substring(pos1 + 1);
-        }
+            int pos1 = decryptionKey.IndexOf(':');
+            string decKey = "";
+            if (pos1 >= 0)
+            {
+                decKey = decryptionKey.Substring(pos1 + 1);
+            }
 
-        string tempFilename = $"{folder}{path}/{filename}_source.mp4";
+            string tempFilename = $"{folder}{path}/{filename}_source.mp4";
 
-        ProcessStartInfo ffmpegStartInfo = new()
-        {
-            FileName = downloadConfig.FFmpegPath,
-            Arguments = $"-cenc_decryption_key {decKey} -headers \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess} Origin: https://onlyfans.com Referer: https://onlyfans.com User-Agent: {user_agent}\" -y -i \"{url}\" -codec copy \"{tempFilename}\"",
-            CreateNoWindow = true,
-            UseShellExecute = false,
-            RedirectStandardOutput = false,
-            RedirectStandardError = true
-        };
+            string parameters = $"-cenc_decryption_key {decKey} -headers \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess} Origin: https://onlyfans.com Referer: https://onlyfans.com User-Agent: {user_agent}\" -y -i \"{url}\" -codec copy \"{tempFilename}\"";
 
-        Process ffmpegProcess = new()
-        {
-            StartInfo = ffmpegStartInfo
-        };
-        ffmpegProcess.Start();
-        var ffmpegErrors = ffmpegProcess.StandardError.ReadToEnd();
-        ffmpegProcess.WaitForExit();
+            var conversion = FFmpeg.Conversions.New().AddParameter(parameters.Replace("\n", "")).SetOverwriteOutput(true);
 
-        if (ffmpegProcess.ExitCode != 0)
-        {
-            Console.WriteLine("\nFFmpeg failed to download {0}", url);
-            Log.Error(ffmpegErrors);
-        }
+            IConversionResult result = await conversion.Start();
 
-        if (File.Exists(tempFilename))
-        {
-            File.SetLastWriteTime(tempFilename, lastModified);
-        }
-        if (!string.IsNullOrEmpty(customFileName))
-        {
-            File.Move(tempFilename, $"{folder + path + "/" + customFileName + ".mp4"}");
-        }
-        //Cleanup Files
-        long fileSizeInBytes = new FileInfo(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + ".mp4" : tempFilename).Length;
-        if (downloadConfig.ShowScrapeSize)
-        {
-            task.Increment(fileSizeInBytes);
-        }
-        else
-        {
-            task.Increment(1);
-        }
-        await m_DBHelper.UpdateMedia(folder, media_id, api_type, folder + path, !string.IsNullOrEmpty(customFileName) ? customFileName + "mp4" : filename + "_source.mp4", fileSizeInBytes, true, lastModified);
+            if (File.Exists(tempFilename))
+            {
+                File.SetLastWriteTime(tempFilename, lastModified);
+            }
+            if (!string.IsNullOrEmpty(customFileName))
+            {
+                File.Move(tempFilename, $"{folder + path + "/" + customFileName + ".mp4"}");
+            }
+            //Cleanup Files
+            long fileSizeInBytes = new FileInfo(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + ".mp4" : tempFilename).Length;
+            if (downloadConfig.ShowScrapeSize)
+            {
+                task.Increment(fileSizeInBytes);
+            }
+            else
+            {
+                task.Increment(1);
+            }
+            await m_DBHelper.UpdateMedia(folder, media_id, api_type, folder + path, !string.IsNullOrEmpty(customFileName) ? customFileName + "mp4" : filename + "_source.mp4", fileSizeInBytes, true, lastModified);
 
+            return true;
+        }
+        catch (ConversionException ex)
+        {
+            Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine("\nInner Exception:");
+                Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine("\nInner Exception:");
+                Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+            }
+        }
         return true;
     }
     #endregion

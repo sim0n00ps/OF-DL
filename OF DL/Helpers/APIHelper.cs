@@ -10,8 +10,10 @@ using OF_DL.Entities.Purchased;
 using OF_DL.Entities.Stories;
 using OF_DL.Entities.Streams;
 using OF_DL.Enumurations;
+using Org.BouncyCastle.Asn1.Crmf;
 using Serilog;
 using System.Globalization;
+using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -2519,52 +2521,58 @@ public class APIHelper : IAPIHelper
     {
         Log.Debug("Calling GetDecryptionKey");
 
+        const int maxAttempts = 20; // Maximum number of retry attempts
+        int attempt = 0;
+
         try
         {
             string dcValue = string.Empty;
-
-            StringBuilder sb = new();
-            sb.Append("{\n");
-            sb.AppendFormat("  \"License URL\": \"{0}\",\n", licenceURL);
-            sb.Append("  \"Headers\": \"{");
-            foreach (KeyValuePair<string, string> header in drmHeaders)
-            {
-                if (header.Key == "time" || header.Key == "user-id")
-                {
-                    sb.AppendFormat("\\\"{0}\\\": \\\"{1}\\\",", header.Key, header.Value);
-                }
-                else
-                {
-                    sb.AppendFormat("\\\"{0}\\\": \\\"{1}\\\",", header.Key, header.Value);
-                }
-            }
-            sb.Remove(sb.Length - 1, 1);
-            sb.Append("}\",\n");
-            sb.AppendFormat("  \"PSSH\": \"{0}\"\n", pssh);
-            sb.Append(",\"JSON\":\"\",\"Cookies\":\"\",\"Data\":\"\",\"Proxy\":\"\"");
-            sb.Append('}');
-            string json = sb.ToString();
             HttpClient client = new();
+
+            CDRMProjectRequest cdrmProjectRequest = new CDRMProjectRequest
+            {
+                PSSH = pssh,
+                LicenseURL = licenceURL,
+                Headers = JsonConvert.SerializeObject(drmHeaders),
+                JSON = "",
+                Cookies = "",
+                Data = "",
+                Proxy = ""
+            };
+
+            string json = JsonConvert.SerializeObject(cdrmProjectRequest);
 
             Log.Debug($"Posting to CDRM Project: {json}");
 
-            HttpRequestMessage request = new(HttpMethod.Post, "https://cdrm-project.com/")
+            while (attempt < maxAttempts)
             {
-                Content = new StringContent(json, Encoding.UTF8, "application/json")
-            };
+                attempt++;
 
-            using var response = await client.SendAsync(request);
+                HttpRequestMessage request = new(HttpMethod.Post, "https://cdrm-project.com/")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
 
-            Log.Debug($"CDRM Project Response: {response}");
+                using var response = await client.SendAsync(request);
 
-            response.EnsureSuccessStatusCode();
-            var body = await response.Content.ReadAsStringAsync();
+                Log.Debug($"CDRM Project Response (Attempt {attempt}): {response}");
 
-            var doc = JsonDocument.Parse(body);
+                response.EnsureSuccessStatusCode();
+                var body = await response.Content.ReadAsStringAsync();
 
-            dcValue = doc.RootElement.GetProperty("Message").GetString().Trim();
+                if (!body.Contains("error", StringComparison.OrdinalIgnoreCase))
+                {
+                    var doc = JsonDocument.Parse(body);
+                    dcValue = doc.RootElement.GetProperty("Message").GetString().Trim();
+                    return dcValue;
+                }
+                else
+                {
+                    Log.Debug($"Response contains 'error'. Retrying... Attempt {attempt} of {maxAttempts}");
+                }
+            }
 
-            return dcValue;
+            throw new Exception("Maximum retry attempts reached. Unable to get a valid decryption key.");
         }
         catch (Exception ex)
         {
@@ -2579,7 +2587,6 @@ public class APIHelper : IAPIHelper
         }
         return null;
     }
-
 
     public async Task<string> GetDecryptionKeyNew(Dictionary<string, string> drmHeaders, string licenceURL, string pssh)
     {
