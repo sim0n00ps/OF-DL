@@ -137,21 +137,22 @@ public class Program
 
             try
             {
+                // Only run the version check if not in DEBUG mode
+                #if !DEBUG
                 Version localVersion = Assembly.GetEntryAssembly()?.GetName().Version; //Only tested with numeric values.
-                //Get all releases from GitHub
-                //Source: https://octokitnet.readthedocs.io/en/latest/getting-started/
+    
+                // Get all releases from GitHub
                 GitHubClient client = new GitHubClient(new ProductHeaderValue("SomeName"));
                 IReadOnlyList<Release> releases = await client.Repository.Release.GetAll("sim0n00ps", "OF-DL");
 
-                //Setup the versions
+                // Setup the versions
                 Version latestGitHubVersion = new Version(releases[0].TagName.Replace("OFDLV", ""));
 
-                //Compare the Versions
-                //Source: https://stackoverflow.com/questions/7568147/compare-version-numbers-without-using-split-function
+                // Compare the Versions
                 int versionComparison = localVersion.CompareTo(latestGitHubVersion);
                 if (versionComparison < 0)
                 {
-                    //The version on GitHub is more up to date than this local release.
+                    // The version on GitHub is more up to date than this local release.
                     AnsiConsole.Markup("[red]You are running OF-DL version " + $"{localVersion.Major}.{localVersion.Minor}.{localVersion.Build}\n[/]");
                     AnsiConsole.Markup("[red]Please update to the current release on GitHub, " + $"{latestGitHubVersion.Major}.{latestGitHubVersion.Minor}.{latestGitHubVersion.Build}: {releases[0].HtmlUrl}\n[/]");
                     Log.Debug("Detected outdated client running version " + $"{localVersion.Major}.{localVersion.Minor}.{localVersion.Build}");
@@ -159,12 +160,16 @@ public class Program
                 }
                 else
                 {
-                    //This local version is greater than the release version on GitHub.
+                    // This local version is greater than the release version on GitHub.
                     AnsiConsole.Markup("[green]You are running OF-DL version " + $"{localVersion.Major}.{localVersion.Minor}.{localVersion.Build}\n[/]");
                     AnsiConsole.Markup("[green]Latest GitHub Release version: " + $"{latestGitHubVersion.Major}.{latestGitHubVersion.Minor}.{latestGitHubVersion.Build}\n[/]");
                     Log.Debug("Detected client running version " + $"{localVersion.Major}.{localVersion.Minor}.{localVersion.Build}");
                     Log.Debug("Latest GitHub release version " + $"{latestGitHubVersion.Major}.{latestGitHubVersion.Minor}.{latestGitHubVersion.Build}");
                 }
+                #else
+                AnsiConsole.Markup("[yellow]Running in Debug/Local mode. Version check skipped.\n[/]");
+                Log.Debug("Running in Debug/Local mode. Version check skipped.");
+                #endif
             }
             catch (Exception e)
             {
