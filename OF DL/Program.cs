@@ -18,8 +18,6 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
-using Xabe.FFmpeg;
-using Xabe.FFmpeg.Downloader;
 using static OF_DL.Entities.Messages.Messages;
 
 namespace OF_DL;
@@ -258,8 +256,6 @@ public class Program
             if (!string.IsNullOrEmpty(config!.FFmpegPath) && ValidateFilePath(config.FFmpegPath))
             {
                 // FFmpeg path is set in config.json and is valid
-                DirectoryInfo directory = Directory.GetParent(config.FFmpegPath);
-                FFmpeg.SetExecutablesPath(directory.FullName);
                 ffmpegFound = true;
                 Log.Debug($"FFMPEG found: {config.FFmpegPath}");
                 Log.Debug("FFMPEG path set in config.json");
@@ -267,8 +263,6 @@ public class Program
             else if (!string.IsNullOrEmpty(auth!.FFMPEG_PATH) && ValidateFilePath(auth.FFMPEG_PATH))
             {
                 // FFmpeg path is set in auth.json and is valid (config.json takes precedence and auth.json is only available for backward compatibility)
-                DirectoryInfo directory = Directory.GetParent(auth.FFMPEG_PATH);
-                FFmpeg.SetExecutablesPath(directory.FullName);
                 ffmpegFound = true;
                 config.FFmpegPath = auth.FFMPEG_PATH;
                 Log.Debug($"FFMPEG found: {config.FFmpegPath}");
@@ -281,8 +275,6 @@ public class Program
                 if (ffmpegPath != null)
                 {
                     // FFmpeg is found in the PATH or current directory
-                    DirectoryInfo directory = Directory.GetParent(ffmpegPath);
-                    FFmpeg.SetExecutablesPath(directory.FullName);
                     ffmpegFound = true;
                     pathAutoDetected = true;
                     config.FFmpegPath = ffmpegPath;
@@ -296,8 +288,6 @@ public class Program
                     if (ffmpegPath != null)
                     {
                         // FFmpeg windows executable is found in the PATH or current directory
-                        DirectoryInfo directory = Directory.GetParent(ffmpegPath);
-                        FFmpeg.SetExecutablesPath(directory.FullName);
                         ffmpegFound = true;
                         pathAutoDetected = true;
                         config.FFmpegPath = ffmpegPath;
@@ -326,23 +316,13 @@ public class Program
             }
             else
             {
-                AnsiConsole.Markup("[yellow]Cannot locate FFmpeg; Attempting to download latest version.[/]");
-                await FFmpegDownloader.GetLatestVersion(FFmpegVersion.Full);
-                string ffmpegExePath = Path.Combine(FFmpeg.ExecutablesPath, "ffmpeg.exe");
-                if (!File.Exists(ffmpegExePath))
+                AnsiConsole.Markup("[red]Cannot locate FFmpeg; please modify config.json with the correct path. Press any key to exit.[/]");
+                Log.Error($"Cannot locate FFmpeg with path: {config.FFmpegPath}");
+                if (!config.NonInteractiveMode)
                 {
-                    AnsiConsole.Markup("[red]Cannot locate FFmpeg; please modify config.json with the correct path. Press any key to exit.[/]");
-                    Log.Error($"Cannot locate FFmpeg with path: {config.FFmpegPath}");
-                    if (!config.NonInteractiveMode)
-                    {
-                        Console.ReadKey();
-                    }
-                    Environment.Exit(4);
+                    Console.ReadKey();
                 }
-                else
-                {
-                    AnsiConsole.Markup($"[green]FFmpeg located successfully\n[/]");
-                }
+                Environment.Exit(4);
             }
 
             if (!File.Exists(Path.Join(WidevineClient.Widevine.Constants.DEVICES_FOLDER, WidevineClient.Widevine.Constants.DEVICE_NAME, "device_client_id_blob")))

@@ -1,3 +1,4 @@
+using FFmpeg.NET;
 using OF_DL.Entities;
 using OF_DL.Entities.Archived;
 using OF_DL.Entities.Messages;
@@ -21,8 +22,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Xabe.FFmpeg;
-using Xabe.FFmpeg.Exceptions;
 using static OF_DL.Entities.Lists.UserList;
 using static OF_DL.Entities.Messages.Messages;
 
@@ -601,9 +600,10 @@ public class DownloadHelper : IDownloadHelper
 
             string parameters = $"-cenc_decryption_key {decKey} -headers \"Cookie:CloudFront-Policy={policy}; CloudFront-Signature={signature}; CloudFront-Key-Pair-Id={kvp}; {sess} Origin: https://onlyfans.com Referer: https://onlyfans.com User-Agent: {user_agent}\" -y -i \"{url}\" -codec copy \"{tempFilename}\"";
 
-            var conversion = FFmpeg.Conversions.New().AddParameter(parameters.Replace("\n", "")).SetOverwriteOutput(true);
+            Log.Debug($"Calling FFMPEG with Parameters: {parameters}");
 
-            IConversionResult result = await conversion.Start();
+            Engine ffmpeg = new Engine(downloadConfig.FFmpegPath);
+            await ffmpeg.ExecuteAsync(parameters, CancellationToken.None);
 
             if (File.Exists(tempFilename))
             {
@@ -626,17 +626,6 @@ public class DownloadHelper : IDownloadHelper
             await m_DBHelper.UpdateMedia(folder, media_id, api_type, folder + path, !string.IsNullOrEmpty(customFileName) ? customFileName + "mp4" : filename + "_source.mp4", fileSizeInBytes, true, lastModified);
 
             return true;
-        }
-        catch (ConversionException ex)
-        {
-            Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
-            if (ex.InnerException != null)
-            {
-                Console.WriteLine("\nInner Exception:");
-                Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
-                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
-            }
         }
         catch (Exception ex)
         {

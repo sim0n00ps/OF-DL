@@ -2555,7 +2555,7 @@ public class APIHelper : IAPIHelper
 
                 using var response = await client.SendAsync(request);
 
-                Log.Debug($"CDRM Project Response (Attempt {attempt}): {response}");
+                Log.Debug($"CDRM Project Response (Attempt {attempt}): {response.Content.ReadAsStringAsync().Result}");
 
                 response.EnsureSuccessStatusCode();
                 var body = await response.Content.ReadAsStringAsync();
@@ -2600,18 +2600,18 @@ public class APIHelper : IAPIHelper
             var challenge = cdm.GetChallenge(pssh, certDataB64, false, false);
             var resp2 = PostData(licenceURL, drmHeaders, challenge);
             var licenseB64 = Convert.ToBase64String(resp2);
-            cdm.ProvideLicense(licenseB64);
-            List<ContentKey> keys = cdm.GetKeys();
-            if (keys.Count > 0)
-            {
-                return keys[0].ToString();
-            }
-
             Log.Debug($"resp1: {resp1}");
             Log.Debug($"certDataB64: {certDataB64}");
             Log.Debug($"challenge: {challenge}");
             Log.Debug($"resp2: {resp2}");
             Log.Debug($"licenseB64: {licenseB64}");
+            cdm.ProvideLicense(licenseB64);
+            List<ContentKey> keys = cdm.GetKeys();
+            if (keys.Count > 0)
+            {
+                Log.Debug($"GetDecryptionKeyNew Key: {keys[0].ToString()}");
+                return keys[0].ToString();
+            }
         }
         catch (Exception ex)
         {

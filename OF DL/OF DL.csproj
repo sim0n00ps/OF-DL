@@ -24,8 +24,7 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
     <PackageReference Include="System.Reactive" Version="6.0.0" />
-    <PackageReference Include="Xabe.FFmpeg" Version="5.2.6" />
-    <PackageReference Include="Xabe.FFmpeg.Downloader" Version="5.2.6" />
+    <PackageReference Include="xFFmpeg.NET" Version="7.2.0" />
   </ItemGroup>
 
   <ItemGroup>
