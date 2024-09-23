@@ -11,7 +11,7 @@
 
 -   Install .NET version 8
     `wget https://dot.net/v1/dotnet-install.sh`  
-    `sudo bash dotnet-install.sh --architecture x64 --install-dir /usr/share/dotnet/ --runtime dotnet --version 8.0.19`
+    `sudo bash dotnet-install.sh --architecture x64 --install-dir /usr/share/dotnet/ --runtime dotnet --version 8.0.8`
 
 -   Clone the repo
     `git clone https://github.com/sim0n00ps/OF-DL.git`  
