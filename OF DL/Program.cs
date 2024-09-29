@@ -213,6 +213,9 @@ public class Program
                 Environment.Exit(2);
             }
 
+            //Added to stop cookie being filled with un-needed headers
+            ValidateCookieString();
+
             if (File.Exists("rules.json"))
             {
                 AnsiConsole.Markup("[green]rules.json located successfully!\n[/]");
@@ -2561,5 +2564,25 @@ public class Program
             }
         }
         return null;
+    }
+
+    public static void ValidateCookieString()
+    {
+        string pattern = @"(auth_id=\d+)|(sess=[^;]+)";
+        var matches = Regex.Matches(auth.COOKIE, pattern);
+
+        string output = string.Join("; ", matches);
+
+        if (!output.EndsWith(";"))
+        {
+            output += ";";
+        }
+
+        if(auth.COOKIE.Trim() != output.Trim())
+        {
+            auth.COOKIE = output;
+            string newAuthString = JsonConvert.SerializeObject(auth, Formatting.Indented);
+            File.WriteAllText("auth.json", newAuthString);
+        }
     }
 }
