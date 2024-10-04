@@ -152,7 +152,7 @@ public class Post
         public bool? canVote { get; set; }
         public List<Medium> media { get; set; }
         public bool? canViewMedia { get; set; }
-        public List<string> preview { get; set; }
+        public List<object> preview { get; set; }
     }
 
     public class Manifest

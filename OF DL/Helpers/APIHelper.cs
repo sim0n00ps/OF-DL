@@ -13,6 +13,7 @@ using OF_DL.Enumurations;
 using Org.BouncyCastle.Asn1.Crmf;
 using Serilog;
 using System.Globalization;
+using System.IO;
 using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
 using System.Text;
@@ -740,9 +741,12 @@ public class APIHelper : IAPIHelper
                     {
                         for (int i = 0; i < purchase.previews.Count; i++)
                         {
-                            if (!previewids.Contains((long)purchase.previews[i]))
+                            if (purchase.previews[i] is long previewId)
                             {
-                                previewids.Add((long)purchase.previews[i]);
+                                if (!previewids.Contains(previewId))
+                                {
+                                    previewids.Add(previewId);
+                                }
                             }
                         }
                     }
@@ -750,9 +754,12 @@ public class APIHelper : IAPIHelper
                     {
                         for (int i = 0; i < purchase.preview.Count; i++)
                         {
-                            if (!previewids.Contains((long)purchase.preview[i]))
+                            if (purchase.preview[i] is long previewId)
                             {
-                                previewids.Add((long)purchase.preview[i]);
+                                if (!previewids.Contains(previewId))
+                                {
+                                    previewids.Add(previewId);
+                                }
                             }
                         }
                     }
@@ -932,13 +939,13 @@ public class APIHelper : IAPIHelper
                 List<long> postPreviewIds = new();
                 if (post.preview != null && post.preview.Count > 0)
                 {
-                    foreach (var id in post.preview)
+                    for (int i = 0; i < post.preview.Count; i++)
                     {
-                        if (id?.ToString() != "poll")
+                        if (post.preview[i] is long previewId)
                         {
-                            if (!postPreviewIds.Contains(Convert.ToInt64(id)))
+                            if (!postPreviewIds.Contains(previewId))
                             {
-                                postPreviewIds.Add(Convert.ToInt64(id));
+                                postPreviewIds.Add(previewId);
                             }
                         }
                     }
@@ -1046,13 +1053,13 @@ public class APIHelper : IAPIHelper
                 List<long> postPreviewIds = new();
                 if (singlePost.preview != null && singlePost.preview.Count > 0)
                 {
-                    foreach (var id in singlePost.preview)
+                    for (int i = 0; i < singlePost.preview.Count; i++)
                     {
-                        if (id?.ToString() != "poll")
+                        if (singlePost.preview[i] is long previewId)
                         {
-                            if (!postPreviewIds.Contains(Convert.ToInt64(id)))
+                            if (!postPreviewIds.Contains(previewId))
                             {
-                                postPreviewIds.Add(Convert.ToInt64(id));
+                                postPreviewIds.Add(previewId);
                             }
                         }
                     }
@@ -1200,13 +1207,13 @@ public class APIHelper : IAPIHelper
                 List<long> streamPreviewIds = new();
                 if (stream.preview != null && stream.preview.Count > 0)
                 {
-                    foreach (var id in stream.preview)
+                    for (int i = 0; i < stream.preview.Count; i++)
                     {
-                        if (id?.ToString() != "poll")
+                        if (stream.preview[i] is long previewId)
                         {
-                            if (!streamPreviewIds.Contains(Convert.ToInt64(id)))
+                            if (!streamPreviewIds.Contains(previewId))
                             {
-                                streamPreviewIds.Add(Convert.ToInt64(id));
+                                streamPreviewIds.Add(previewId);
                             }
                         }
                     }
@@ -1344,11 +1351,11 @@ public class APIHelper : IAPIHelper
                 {
                     for (int i = 0; i < archive.preview.Count; i++)
                     {
-                        if (archive.preview[i]?.ToString() != "poll")
+                        if (archive.preview[i] is long previewId)
                         {
-                            if (!previewids.Contains((long)archive.preview[i]))
+                            if (!previewids.Contains(previewId))
                             {
-                                previewids.Add((long)archive.preview[i]);
+                                previewids.Add(previewId);
                             }
                         }
                     }
@@ -1462,11 +1469,14 @@ public class APIHelper : IAPIHelper
                 List<long> messagePreviewIds = new();
                 if (list.previews != null && list.previews.Count > 0)
                 {
-                    foreach (var id in list.previews)
+                    for (int i = 0; i < list.previews.Count; i++)
                     {
-                        if (!messagePreviewIds.Contains((long)id))
+                        if (list.previews[i] is long previewId)
                         {
-                            messagePreviewIds.Add((long)id);
+                            if (!messagePreviewIds.Contains(previewId))
+                            {
+                                messagePreviewIds.Add(previewId);
+                            }
                         }
                     }
                 }
@@ -1625,11 +1635,14 @@ public class APIHelper : IAPIHelper
             List<long> messagePreviewIds = new();
             if (message.previews != null && message.previews.Count > 0)
             {
-                foreach (var id in message.previews)
+                for (int i = 0; i < message.previews.Count; i++)
                 {
-                    if (!messagePreviewIds.Contains((long)id))
+                    if (message.previews[i] is long previewId)
                     {
-                        messagePreviewIds.Add((long)id);
+                        if (!messagePreviewIds.Contains(previewId))
+                        {
+                            messagePreviewIds.Add(previewId);
+                        }
                     }
                 }
             }
@@ -1780,9 +1793,12 @@ public class APIHelper : IAPIHelper
                         {
                             for (int i = 0; i < purchase.previews.Count; i++)
                             {
-                                if (!previewids.Contains((long)purchase.previews[i]))
+                                if (purchase.previews[i] is long previewId)
                                 {
-                                    previewids.Add((long)purchase.previews[i]);
+                                    if (!previewids.Contains(previewId))
+                                    {
+                                        previewids.Add(previewId);
+                                    }
                                 }
                             }
                         }
@@ -1790,9 +1806,12 @@ public class APIHelper : IAPIHelper
                         {
                             for (int i = 0; i < purchase.preview.Count; i++)
                             {
-                                if (!previewids.Contains((long)purchase.preview[i]))
+                                if (purchase.preview[i] is long previewId)
                                 {
-                                    previewids.Add((long)purchase.preview[i]);
+                                    if (!previewids.Contains(previewId))
+                                    {
+                                        previewids.Add(previewId);
+                                    }
                                 }
                             }
                         }
@@ -2185,9 +2204,12 @@ public class APIHelper : IAPIHelper
                                 {
                                     for (int i = 0; i < purchase.previews.Count; i++)
                                     {
-                                        if (!previewids.Contains((long)purchase.previews[i]))
+                                        if (purchase.previews[i] is long previewId)
                                         {
-                                            previewids.Add((long)purchase.previews[i]);
+                                            if (!previewids.Contains(previewId))
+                                            {
+                                                previewids.Add(previewId);
+                                            }
                                         }
                                     }
                                 }
@@ -2195,9 +2217,12 @@ public class APIHelper : IAPIHelper
                                 {
                                     for (int i = 0; i < purchase.preview.Count; i++)
                                     {
-                                        if (!previewids.Contains((long)purchase.preview[i]))
+                                        if (purchase.preview[i] is long previewId)
                                         {
-                                            previewids.Add((long)purchase.preview[i]);
+                                            if (!previewids.Contains(previewId))
+                                            {
+                                                previewids.Add(previewId);
+                                            }
                                         }
                                     }
                                 }
@@ -2286,9 +2311,12 @@ public class APIHelper : IAPIHelper
                                     {
                                         for (int i = 0; i < purchase.previews.Count; i++)
                                         {
-                                            if (!paidMessagePreviewids.Contains((long)purchase.previews[i]))
+                                            if (purchase.previews[i] is long previewId)
                                             {
-                                                paidMessagePreviewids.Add((long)purchase.previews[i]);
+                                                if (!paidMessagePreviewids.Contains(previewId))
+                                                {
+                                                    paidMessagePreviewids.Add(previewId);
+                                                }
                                             }
                                         }
                                     }
@@ -2296,9 +2324,12 @@ public class APIHelper : IAPIHelper
                                     {
                                         for (int i = 0; i < purchase.preview.Count; i++)
                                         {
-                                            if (!paidMessagePreviewids.Contains((long)purchase.preview[i]))
+                                            if (purchase.preview[i] is long previewId)
                                             {
-                                                paidMessagePreviewids.Add((long)purchase.preview[i]);
+                                                if (!paidMessagePreviewids.Contains(previewId))
+                                                {
+                                                    paidMessagePreviewids.Add(previewId);
+                                                }
                                             }
                                         }
                                     }
