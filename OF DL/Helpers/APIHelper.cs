@@ -14,6 +14,7 @@ using Org.BouncyCastle.Asn1.Crmf;
 using Serilog;
 using System.Globalization;
 using System.IO;
+using System.Net;
 using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
 using System.Text;
@@ -54,7 +55,16 @@ public class APIHelper : IAPIHelper
 
         DynamicRules? root;
 
-        root = JsonConvert.DeserializeObject<DynamicRules>(File.ReadAllText("rules.json"));
+        //Get rules from GitHub and fallback to local file
+        string? dynamicRulesJSON = GetDynamicRules();
+        if (!string.IsNullOrEmpty(dynamicRulesJSON))
+        {
+            root = JsonConvert.DeserializeObject<DynamicRules>(dynamicRulesJSON);
+        }
+        else
+        {
+            root = JsonConvert.DeserializeObject<DynamicRules>(File.ReadAllText("rules.json"));
+        }
 
         DateTimeOffset dto = (DateTimeOffset)DateTime.UtcNow;
         long timestamp = dto.ToUnixTimeMilliseconds();
@@ -2652,6 +2662,42 @@ public class APIHelper : IAPIHelper
                 Log.Debug($"GetDecryptionKeyNew Key: {keys[0].ToString()}");
                 return keys[0].ToString();
             }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine("\nInner Exception:");
+                Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+            }
+        }
+        return null;
+    }
+
+    public static string? GetDynamicRules()
+    {
+        Log.Debug("Calling GetDynamicRules");
+        try
+        {
+            HttpClient client = new HttpClient();
+            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "https://raw.githubusercontent.com/deviint/onlyfans-dynamic-rules/main/dynamicRules.json");
+            using var response = client.Send(request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                Log.Debug("GetDynamicRules did not return a Success Status Code");
+                return null;
+            }
+
+            var body = response.Content.ReadAsStringAsync().Result;
+
+            Log.Debug("GetDynamicRules Response: ");
+            Log.Debug(body);
+
+            return body;
         }
         catch (Exception ex)
         {

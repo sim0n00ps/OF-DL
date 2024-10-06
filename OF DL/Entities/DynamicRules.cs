@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 
 namespace OF_DL.Entities
 {
@@ -6,6 +6,9 @@ namespace OF_DL.Entities
     {
         [JsonProperty(PropertyName="app-token")]
         public string? AppToken { get; set; }
+
+        [JsonProperty(PropertyName="app_token")]
+        private string AppToken2 { set { AppToken = value; } }
 
         [JsonProperty(PropertyName="static_param")]
         public string? StaticParam { get; set; }
