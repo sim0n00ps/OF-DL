@@ -1,3 +1,4 @@
+using HtmlAgilityPack;
 using OF_DL.Entities;
 using System;
 using System.Collections.Generic;
@@ -130,7 +131,9 @@ namespace OF_DL.Helpers
                         object propertyValue = property.GetValue(obj1);
                         if (propertyValue != null)
                         {
-                            var str = propertyValue.ToString();
+                            var pageDoc = new HtmlDocument();
+                            pageDoc.LoadHtml(propertyValue.ToString());
+                            var str = pageDoc.DocumentNode.InnerText;
                             if (str.Length > 100) // todo: add length limit to config
                                 str = str.Substring(0, 100);
                             values.Add(propertyName, str);
