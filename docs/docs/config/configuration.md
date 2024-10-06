@@ -493,3 +493,13 @@ Allowed values: `"Verbose"`, `"Debug"`, `"Information"`, `"Warning"`, `"Error"`,
 
 Description: The level of logging that will be saved to the log files in the `logs` folder.
 When requesting help with an issue, it is recommended to set this to `"Verbose"` and provide the log file.
+
+## IgnoreOwnMessages
+
+Type: `boolean`
+
+Default: `false`
+
+Allowed values: `true`, `false`
+
+Description: By default (or when set to `false`), messages that were sent by yourself will be added to the metadata DB and any media which has been sent by yourself will be downloaded. If set to `true`, the program will not add messages sent by yourself to the metadata DB and will not download any media which has been sent by yourself.
