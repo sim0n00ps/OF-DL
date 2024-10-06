@@ -47,6 +47,8 @@ namespace OF_DL.Entities
 
         bool DownloadDuplicatedMedia { get; set; }
         public LoggingLevel LoggingLevel { get; set; }
+
+        bool IgnoreOwnMessages { get; set; }
     }
 
 }

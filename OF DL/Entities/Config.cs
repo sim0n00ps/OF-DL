@@ -94,6 +94,9 @@ namespace OF_DL.Entities
 
         [JsonConverter(typeof(StringEnumConverter))]
         public LoggingLevel LoggingLevel { get; set; } = LoggingLevel.Error;
+
+        [ToggleableConfig]
+        public bool IgnoreOwnMessages { get; set; } = false;
     }
 
     public class CreatorConfig : IFileNameFormatConfig
