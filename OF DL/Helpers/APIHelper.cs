@@ -2571,7 +2571,8 @@ public class APIHelper : IAPIHelper
     {
         Log.Debug("Calling GetDecryptionKey");
 
-        const int maxAttempts = 20; // Maximum number of retry attempts
+        const int maxAttempts = 30;
+        const int delayBetweenAttempts = 3000;
         int attempt = 0;
 
         try
@@ -2619,6 +2620,10 @@ public class APIHelper : IAPIHelper
                 else
                 {
                     Log.Debug($"Response contains 'error'. Retrying... Attempt {attempt} of {maxAttempts}");
+                    if (attempt < maxAttempts)
+                    {
+                        await Task.Delay(delayBetweenAttempts); 
+                    }
                 }
             }
 

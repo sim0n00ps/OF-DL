@@ -853,8 +853,8 @@ public class Program
         int newPaidMessagesCount = 0;
         if (paidMessageCollection != null && paidMessageCollection.PaidMessages.Count > 0)
         {
-            AnsiConsole.Markup($"[red]Found {paidMessageCollection.PaidMessages.Count} Paid Messages\n[/]");
-            Log.Debug($"Found {paidMessageCollection.PaidMessages.Count} Paid Messages");
+            AnsiConsole.Markup($"[red]Found {paidMessageCollection.PaidMessages.Count} Media from {paidMessageCollection.PaidMessageObjects.Count} Paid Messages\n[/]");
+            Log.Debug($"Found {paidMessageCollection.PaidMessages.Count} Media from {paidMessageCollection.PaidMessageObjects.Count} Paid Messages");
             paidMessagesCount = paidMessageCollection.PaidMessages.Count;
             long totalSize = 0;
             if (downloadContext.DownloadConfig.ShowScrapeSize)
@@ -981,8 +981,8 @@ public class Program
         int newMessagesCount = 0;
         if (messages != null && messages.Messages.Count > 0)
         {
-            AnsiConsole.Markup($"[red]Found {messages.Messages.Count} Messages\n[/]");
-            Log.Debug($"[red]Found {messages.Messages.Count} Messages");
+            AnsiConsole.Markup($"[red]Found {messages.Messages.Count} Media from {messages.MessageObjects.Count} Messages\n[/]");
+            Log.Debug($"[red]Found {messages.Messages.Count} Media from {messages.MessageObjects.Count} Messages");
             messagesCount = messages.Messages.Count;
             long totalSize = 0;
             if (downloadContext.DownloadConfig.ShowScrapeSize)
@@ -1224,8 +1224,8 @@ public class Program
         int newArchivedCount = 0;
         if (archived != null && archived.ArchivedPosts.Count > 0)
         {
-            AnsiConsole.Markup($"[red]Found {archived.ArchivedPosts.Count} Archived Posts\n[/]");
-            Log.Debug($"Found {archived.ArchivedPosts.Count} Archived Posts");
+            AnsiConsole.Markup($"[red]Found {archived.ArchivedPosts.Count} Media from {archived.ArchivedPostObjects.Count} Archived Posts\n[/]");
+            Log.Debug($"Found {archived.ArchivedPosts.Count} Media from {archived.ArchivedPostObjects.Count} Archived Posts");
             archivedCount = archived.ArchivedPosts.Count;
             long totalSize = 0;
             if (downloadContext.DownloadConfig.ShowScrapeSize)
@@ -1357,8 +1357,8 @@ public class Program
             return 0;
         }
 
-        AnsiConsole.Markup($"[red]Found {posts.Posts.Count} Posts\n[/]");
-        Log.Debug($"Found {posts.Posts.Count} Posts");
+        AnsiConsole.Markup($"[red]Found {posts.Posts.Count} Media from {posts.PostObjects.Count} Posts\n[/]");
+        Log.Debug($"Found {posts.Posts.Count} Media from {posts.PostObjects.Count} Posts");
         postCount = posts.Posts.Count;
         long totalSize = 0;
         if (downloadContext.DownloadConfig.ShowScrapeSize)
@@ -1493,8 +1493,8 @@ public class Program
             return 0;
         }
 
-        AnsiConsole.Markup($"[red]Found {purchasedPosts.PaidPosts.Count} Paid Posts\n[/]");
-        Log.Debug($"ound {purchasedPosts.PaidPosts.Count} Paid Posts");
+        AnsiConsole.Markup($"[red]Found {purchasedPosts.PaidPosts.Count} Media from {purchasedPosts.PaidPostObjects.Count} Paid Posts\n[/]");
+        Log.Debug($"Found {purchasedPosts.PaidPosts.Count} Media from {purchasedPosts.PaidPostObjects.Count} Paid Posts");
         paidPostCount = purchasedPosts.PaidPosts.Count;
         long totalSize = 0;
         if (downloadContext.DownloadConfig.ShowScrapeSize)
@@ -1616,8 +1616,8 @@ public class Program
             return 0;
         }
 
-        AnsiConsole.Markup($"[red]Found {purchasedPosts.PaidPosts.Count} Paid Posts\n[/]");
-        Log.Debug($"Found {purchasedPosts.PaidPosts.Count} Paid Posts");
+        AnsiConsole.Markup($"[red]Found {purchasedPosts.PaidPosts.Count} Media from {purchasedPosts.PaidPostObjects.Count} Paid Posts\n[/]");
+        Log.Debug($"Found {purchasedPosts.PaidPosts.Count} Media from {purchasedPosts.PaidPostObjects.Count} Paid Posts");
 
         paidPostCount = purchasedPosts.PaidPosts.Count;
         long totalSize = 0;
@@ -1735,8 +1735,8 @@ public class Program
         int newPaidMessagesCount = 0;
         if (paidMessageCollection != null && paidMessageCollection.PaidMessages.Count > 0)
         {
-            AnsiConsole.Markup($"[red]Found {paidMessageCollection.PaidMessages.Count} Paid Messages\n[/]");
-            Log.Debug($"Found {paidMessageCollection.PaidMessages.Count} Paid Messages");
+            AnsiConsole.Markup($"[red]Found {paidMessageCollection.PaidMessages.Count} Media from {paidMessageCollection.PaidMessageObjects.Count} Paid Messages\n[/]");
+            Log.Debug($"Found {paidMessageCollection.PaidMessages.Count} Media from {paidMessageCollection.PaidMessageObjects.Count} Paid Messages");
             paidMessagesCount = paidMessageCollection.PaidMessages.Count;
             long totalSize = 0;
             if (downloadContext.DownloadConfig.ShowScrapeSize)
@@ -1869,8 +1869,8 @@ public class Program
             return 0;
         }
 
-        AnsiConsole.Markup($"[red]Found {streams.Streams.Count} Streams\n[/]");
-        Log.Debug($"Found {streams.Streams.Count} Streams");
+        AnsiConsole.Markup($"[red]Found {streams.Streams.Count} Media from {streams.StreamObjects.Count} Streams\n[/]");
+        Log.Debug($"Found {streams.Streams.Count} Media from {streams.StreamObjects.Count} Streams");
         streamsCount = streams.Streams.Count;
         long totalSize = 0;
         if (downloadContext.DownloadConfig.ShowScrapeSize)
@@ -1998,8 +1998,8 @@ public class Program
         int newPaidMessagesCount = 0;
         if (singlePaidMessageCollection != null && singlePaidMessageCollection.SingleMessages.Count > 0)
         {
-            AnsiConsole.Markup($"[red]Found {singlePaidMessageCollection.SingleMessages.Count} Paid Messages\n[/]");
-            Log.Debug($"Found {singlePaidMessageCollection.SingleMessages.Count} Paid Messages");
+            AnsiConsole.Markup($"[red]Found {singlePaidMessageCollection.SingleMessages.Count} Media from {singlePaidMessageCollection.SingleMessageObjects.Count} Paid Messages\n[/]");
+            Log.Debug($"Found {singlePaidMessageCollection.SingleMessages.Count} Media from {singlePaidMessageCollection.SingleMessageObjects.Count} Paid Messages");
             paidMessagesCount = singlePaidMessageCollection.SingleMessages.Count;
             long totalSize = 0;
             if (downloadContext.DownloadConfig.ShowScrapeSize)
