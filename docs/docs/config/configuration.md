@@ -414,6 +414,7 @@ as the PATH environment variable.
 :::note
 
 If you are using a Windows path, you will need to escape the backslashes, e.g. `"C:\\ffmpeg\\bin\\ffmpeg.exe"`
+For example, this is not valid: `"C:\some\path\ffmpeg.exe"`, but `"C:/some/path/ffmpeg.exe"` and `"C:\\some\\path\\ffmpeg.exe"` are both valid.
 
 :::
 
