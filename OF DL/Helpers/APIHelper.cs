@@ -247,7 +247,7 @@ public class APIHelper : IAPIHelper
             //if the content creator doesnt exist, we get a 200 response, but the content isnt usable
             //so let's not throw an exception, since "content creator no longer exists" is handled elsewhere
             //which means we wont get loads of exceptions
-            if (body.Equals("[]"))
+            if (body.Contains("[]"))
                 return null;
 
             JObject jObject = JObject.Parse(body);
@@ -290,7 +290,7 @@ public class APIHelper : IAPIHelper
                     Subscriptions newSubscriptions = new();
                     string? loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient());
 
-                    if (!string.IsNullOrEmpty(loopbody) && loopbody.Trim() != "[]")
+                    if (!string.IsNullOrEmpty(loopbody) && !loopbody.Contains("[]"))
                     {
                         newSubscriptions = JsonConvert.DeserializeObject<Subscriptions>(loopbody, m_JsonSerializerSettings);
                     }
