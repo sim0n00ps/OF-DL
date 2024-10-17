@@ -60,7 +60,6 @@ namespace OF_DL.Entities.Post
         public int commentsCount { get; set; }
         public List<object> mentionedUsers { get; set; }
         public List<object> linkedUsers { get; set; }
-        public List<object> linkedPosts { get; set; }
         public string tipsAmount { get; set; }
         public string tipsAmountRaw { get; set; }
         public List<Medium> media { get; set; }

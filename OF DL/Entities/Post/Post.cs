@@ -148,7 +148,6 @@ public class Post
         public int? commentsCount { get; set; }
         public List<object> mentionedUsers { get; set; }
         public List<object> linkedUsers { get; set; }
-        public List<object> linkedPosts { get; set; }
         public bool? canVote { get; set; }
         public List<Medium> media { get; set; }
         public bool? canViewMedia { get; set; }
