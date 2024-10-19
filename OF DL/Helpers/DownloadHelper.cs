@@ -1,4 +1,5 @@
 using FFmpeg.NET;
+using FFmpeg.NET.Events;
 using OF_DL.Entities;
 using OF_DL.Entities.Archived;
 using OF_DL.Entities.Messages;
@@ -34,6 +35,7 @@ public class DownloadHelper : IDownloadHelper
     private readonly IFileNameHelper _FileNameHelper;
     private readonly IDownloadConfig downloadConfig;
     private readonly IFileNameFormatConfig fileNameFormatConfig;
+    private TaskCompletionSource<bool> _completionSource;
 
     public DownloadHelper(Auth auth, IDownloadConfig downloadConfig, IFileNameFormatConfig fileNameFormatConfig)
     {
@@ -589,6 +591,8 @@ public class DownloadHelper : IDownloadHelper
     {
         try
         {
+            _completionSource = new TaskCompletionSource<bool>();
+
             int pos1 = decryptionKey.IndexOf(':');
             string decKey = "";
             if (pos1 >= 0)
@@ -603,29 +607,15 @@ public class DownloadHelper : IDownloadHelper
             Log.Debug($"Calling FFMPEG with Parameters: {parameters}");
 
             Engine ffmpeg = new Engine(downloadConfig.FFmpegPath);
+            ffmpeg.Error += OnError;
+            ffmpeg.Complete += async (sender, args) =>
+            {
+                _completionSource.TrySetResult(true);
+                await OnFFMPEGDownloadComplete(tempFilename, lastModified, folder, path, customFileName, filename, media_id, api_type, task);
+            };
             await ffmpeg.ExecuteAsync(parameters, CancellationToken.None);
 
-            if (File.Exists(tempFilename))
-            {
-                File.SetLastWriteTime(tempFilename, lastModified);
-            }
-            if (!string.IsNullOrEmpty(customFileName))
-            {
-                File.Move(tempFilename, $"{folder + path + "/" + customFileName + ".mp4"}");
-            }
-            //Cleanup Files
-            long fileSizeInBytes = new FileInfo(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + ".mp4" : tempFilename).Length;
-            if (downloadConfig.ShowScrapeSize)
-            {
-                task.Increment(fileSizeInBytes);
-            }
-            else
-            {
-                task.Increment(1);
-            }
-            await m_DBHelper.UpdateMedia(folder, media_id, api_type, folder + path, !string.IsNullOrEmpty(customFileName) ? customFileName + "mp4" : filename + "_source.mp4", fileSizeInBytes, true, lastModified);
-
-            return true;
+            return await _completionSource.Task;
         }
         catch (Exception ex)
         {
@@ -638,7 +628,7 @@ public class DownloadHelper : IDownloadHelper
                 Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
         }
-        return true;
+        return false;
     }
     #endregion
 
@@ -904,6 +894,51 @@ public class DownloadHelper : IDownloadHelper
                 Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
             }
         }
+    }
+
+    private async Task OnFFMPEGDownloadComplete(string tempFilename, DateTime lastModified, string folder, string path, string customFileName, string filename, long media_id, string api_type, ProgressTask task)
+    {
+        try
+        {
+            if (File.Exists(tempFilename))
+            {
+                File.SetLastWriteTime(tempFilename, lastModified);
+            }
+            if (!string.IsNullOrEmpty(customFileName))
+            {
+                File.Move(tempFilename, $"{folder + path + "/" + customFileName + ".mp4"}");
+            }
+
+            // Cleanup Files
+            long fileSizeInBytes = new FileInfo(!string.IsNullOrEmpty(customFileName) ? folder + path + "/" + customFileName + ".mp4" : tempFilename).Length;
+            if (downloadConfig.ShowScrapeSize)
+            {
+                task.Increment(fileSizeInBytes);
+            }
+            else
+            {
+                task.Increment(1);
+            }
+
+            await m_DBHelper.UpdateMedia(folder, media_id, api_type, folder + path, !string.IsNullOrEmpty(customFileName) ? customFileName + ".mp4" : filename + "_source.mp4", fileSizeInBytes, true, lastModified);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine("\nInner Exception:");
+                Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+            }
+        }
+    }
+
+    private void OnError(object sender, ConversionErrorEventArgs e)
+    {
+        Log.Debug("[{0} => {1}]: Error: {2}\n{3}", e.Input.Name, e.Output.Name, e.Exception.ExitCode, e.Exception.InnerException);
+        _completionSource?.TrySetResult(false);
     }
 
     #region drm posts
