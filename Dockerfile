@@ -3,7 +3,7 @@ FROM alpine:3.20 AS build
 ARG VERSION
 
 RUN apk --no-cache --repository community add \
-      dotnet8-sdk==8.0.110-r0 \
+      dotnet8-sdk \
       jq==1.7.1-r0
 
 # Copy source code
@@ -30,10 +30,10 @@ FROM alpine:3.20 AS final
 
 # Install dependencies
 RUN apk --no-cache --repository community add \
-      bash==5.2.26-r0 \
-      tini==0.19.0-r3 \
-      dotnet8-runtime==8.0.10-r2 \
-      ffmpeg==6.1.1-r8
+      bash \
+      tini \
+      dotnet8-runtime \
+      ffmpeg
 
 # Copy release and entrypoint script
 COPY --from=build /src/out /app
