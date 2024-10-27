@@ -32,7 +32,7 @@ FROM alpine:3.20 AS final
 RUN apk --no-cache --repository community add \
       bash==5.2.26-r0 \
       tini==0.19.0-r3 \
-      dotnet8-runtime==8.0.110-r0 \
+      dotnet8-runtime==8.0.10-r2 \
       ffmpeg==6.1.1-r8
 
 # Copy release and entrypoint script
