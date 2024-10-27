@@ -653,7 +653,7 @@ public class APIHelper : IAPIHelper
                             {
                                 await m_DBHelper.AddStory(folder, item.id, string.Empty, "0", false, false, DateTime.Now);
                             }
-                            if (item.media.Count > 0 && !item.media[0].files.full.url.Contains("upload"))
+                            if (item.media.Count > 0 && item.media[0].canView)
                             {
                                 foreach (HighlightMedia.Medium medium in item.media)
                                 {
