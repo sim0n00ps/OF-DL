@@ -290,7 +290,7 @@ public class APIHelper : IAPIHelper
                     Subscriptions newSubscriptions = new();
                     string? loopbody = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient());
 
-                    if (!string.IsNullOrEmpty(loopbody) && !loopbody.Contains("[]"))
+                    if (!string.IsNullOrEmpty(loopbody) && (!loopbody.Contains("[]") || loopbody.Trim() != "[]"))
                     {
                         newSubscriptions = JsonConvert.DeserializeObject<Subscriptions>(loopbody, m_JsonSerializerSettings);
                     }
@@ -2045,7 +2045,10 @@ public class APIHelper : IAPIHelper
                             {
                                 if (!config.BypassContentForCreatorsWhoNoLongerExist)
                                 {
-                                    purchasedTabUsers.Add($"Deleted User - {purchase.fromUser.id}", purchase.fromUser.id);
+                                    if(!purchasedTabUsers.ContainsKey($"Deleted User - {purchase.fromUser.id}"))
+                                    {
+                                        purchasedTabUsers.Add($"Deleted User - {purchase.fromUser.id}", purchase.fromUser.id);
+                                    }
                                 }
                                 Log.Debug("Content creator not longer exists - {0}", purchase.fromUser.id);
                             }
@@ -2092,9 +2095,12 @@ public class APIHelper : IAPIHelper
                             {
                                 if (!config.BypassContentForCreatorsWhoNoLongerExist)
                                 {
-                                    purchasedTabUsers.Add($"Deleted User - {purchase.fromUser.id}", purchase.fromUser.id);
+                                    if(!purchasedTabUsers.ContainsKey($"Deleted User - {purchase.author.id}"))
+                                    {
+                                        purchasedTabUsers.Add($"Deleted User - {purchase.author.id}", purchase.author.id);
+                                    }
                                 }
-                                Log.Debug("Content creator not longer exists - {0}", purchase.fromUser.id);
+                                Log.Debug("Content creator not longer exists - {0}", purchase.author.id);
                             }
                             else if (!string.IsNullOrEmpty(user[purchase.author.id.ToString()]["username"].ToString()))
                             {
