@@ -18,7 +18,7 @@ To run OF-DL in a docker container, follow the folling steps:
         Adjust `$HOME/ofdl` as desired (including in the commands below) if you want the files stored elsewhere.
 4. Run the following command to start the docker container:
     ```bash
-    docker run -it -v $HOME/ofdl/data/:/data -v $HOME/ofdl/config/:/config ghcr.io/sim0n00ps/of-dl:latest
+    docker run --rm -it -v $HOME/ofdl/data/:/data -v $HOME/ofdl/config/:/config ghcr.io/sim0n00ps/of-dl:latest
     ```
     If `auth.json`, `config.json`, and/or `rules.json` don't exist in the `config` directory, files with default values will be created when you run the docker container.
     If you have your own Widevine keys, those files should be placed under `$HOME/ofdl/config/cdm/devices/chrome_1610/`.
