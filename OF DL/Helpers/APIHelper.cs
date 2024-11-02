@@ -247,7 +247,7 @@ public class APIHelper : IAPIHelper
             //if the content creator doesnt exist, we get a 200 response, but the content isnt usable
             //so let's not throw an exception, since "content creator no longer exists" is handled elsewhere
             //which means we wont get loads of exceptions
-            if (body.Contains("[]"))
+            if (body.Equals("[]"))
                 return null;
 
             JObject jObject = JObject.Parse(body);
