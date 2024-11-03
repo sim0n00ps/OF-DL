@@ -169,7 +169,8 @@ If you set the download path to `"S:/"`, then content will be downloaded to `S:/
 
 :::note
 
-If you are using a Windows path, you will need to escape the backslashes, e.g. `"C:\\Users\\user\\Downloads\\OnlyFans"`
+If you are using a Windows path, you will need to escape the backslashes, e.g. `"C:\\Users\\user\\Downloads\\OnlyFans\\"`
+Please make sure your path ends with a `/`
 
 :::
 
