@@ -10,18 +10,13 @@ using OF_DL.Entities.Purchased;
 using OF_DL.Entities.Stories;
 using OF_DL.Entities.Streams;
 using OF_DL.Enumurations;
-using Org.BouncyCastle.Asn1.Crmf;
 using Serilog;
 using System.Globalization;
-using System.IO;
-using System.Net;
-using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Xml.Linq;
 using WidevineClient.Widevine;
-using static OF_DL.Entities.Highlights.HighlightMedia;
 using static WidevineClient.HttpUtil;
 
 namespace OF_DL.Helpers;

@@ -1,5 +1,6 @@
 using FFmpeg.NET;
 using FFmpeg.NET.Events;
+using FFmpeg.NET.Services;
 using OF_DL.Entities;
 using OF_DL.Entities.Archived;
 using OF_DL.Entities.Messages;
@@ -16,6 +17,7 @@ using Spectre.Console;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -999,6 +1001,30 @@ public class DownloadHelper : IDownloadHelper
             }
             else
             {
+                if (!string.IsNullOrEmpty(customFileName))
+                {
+                    if (downloadConfig.RenameExistingFilesWhenCustomFormatIsSelected && (filename + "_source" != customFileName))
+                    {
+                        string fullPathWithTheServerFileName = $"{folder}{path}/{filename}_source.mp4";
+                        string fullPathWithTheNewFileName = $"{folder}{path}/{customFileName}.mp4";
+                        if (!File.Exists(fullPathWithTheServerFileName))
+                        {
+                            return false;
+                        }
+                        try
+                        {
+                            File.Move(fullPathWithTheServerFileName, fullPathWithTheNewFileName);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"An error occurred: {ex.Message}");
+                            return false;
+                        }
+                        long size = await m_DBHelper.GetStoredFileSize(folder, media_id, api_type);
+                        await m_DBHelper.UpdateMedia(folder, media_id, api_type, folder + path, customFileName + ".mp4", size, true, lastModified);
+                    }
+                }
+
                 if (downloadConfig.ShowScrapeSize)
                 {
                     long size = await m_DBHelper.GetStoredFileSize(folder, media_id, api_type);
@@ -1082,6 +1108,30 @@ public class DownloadHelper : IDownloadHelper
             }
             else
             {
+                if (!string.IsNullOrEmpty(customFileName))
+                {
+                    if (downloadConfig.RenameExistingFilesWhenCustomFormatIsSelected && (filename + "_source" != customFileName))
+                    {
+                        string fullPathWithTheServerFileName = $"{folder}{path}/{filename}_source.mp4";
+                        string fullPathWithTheNewFileName = $"{folder}{path}/{customFileName}.mp4";
+                        if (!File.Exists(fullPathWithTheServerFileName))
+                        {
+                            return false;
+                        }
+                        try
+                        {
+                            File.Move(fullPathWithTheServerFileName, fullPathWithTheNewFileName);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"An error occurred: {ex.Message}");
+                            return false;
+                        }
+                        long size = await m_DBHelper.GetStoredFileSize(folder, media_id, api_type);
+                        await m_DBHelper.UpdateMedia(folder, media_id, api_type, folder + path, customFileName + ".mp4", size, true, lastModified);
+                    }
+                }
+
                 if (downloadConfig.ShowScrapeSize)
                 {
                     long size = await m_DBHelper.GetStoredFileSize(folder, media_id, api_type);
@@ -1164,6 +1214,30 @@ public class DownloadHelper : IDownloadHelper
             }
             else
             {
+                if (!string.IsNullOrEmpty(customFileName))
+                {
+                    if (downloadConfig.RenameExistingFilesWhenCustomFormatIsSelected && (filename + "_source" != customFileName))
+                    {
+                        string fullPathWithTheServerFileName = $"{folder}{path}/{filename}_source.mp4";
+                        string fullPathWithTheNewFileName = $"{folder}{path}/{customFileName}.mp4";
+                        if (!File.Exists(fullPathWithTheServerFileName))
+                        {
+                            return false;
+                        }
+                        try
+                        {
+                            File.Move(fullPathWithTheServerFileName, fullPathWithTheNewFileName);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"An error occurred: {ex.Message}");
+                            return false;
+                        }
+                        long size = await m_DBHelper.GetStoredFileSize(folder, media_id, api_type);
+                        await m_DBHelper.UpdateMedia(folder, media_id, api_type, folder + path, customFileName + ".mp4", size, true, lastModified);
+                    }
+                }
+
                 if (downloadConfig.ShowScrapeSize)
                 {
                     long size = await m_DBHelper.GetStoredFileSize(folder, media_id, api_type);
@@ -1247,6 +1321,30 @@ public class DownloadHelper : IDownloadHelper
             }
             else
             {
+                if (!string.IsNullOrEmpty(customFileName))
+                {
+                    if (downloadConfig.RenameExistingFilesWhenCustomFormatIsSelected && (filename + "_source" != customFileName))
+                    {
+                        string fullPathWithTheServerFileName = $"{folder}{path}/{filename}_source.mp4";
+                        string fullPathWithTheNewFileName = $"{folder}{path}/{customFileName}.mp4";
+                        if (!File.Exists(fullPathWithTheServerFileName))
+                        {
+                            return false;
+                        }
+                        try
+                        {
+                            File.Move(fullPathWithTheServerFileName, fullPathWithTheNewFileName);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"An error occurred: {ex.Message}");
+                            return false;
+                        }
+                        long size = await m_DBHelper.GetStoredFileSize(folder, media_id, api_type);
+                        await m_DBHelper.UpdateMedia(folder, media_id, api_type, folder + path, customFileName + ".mp4", size, true, lastModified);
+                    }
+                }
+
                 if (downloadConfig.ShowScrapeSize)
                 {
                     long size = await m_DBHelper.GetStoredFileSize(folder, media_id, api_type);
@@ -1328,6 +1426,30 @@ public class DownloadHelper : IDownloadHelper
             }
             else
             {
+                if (!string.IsNullOrEmpty(customFileName))
+                {
+                    if (downloadConfig.RenameExistingFilesWhenCustomFormatIsSelected && (filename + "_source" != customFileName))
+                    {
+                        string fullPathWithTheServerFileName = $"{folder}{path}/{filename}_source.mp4";
+                        string fullPathWithTheNewFileName = $"{folder}{path}/{customFileName}.mp4";
+                        if (!File.Exists(fullPathWithTheServerFileName))
+                        {
+                            return false;
+                        }
+                        try
+                        {
+                            File.Move(fullPathWithTheServerFileName, fullPathWithTheNewFileName);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"An error occurred: {ex.Message}");
+                            return false;
+                        }
+                        long size = await m_DBHelper.GetStoredFileSize(folder, media_id, api_type);
+                        await m_DBHelper.UpdateMedia(folder, media_id, api_type, folder + path, customFileName + ".mp4", size, true, lastModified);
+                    }
+                }
+                
                 if (downloadConfig.ShowScrapeSize)
                 {
                     long size = await m_DBHelper.GetStoredFileSize(folder, media_id, api_type);
@@ -1409,6 +1531,30 @@ public class DownloadHelper : IDownloadHelper
             }
             else
             {
+                if (!string.IsNullOrEmpty(customFileName))
+                {
+                    if (downloadConfig.RenameExistingFilesWhenCustomFormatIsSelected && (filename + "_source" != customFileName))
+                    {
+                        string fullPathWithTheServerFileName = $"{folder}{path}/{filename}_source.mp4";
+                        string fullPathWithTheNewFileName = $"{folder}{path}/{customFileName}.mp4";
+                        if (!File.Exists(fullPathWithTheServerFileName))
+                        {
+                            return false;
+                        }
+                        try
+                        {
+                            File.Move(fullPathWithTheServerFileName, fullPathWithTheNewFileName);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"An error occurred: {ex.Message}");
+                            return false;
+                        }
+                        long size = await m_DBHelper.GetStoredFileSize(folder, media_id, api_type);
+                        await m_DBHelper.UpdateMedia(folder, media_id, api_type, folder + path, customFileName + ".mp4", size, true, lastModified);
+                    }
+                }
+
                 if (downloadConfig.ShowScrapeSize)
                 {
                     long size = await m_DBHelper.GetStoredFileSize(folder, media_id, api_type);
@@ -1492,6 +1638,30 @@ public class DownloadHelper : IDownloadHelper
             }
             else
             {
+                if (!string.IsNullOrEmpty(customFileName))
+                {
+                    if (downloadConfig.RenameExistingFilesWhenCustomFormatIsSelected && (filename + "_source" != customFileName))
+                    {
+                        string fullPathWithTheServerFileName = $"{folder}{path}/{filename}_source.mp4";
+                        string fullPathWithTheNewFileName = $"{folder}{path}/{customFileName}.mp4";
+                        if (!File.Exists(fullPathWithTheServerFileName))
+                        {
+                            return false;
+                        }
+                        try
+                        {
+                            File.Move(fullPathWithTheServerFileName, fullPathWithTheNewFileName);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"An error occurred: {ex.Message}");
+                            return false;
+                        }
+                        long size = await m_DBHelper.GetStoredFileSize(folder, media_id, api_type);
+                        await m_DBHelper.UpdateMedia(folder, media_id, api_type, folder + path, customFileName + ".mp4", size, true, lastModified);
+                    }
+                }
+
                 if (downloadConfig.ShowScrapeSize)
                 {
                     long size = await m_DBHelper.GetStoredFileSize(folder, media_id, api_type);
@@ -1567,6 +1737,30 @@ public class DownloadHelper : IDownloadHelper
             }
             else
             {
+                if (!string.IsNullOrEmpty(customFileName))
+                {
+                    if (downloadConfig.RenameExistingFilesWhenCustomFormatIsSelected && (filename + "_source" != customFileName))
+                    {
+                        string fullPathWithTheServerFileName = $"{folder}{path}/{filename}_source.mp4";
+                        string fullPathWithTheNewFileName = $"{folder}{path}/{customFileName}.mp4";
+                        if (!File.Exists(fullPathWithTheServerFileName))
+                        {
+                            return false;
+                        }
+                        try
+                        {
+                            File.Move(fullPathWithTheServerFileName, fullPathWithTheNewFileName);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"An error occurred: {ex.Message}");
+                            return false;
+                        }
+                        long size = await m_DBHelper.GetStoredFileSize(folder, media_id, api_type);
+                        await m_DBHelper.UpdateMedia(folder, media_id, api_type, folder + path, customFileName + ".mp4", size, true, lastModified);
+                    }
+                }
+
                 if (downloadConfig.ShowScrapeSize)
                 {
                     long size = await m_DBHelper.GetStoredFileSize(folder, media_id, api_type);
