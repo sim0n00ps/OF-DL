@@ -2586,10 +2586,8 @@ public class APIHelper : IAPIHelper
                 PSSH = pssh,
                 LicenseURL = licenceURL,
                 Headers = JsonConvert.SerializeObject(drmHeaders),
-                JSON = "",
                 Cookies = "",
                 Data = "",
-                Proxy = ""
             };
 
             string json = JsonConvert.SerializeObject(cdrmProjectRequest);
@@ -2600,7 +2598,7 @@ public class APIHelper : IAPIHelper
             {
                 attempt++;
 
-                HttpRequestMessage request = new(HttpMethod.Post, "https://cdrm-project.com/")
+                HttpRequestMessage request = new(HttpMethod.Post, "https://cdrm-project.com/api/decrypt")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
                 };
@@ -2615,7 +2613,7 @@ public class APIHelper : IAPIHelper
                 if (!body.Contains("error", StringComparison.OrdinalIgnoreCase))
                 {
                     var doc = JsonDocument.Parse(body);
-                    dcValue = doc.RootElement.GetProperty("Message").GetString().Trim();
+                    dcValue = doc.RootElement.GetProperty("message").GetString().Trim();
                     return dcValue;
                 }
                 else
