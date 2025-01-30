@@ -9,14 +9,19 @@ namespace OF_DL.Entities
 {
     public class CDRMProjectRequest
     {
+        [JsonProperty("pssh")]
         public string PSSH { get; set; } = "";
 
-        [JsonProperty("License URL")]
+        [JsonProperty("licurl")]
         public string LicenseURL { get; set; } = "";
+
+        [JsonProperty("headers")]
         public string Headers { get; set; } = "";
-        public string JSON { get; set; } = "";
+
+        [JsonProperty("cookies")]
         public string Cookies { get; set; } = "";
+
+        [JsonProperty("data")]
         public string Data { get; set; } = "";
-        public string Proxy { get; set; } = "";
     }
 }

@@ -2586,10 +2586,8 @@ public class APIHelper : IAPIHelper
                 PSSH = pssh,
                 LicenseURL = licenceURL,
                 Headers = JsonConvert.SerializeObject(drmHeaders),
-                JSON = "",
                 Cookies = "",
-                Data = "",
-                Proxy = ""
+                Data = ""
             };
 
             string json = JsonConvert.SerializeObject(cdrmProjectRequest);
@@ -2600,7 +2598,7 @@ public class APIHelper : IAPIHelper
             {
                 attempt++;
 
-                HttpRequestMessage request = new(HttpMethod.Post, "https://cdrm-project.com/")
+                HttpRequestMessage request = new(HttpMethod.Post, "https://cdrm-project.com/api/decrypt")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
                 };
@@ -2611,19 +2609,30 @@ public class APIHelper : IAPIHelper
 
                 response.EnsureSuccessStatusCode();
                 var body = await response.Content.ReadAsStringAsync();
+                var doc = JsonDocument.Parse(body);
 
-                if (!body.Contains("error", StringComparison.OrdinalIgnoreCase))
+                if (doc.RootElement.TryGetProperty("status", out JsonElement status))
                 {
-                    var doc = JsonDocument.Parse(body);
-                    dcValue = doc.RootElement.GetProperty("Message").GetString().Trim();
-                    return dcValue;
+                    if (status.ToString().Trim().Equals("success", StringComparison.OrdinalIgnoreCase))
+                    {
+                        dcValue = doc.RootElement.GetProperty("message").GetString().Trim();
+                        return dcValue;
+                    }
+                    else
+                    {
+                        Log.Debug($"CDRM response status not successful. Retrying... Attempt {attempt} of {maxAttempts}");
+                        if (attempt < maxAttempts)
+                        {
+                            await Task.Delay(delayBetweenAttempts);
+                        }
+                    }
                 }
                 else
                 {
-                    Log.Debug($"Response contains 'error'. Retrying... Attempt {attempt} of {maxAttempts}");
+                    Log.Debug($"Status not in CDRM response. Retrying... Attempt {attempt} of {maxAttempts}");
                     if (attempt < maxAttempts)
                     {
-                        await Task.Delay(delayBetweenAttempts); 
+                        await Task.Delay(delayBetweenAttempts);
                     }
                 }
             }
