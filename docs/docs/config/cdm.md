@@ -16,7 +16,7 @@ I have also made some [batch scripts](https://github.com/sim0n00ps/L3-Dumping) t
 
 ## Discord Method
 
-Generating these keys can be complicated, so the team (shout out to Masaki here) have set up a bot on the Discord server to help securely deliver these keys to users who need them. You can join the discord sever [here](https://discord.gg/FXtqMnFB)
+Generating these keys can be complicated, so the team (shout out to Masaki here) have set up a bot on the Discord server to help securely deliver these keys to users who need them. You can join the discord sever [here](https://discord.com/invite/6bUW8EJ53j)
 
 After joining, visit the bot [here](https://discord.com/channels/1198332760947966094/1333835216313122887) (the pinned post in the `#ofdl` support forum) 
 
