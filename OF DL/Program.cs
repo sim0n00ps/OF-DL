@@ -33,7 +33,58 @@ public class Program
     private static Auth? auth = null;
     private static LoggingLevelSwitch levelSwitch = new LoggingLevelSwitch();
 
-    public async static Task Main(string[] args)
+    private static async Task SetupAuth(bool cliNonInteractive)
+    {
+        try
+        {
+            var authHelper = new AuthHelper();
+            Task setupBrowserTask = authHelper.SetupBrowser();
+
+            Task.Delay(1000).Wait();
+            if (!setupBrowserTask.IsCompleted)
+            {
+                AnsiConsole.MarkupLine($"[yellow]Downloading dependencies. Please wait ...[/]");
+            }
+            setupBrowserTask.Wait();
+
+            auth = await authHelper.GetAuthFromBrowser();
+        }
+        catch (Exception e)
+        {
+            AnsiConsole.MarkupLine($"\n[red]auth.json is not valid, check your JSON syntax![/]\n");
+            AnsiConsole.MarkupLine($"[red]If you are struggling with this file, you may want to try the browser extension which is documented here:[/]\n");
+            AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth#browser-extension[/]\n");
+            AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
+            Log.Error(e, "auth invalid after attempt to get auth from browser");
+
+            if (!cliNonInteractive)
+            {
+                Console.ReadKey();
+            }
+            Environment.Exit(2);
+        }
+
+        if (auth == null)
+        {
+            AnsiConsole.MarkupLine($"\n[red]auth.json is not valid, check your JSON syntax![/]\n");
+            AnsiConsole.MarkupLine($"[red]If you are struggling with this file, you may want to try the browser extension which is documented here:[/]\n");
+            AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth#browser-extension[/]\n");
+            AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
+            Log.Error("auth invalid after attempt to get auth from browser");
+
+            if (!cliNonInteractive)
+            {
+                Console.ReadKey();
+            }
+            Environment.Exit(2);
+        }
+        else
+        {
+            await File.WriteAllTextAsync("auth.json", JsonConvert.SerializeObject(auth, Formatting.Indented));
+        }
+    }
+
+    public static async Task Main(string[] args)
     {
         bool cliNonInteractive = false;
 
@@ -186,86 +237,12 @@ public class Program
                 }
                 catch (Exception _)
                 {
-                    try
-                    {
-                        var authHelper = new AuthHelper();
-                        auth = await authHelper.GetAuthFromBrowser();
-                    }
-                    catch (Exception e)
-                    {
-                        AnsiConsole.MarkupLine($"\n[red]auth.json is not valid, check your JSON syntax![/]\n");
-                        AnsiConsole.MarkupLine($"[red]If you are struggling with this file, you may want to try the browser extension which is documented here:[/]\n");
-                        AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth#browser-extension[/]\n");
-                        AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
-                        Log.Error(e, "auth invalid after attempt to get auth from browser");
-
-                        if (!cliNonInteractive)
-                        {
-                            Console.ReadKey();
-                        }
-                        Environment.Exit(2);
-                    }
-
-                    if (auth == null)
-                    {
-                        AnsiConsole.MarkupLine($"\n[red]auth.json is not valid, check your JSON syntax![/]\n");
-                        AnsiConsole.MarkupLine($"[red]If you are struggling with this file, you may want to try the browser extension which is documented here:[/]\n");
-                        AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth#browser-extension[/]\n");
-                        AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
-                        Log.Error("auth invalid after attempt to get auth from browser");
-
-                        if (!cliNonInteractive)
-                        {
-                            Console.ReadKey();
-                        }
-                        Environment.Exit(2);
-                    }
-                    else
-                    {
-                        await File.WriteAllTextAsync("auth.json", JsonConvert.SerializeObject(auth, Formatting.Indented));
-                    }
+                    await SetupAuth(cliNonInteractive);
                 }
             }
             else
             {
-                try
-                {
-                    var authHelper = new AuthHelper();
-                    auth = await authHelper.GetAuthFromBrowser();
-                }
-                catch (Exception e)
-                {
-                    AnsiConsole.MarkupLine($"\n[red]auth.json is not valid, check your JSON syntax![/]\n");
-                    AnsiConsole.MarkupLine($"[red]If you are struggling with this file, you may want to try the browser extension which is documented here:[/]\n");
-                    AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth#browser-extension[/]\n");
-                    AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
-                    Log.Error(e, "auth invalid after attempt to get auth from browser");
-
-                    if (!cliNonInteractive)
-                    {
-                        Console.ReadKey();
-                    }
-                    Environment.Exit(2);
-                }
-
-                if (auth == null)
-                {
-                    AnsiConsole.MarkupLine($"\n[red]auth.json is not valid, check your JSON syntax![/]\n");
-                    AnsiConsole.MarkupLine($"[red]If you are struggling with this file, you may want to try the browser extension which is documented here:[/]\n");
-                    AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth#browser-extension[/]\n");
-                    AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
-                    Log.Error("auth invalid after attempt to get auth from browser");
-
-                    if (!cliNonInteractive)
-                    {
-                        Console.ReadKey();
-                    }
-                    Environment.Exit(2);
-                }
-                else
-                {
-                    await File.WriteAllTextAsync("auth.json", JsonConvert.SerializeObject(auth, Formatting.Indented));
-                }
+                await SetupAuth(cliNonInteractive);
             }
 
             //Added to stop cookie being filled with un-needed headers

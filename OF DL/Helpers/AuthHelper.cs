@@ -12,12 +12,9 @@ public class AuthHelper
     {
         Headless = false,
         Channel = ChromeReleaseChannel.Stable,
-        DefaultViewport = new ViewPortOptions
-        {
-            Width = 1280,
-            Height = 720
-        },
-        Args = ["--no-sandbox", "--disable-setuid-sandbox"]
+        DefaultViewport = null,
+        Args = ["--no-sandbox", "--disable-setuid-sandbox"],
+        UserDataDir = Path.GetFullPath("chrome-data")
     };
 
     private readonly string[] _desiredCookies =
@@ -29,25 +26,38 @@ public class AuthHelper
     private readonly int LOGIN_TIMEOUT = 180000;
     private readonly int FEED_LOAD_TIMEOUT = 45000;
 
-    private async Task LoadCookies(IPage page)
+    public async Task SetupBrowser()
     {
-        if (File.Exists("cookies.json"))
+        string? executablePath = Environment.GetEnvironmentVariable("OFDL_PUPPETEER_EXECUTABLE_PATH");
+        if (executablePath != null)
         {
-            Log.Information("Loading cookies from cookies.json");
-            var cookies = JsonConvert.DeserializeObject<CookieParam[]>(await File.ReadAllTextAsync("cookies.json"));
-            await page.SetCookieAsync(cookies);
+            Log.Information("OFDL_PUPPETEER_EXECUTABLE_PATH environment variable found. Using browser executable path: {executablePath}", executablePath);
+            _options.ExecutablePath = executablePath;
         }
         else
         {
-            Log.Information("No cookies.json found");
+            var browserFetcher = new BrowserFetcher();
+            var installedBrowsers = browserFetcher.GetInstalledBrowsers().ToList();
+            if (installedBrowsers.Count == 0)
+            {
+                Log.Information("Downloading browser.");
+                var downloadedBrowser = await browserFetcher.DownloadAsync();
+                Log.Information("Browser downloaded. Path: {executablePath}",
+                    downloadedBrowser.GetExecutablePath());
+                _options.ExecutablePath = downloadedBrowser.GetExecutablePath();
+            }
+            else
+            {
+                _options.ExecutablePath = installedBrowsers.First().GetExecutablePath();
+            }
         }
-    }
 
-    private async Task SaveCookies(IPage page)
-    {
-        Log.Information("Saving cookies to cookies.json");
-        var cookies = await page.GetCookiesAsync();
-        await File.WriteAllTextAsync("cookies.json", JsonConvert.SerializeObject(cookies));
+        string? dockerEnv = Environment.GetEnvironmentVariable("OFDL_DOCKER");
+        if (dockerEnv != null)
+        {
+            Log.Information("OFDL_DOCKER environment variable found. Using headless mode.");
+            _options.Args = ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"];
+        }
     }
 
     private async Task<string> GetBcToken(IPage page)
@@ -55,28 +65,22 @@ public class AuthHelper
         return await page.EvaluateExpressionAsync<string>("window.localStorage.getItem('bcTokenSha') || ''");
     }
 
-    public async Task<Auth?> GetAuthFromBrowser()
+    public async Task<Auth?> GetAuthFromBrowser(bool isDocker = false)
     {
         try
         {
-            Log.Information("Downloading browser (if needed) ...");
-            Console.WriteLine("Downloading browser (if needed) ...");
-            var browserFetcher = new BrowserFetcher();
-            await browserFetcher.DownloadAsync();
 
             await using var browser = await Puppeteer.LaunchAsync(_options);
-            await using var page = await browser.NewPageAsync();
+            var pages = await browser.PagesAsync();
+            var page = pages.First();
 
-            await LoadCookies(page);
-
-            Log.Information("Navigating to onlyfans.com");
             await page.GoToAsync("https://onlyfans.com");
 
             Console.WriteLine("Login to OnlyFans with your credentials ...");
 
             try
             {
-                await page.WaitForSelectorAsync(".g-avatar", new WaitForSelectorOptions { Timeout = LOGIN_TIMEOUT });
+                await page.WaitForSelectorAsync(".b-feed", new WaitForSelectorOptions { Timeout = LOGIN_TIMEOUT });
                 Console.WriteLine("Logged in to OnlyFans");
             }
             catch (Exception e)
@@ -84,8 +88,6 @@ public class AuthHelper
                 Console.WriteLine(e);
                 throw;
             }
-
-            await SaveCookies(page);
 
             await page.ReloadAsync();
 
