@@ -486,46 +486,51 @@ public class Program
                                 {
                                     return ValidationResult.Success();
                                 }
+                                if (url == "exit" || url == "back") {
+                                    return ValidationResult.Success();
+                                }
                                 Log.Error("Post URL invalid");
                                 return ValidationResult.Error("[red]Please enter a valid post URL[/]");
                             }));
 
-                long post_id = Convert.ToInt64(postUrl.Split("/")[3]);
-                string username = postUrl.Split("/")[4];
+                if (postUrl != "exit" && postUrl != "back") {
+                    long post_id = Convert.ToInt64(postUrl.Split("/")[3]);
+                    string username = postUrl.Split("/")[4];
 
-                Log.Debug($"Single Post ID: {post_id.ToString()}");
-                Log.Debug($"Single Post Creator: {username}");
+                    Log.Debug($"Single Post ID: {post_id.ToString()}");
+                    Log.Debug($"Single Post Creator: {username}");
 
-                if (users.ContainsKey(username))
-                {
-                    string path = "";
-                    if (!string.IsNullOrEmpty(Config.DownloadPath))
+                    if (users.ContainsKey(username))
                     {
-                        path = System.IO.Path.Combine(Config.DownloadPath, username);
+                        string path = "";
+                        if (!string.IsNullOrEmpty(Config.DownloadPath))
+                        {
+                            path = System.IO.Path.Combine(Config.DownloadPath, username);
+                        }
+                        else
+                        {
+                            path = $"__user_data__/sites/OnlyFans/{username}";
+                        }
+
+                        Log.Debug($"Download path: {path}");
+
+                        if (!Directory.Exists(path))
+                        {
+                            Directory.CreateDirectory(path);
+                            AnsiConsole.Markup($"[red]Created folder for {username}\n[/]");
+                            Log.Debug($"Created folder for {username}");
+                        }
+                        else
+                        {
+                            AnsiConsole.Markup($"[red]Folder for {username} already created\n[/]");
+                        }
+
+                        await dBHelper.CreateDB(path);
+
+                        var downloadContext = new DownloadContext(Auth, Config, GetCreatorFileNameFormatConfig(Config, username), m_ApiHelper, dBHelper);
+
+                        await DownloadSinglePost(downloadContext, post_id, path, users);
                     }
-                    else
-                    {
-                        path = $"__user_data__/sites/OnlyFans/{username}";
-                    }
-
-                    Log.Debug($"Download path: {path}");
-
-                    if (!Directory.Exists(path))
-                    {
-                        Directory.CreateDirectory(path);
-                        AnsiConsole.Markup($"[red]Created folder for {username}\n[/]");
-                        Log.Debug($"Created folder for {username}");
-                    }
-                    else
-                    {
-                        AnsiConsole.Markup($"[red]Folder for {username} already created\n[/]");
-                    }
-
-                    await dBHelper.CreateDB(path);
-
-                    var downloadContext = new DownloadContext(Auth, Config, GetCreatorFileNameFormatConfig(Config, username), m_ApiHelper, dBHelper);
-
-                    await DownloadSinglePost(downloadContext, post_id, path, users);
                 }
             }
             else if (hasSelectedUsersKVP.Key && hasSelectedUsersKVP.Value != null && hasSelectedUsersKVP.Value.ContainsKey("PurchasedTab"))
