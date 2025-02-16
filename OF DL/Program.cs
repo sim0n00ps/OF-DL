@@ -486,14 +486,14 @@ public class Program
                                 {
                                     return ValidationResult.Success();
                                 }
-                                if (url == "exit" || url == "back") {
+                                if (url == "" || url == "exit" || url == "back") {
                                     return ValidationResult.Success();
                                 }
                                 Log.Error("Post URL invalid");
                                 return ValidationResult.Error("[red]Please enter a valid post URL[/]");
                             }));
 
-                if (postUrl != "exit" && postUrl != "back") {
+                if (postUrl != "" && postUrl != "exit" && postUrl != "back") {
                     long post_id = Convert.ToInt64(postUrl.Split("/")[3]);
                     string username = postUrl.Split("/")[4];
 
@@ -631,60 +631,65 @@ public class Program
                             {
                                 return ValidationResult.Success();
                             }
+                            if (url == "" || url == "back" || url == "exit")
+                            {
+                                return ValidationResult.Success();
+                            }
                             Log.Error("Message URL invalid");
                             return ValidationResult.Error("[red]Please enter a valid message URL[/]");
                         }));
 
-
-                long message_id = Convert.ToInt64(messageUrl.Split("?firstId=")[1]);
-                long user_id = Convert.ToInt64(messageUrl.Split("/")[6]);
-                JObject user = await m_ApiHelper.GetUserInfoById($"/users/list?x[]={user_id.ToString()}");
-                string username = string.Empty;
-
-                Log.Debug($"Message ID: {message_id}");
-                Log.Debug($"User ID: {user_id}");
-
-                if (user is null)
+                if (messageUrl != "" && messageUrl != "exit" && messageUrl != "back")
                 {
-                    username = $"Deleted User - {user_id.ToString()}";
-                    Log.Debug("Content creator not longer exists - ", user_id.ToString());
+                    long message_id = Convert.ToInt64(messageUrl.Split("?firstId=")[1]);
+                    long user_id = Convert.ToInt64(messageUrl.Split("/")[6]);
+                    JObject user = await m_ApiHelper.GetUserInfoById($"/users/list?x[]={user_id.ToString()}");
+                    string username = string.Empty;
+
+                    Log.Debug($"Message ID: {message_id}");
+                    Log.Debug($"User ID: {user_id}");
+
+                    if (user is null)
+                    {
+                        username = $"Deleted User - {user_id.ToString()}";
+                        Log.Debug("Content creator not longer exists - ", user_id.ToString());
+                    }
+                    else if (!string.IsNullOrEmpty(user[user_id.ToString()]["username"].ToString()))
+                    {
+                        username = user[user_id.ToString()]["username"].ToString();
+                        Log.Debug("Content creator: ", username);
+                    }
+
+                    string path = "";
+                    if (!string.IsNullOrEmpty(Config.DownloadPath))
+                    {
+                        path = System.IO.Path.Combine(Config.DownloadPath, username);
+                    }
+                    else
+                    {
+                        path = $"__user_data__/sites/OnlyFans/{username}";
+                    }
+
+                    Log.Debug("Download path: ", path);
+
+                    if (!Directory.Exists(path))
+                    {
+                        Directory.CreateDirectory(path);
+                        AnsiConsole.Markup($"[red]Created folder for {username}\n[/]");
+                        Log.Debug($"Created folder for {username}");
+                    }
+                    else
+                    {
+                        AnsiConsole.Markup($"[red]Folder for {username} already created\n[/]");
+                        Log.Debug($"Folder for {username} already created");
+                    }
+
+                    await dBHelper.CreateDB(path);
+
+                    var downloadContext = new DownloadContext(Auth, Config, GetCreatorFileNameFormatConfig(Config, username), m_ApiHelper, dBHelper);
+
+                    await DownloadPaidMessage(downloadContext, hasSelectedUsersKVP, username, 1, path, message_id);
                 }
-                else if (!string.IsNullOrEmpty(user[user_id.ToString()]["username"].ToString()))
-                {
-                    username = user[user_id.ToString()]["username"].ToString();
-                    Log.Debug("Content creator: ", username);
-                }
-
-                string path = "";
-                if (!string.IsNullOrEmpty(Config.DownloadPath))
-                {
-                    path = System.IO.Path.Combine(Config.DownloadPath, username);
-                }
-                else
-                {
-                    path = $"__user_data__/sites/OnlyFans/{username}";
-                }
-
-                Log.Debug("Download path: ", path);
-
-                if (!Directory.Exists(path))
-                {
-                    Directory.CreateDirectory(path);
-                    AnsiConsole.Markup($"[red]Created folder for {username}\n[/]");
-                    Log.Debug($"Created folder for {username}");
-                }
-                else
-                {
-                    AnsiConsole.Markup($"[red]Folder for {username} already created\n[/]");
-                    Log.Debug($"Folder for {username} already created");
-                }
-
-                await dBHelper.CreateDB(path);
-
-                var downloadContext = new DownloadContext(Auth, Config, GetCreatorFileNameFormatConfig(Config, username), m_ApiHelper, dBHelper);
-
-                await DownloadPaidMessage(downloadContext, hasSelectedUsersKVP, username, 1, path, message_id);
-
             }
             else if (hasSelectedUsersKVP.Key && !hasSelectedUsersKVP.Value.ContainsKey("ConfigChanged"))
             {
