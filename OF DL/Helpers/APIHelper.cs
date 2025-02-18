@@ -2568,7 +2568,7 @@ public class APIHelper : IAPIHelper
     }
 
 
-    public async Task<string> GetDecryptionKey(Dictionary<string, string> drmHeaders, string licenceURL, string pssh)
+    public async Task<string> GetDecryptionKeyCDRMProject(Dictionary<string, string> drmHeaders, string licenceURL, string pssh)
     {
         Log.Debug("Calling GetDecryptionKey");
 
@@ -2653,9 +2653,57 @@ public class APIHelper : IAPIHelper
         return null;
     }
 
-    public async Task<string> GetDecryptionKeyNew(Dictionary<string, string> drmHeaders, string licenceURL, string pssh)
+    public async Task<string> GetDecryptionKeyOFDL(Dictionary<string, string> drmHeaders, string licenceURL, string pssh)
     {
-        Log.Debug("Calling GetDecryptionKeyNew");
+        Log.Debug("Calling GetDecryptionOFDL");
+
+
+        try
+        {
+            string dcValue = string.Empty;
+            HttpClient client = new();
+
+            OFDLRequest ofdlRequest = new OFDLRequest
+            {
+                PSSH = pssh,
+                LicenseURL = licenceURL,
+                Headers = JsonConvert.SerializeObject(drmHeaders)
+            };
+
+            string json = JsonConvert.SerializeObject(ofdlRequest);
+
+            Log.Debug($"Posting to ofdl.tools: {json}");
+
+            HttpRequestMessage request = new(HttpMethod.Post, "https://ofdl.tools/WV")
+            {
+                Content = new StringContent(json, Encoding.UTF8, "application/json")
+            };
+
+            using var response = await client.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                string body = await response.Content.ReadAsStringAsync();
+                return body;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+            Log.Error("Exception caught: {0}\n\nStackTrace: {1}", ex.Message, ex.StackTrace);
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine("\nInner Exception:");
+                Console.WriteLine("Exception caught: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+                Log.Error("Inner Exception: {0}\n\nStackTrace: {1}", ex.InnerException.Message, ex.InnerException.StackTrace);
+            }
+        }
+        return null;
+    }
+
+    public async Task<string> GetDecryptionKeyCDM(Dictionary<string, string> drmHeaders, string licenceURL, string pssh)
+    {
+        Log.Debug("Calling GetDecryptionKeyCDM");
 
         try
         {
@@ -2674,7 +2722,7 @@ public class APIHelper : IAPIHelper
             List<ContentKey> keys = cdm.GetKeys();
             if (keys.Count > 0)
             {
-                Log.Debug($"GetDecryptionKeyNew Key: {keys[0].ToString()}");
+                Log.Debug($"GetDecryptionKeyCDM Key: {keys[0].ToString()}");
                 return keys[0].ToString();
             }
         }

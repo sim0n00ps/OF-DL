@@ -11,8 +11,8 @@ namespace OF_DL.Helpers
 {
     public interface IAPIHelper
     {
-        Task<string> GetDecryptionKey(Dictionary<string, string> drmHeaders, string licenceURL, string pssh);
-        Task<string> GetDecryptionKeyNew(Dictionary<string, string> drmHeaders, string licenceURL, string pssh);
+        Task<string> GetDecryptionKeyCDRMProject(Dictionary<string, string> drmHeaders, string licenceURL, string pssh);
+        Task<string> GetDecryptionKeyCDM(Dictionary<string, string> drmHeaders, string licenceURL, string pssh);
         Task<DateTime> GetDRMMPDLastModified(string mpdUrl, string policy, string signature, string kvp);
         Task<string> GetDRMMPDPSSH(string mpdUrl, string policy, string signature, string kvp);
         Task<Dictionary<string, int>> GetLists(string endpoint, IDownloadConfig config);
@@ -32,5 +32,6 @@ namespace OF_DL.Helpers
         Dictionary<string, string> GetDynamicHeaders(string path, string queryParam);
         Task<Dictionary<string, int>> GetActiveSubscriptions(string endpoint, bool includeRestrictedSubscriptions, IDownloadConfig config);
         Task<Dictionary<string, int>> GetExpiredSubscriptions(string endpoint, bool includeRestrictedSubscriptions, IDownloadConfig config);
+        Task<string> GetDecryptionKeyOFDL(Dictionary<string, string> drmHeaders, string licenceURL, string pssh);
     }
 }
