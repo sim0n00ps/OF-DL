@@ -144,7 +144,6 @@ public class AuthHelper
         catch (Exception e)
         {
             Log.Error(e, "Error getting auth from browser");
-            Console.WriteLine(e);
             return null;
         }
     }

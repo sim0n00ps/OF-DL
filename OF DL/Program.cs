@@ -70,8 +70,8 @@ public class Program
         }
         catch (Exception e)
         {
-            AnsiConsole.MarkupLine($"\n[red]Authorization failed. Be sure to log into to OF using the new window that opened automatically.[/]\n");
-            AnsiConsole.MarkupLine($"[red]The window will close automatically when the authorization process is finished.\n[/]\n.[/]");
+            AnsiConsole.MarkupLine($"\n[red]Authorization failed. Be sure to log into to OF using the new window that opened automatically.[/]");
+            AnsiConsole.MarkupLine($"[red]The window will close automatically when the authorization process is finished.[/]");
             AnsiConsole.MarkupLine($"[red]If the problem persists, you may want to try generating the authorization file manually or use the browser extension which is documented here:[/]\n");
             AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth#browser-extension[/]\n");
             AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
@@ -82,11 +82,12 @@ public class Program
 
         if (auth == null)
         {
-            AnsiConsole.MarkupLine($"\n[red]Authorization failed. Be sure to log into to OF using the new window that opened automatically.[/]\n");
-            AnsiConsole.MarkupLine($"[red]The window will close automatically when the authorization process is finished.\n[/]\n.[/]");
+            AnsiConsole.MarkupLine($"\n[red]Authorization failed. Be sure to log into to OF using the new window that opened automatically.[/]");
+            AnsiConsole.MarkupLine($"[red]The window will close automatically when the authorization process is finished.[/]");
             AnsiConsole.MarkupLine($"[red]If the problem persists, you may want to try generating the authorization file manually or use the browser extension which is documented here:[/]\n");
             AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth#browser-extension[/]\n");
             AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
+            Log.Error("auth invalid after attempt to get auth from browser");
 
             Environment.Exit(2);
         }
@@ -2536,6 +2537,18 @@ public class Program
                         break;
                     }
                     break;
+                case "[red]Logout and exit[/]":
+                    if (Directory.Exists("chrome-data"))
+                    {
+                        Log.Information("Deleting chrome-data folder");
+                        Directory.Delete("chrome-data", true);
+                    }
+                    if (File.Exists("auth.json"))
+                    {
+                        Log.Information("Deleting auth.json");
+                        File.Delete("auth.json");
+                    }
+                    return (false, null, currentConfig); // Return false to indicate exit
                 case "[red]Exit[/]":
                     return (false, null, currentConfig); // Return false to indicate exit
             }
@@ -2558,6 +2571,7 @@ public class Program
                 "[red]Download Purchased Tab[/]",
                 "[red]Edit config.json[/]",
                 "[red]Change logging level[/]",
+                "[red]Logout and Exit[/]",
                 "[red]Exit[/]"
             };
         }
@@ -2572,6 +2586,7 @@ public class Program
                 "[red]Download Purchased Tab[/]",
                 "[red]Edit config.json[/]",
                 "[red]Change logging level[/]",
+                "[red]Logout and Exit[/]",
                 "[red]Exit[/]"
             };
         }
