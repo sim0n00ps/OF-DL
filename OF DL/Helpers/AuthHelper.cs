@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using OF_DL.Entities;
+﻿using OF_DL.Entities;
 using PuppeteerSharp;
 using PuppeteerSharp.BrowserData;
 using Serilog;
@@ -23,10 +22,10 @@ public class AuthHelper
         "sess"
     ];
 
-    private readonly int LOGIN_TIMEOUT = 180000;
-    private readonly int FEED_LOAD_TIMEOUT = 45000;
+    private const int LoginTimeout = 180000;
+    private const int FeedLoadTimeout = 45000;
 
-    public async Task SetupBrowser()
+    public async Task SetupBrowser(bool runningInDocker)
     {
         string? executablePath = Environment.GetEnvironmentVariable("OFDL_PUPPETEER_EXECUTABLE_PATH");
         if (executablePath != null)
@@ -52,10 +51,9 @@ public class AuthHelper
             }
         }
 
-        string? dockerEnv = Environment.GetEnvironmentVariable("OFDL_DOCKER");
-        if (dockerEnv != null)
+        if (runningInDocker)
         {
-            Log.Information("OFDL_DOCKER environment variable found. Using headless mode.");
+            Log.Information("Running in Docker. Disabling sandbox and GPU.");
             _options.Args = ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"];
         }
     }
@@ -70,34 +68,37 @@ public class AuthHelper
         try
         {
 
-            await using var browser = await Puppeteer.LaunchAsync(_options);
-            var pages = await browser.PagesAsync();
-            var page = pages.First();
+            await using IBrowser? browser = await Puppeteer.LaunchAsync(_options);
 
+            if (browser == null)
+            {
+                throw new Exception("Could not get browser");
+            }
+
+            IPage[]? pages = await browser.PagesAsync();
+            IPage? page = pages.First();
+
+            if (page == null)
+            {
+                throw new Exception("Could not get page");
+            }
+
+            Log.Debug("Navigating to OnlyFans.");
             await page.GoToAsync("https://onlyfans.com");
 
-            Console.WriteLine("Login to OnlyFans with your credentials ...");
-
-            try
-            {
-                await page.WaitForSelectorAsync(".b-feed", new WaitForSelectorOptions { Timeout = LOGIN_TIMEOUT });
-                Console.WriteLine("Logged in to OnlyFans");
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
+            Log.Debug("Waiting for user to login");
+            await page.WaitForSelectorAsync(".b-feed", new WaitForSelectorOptions { Timeout = LoginTimeout });
+            Log.Debug("Feed element detected (user logged in)");
 
             await page.ReloadAsync();
 
             await page.WaitForNavigationAsync(new NavigationOptions {
                 WaitUntil = [WaitUntilNavigation.Networkidle2],
-                Timeout = FEED_LOAD_TIMEOUT
+                Timeout = FeedLoadTimeout
             });
-            Console.WriteLine("DOM loaded");
+            Log.Debug("DOM loaded. Getting BC token and cookies ...");
 
-            var xBc = string.Empty;
+            string xBc;
             try
             {
                 xBc = await GetBcToken(page);
@@ -107,24 +108,29 @@ public class AuthHelper
                 throw new Exception("Error getting bcToken");
             }
 
-            var mappedCookies = (await page.GetCookiesAsync())
+            Dictionary<string, string> mappedCookies = (await page.GetCookiesAsync())
                 .Where(cookie => cookie.Domain.Contains("onlyfans.com"))
                 .ToDictionary(cookie => cookie.Name, cookie => cookie.Value);
 
-            mappedCookies.TryGetValue("auth_id", out var userId);
+            mappedCookies.TryGetValue("auth_id", out string? userId);
             if (userId == null)
             {
                 throw new Exception("Could not find 'auth_id' cookie");
             }
 
-            mappedCookies.TryGetValue("sess", out var sess);
+            mappedCookies.TryGetValue("sess", out string? sess);
             if (sess == null)
             {
                 throw new Exception("Could not find 'sess' cookie");
             }
 
-            var userAgent = await browser.GetUserAgentAsync();
-            var cookies = String.Join(" ", mappedCookies.Keys.Where(key => _desiredCookies.Contains(key))
+            string? userAgent = await browser.GetUserAgentAsync();
+            if (userAgent == null)
+            {
+                throw new Exception("Could not get user agent");
+            }
+
+            string cookies = string.Join(" ", mappedCookies.Keys.Where(key => _desiredCookies.Contains(key))
                 .Select(key => $"${key}={mappedCookies[key]};"));
 
             return new Auth()
