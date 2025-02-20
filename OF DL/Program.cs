@@ -70,9 +70,9 @@ public class Program
         }
         catch (Exception e)
         {
-            AnsiConsole.MarkupLine($"\n[red]Authorization failed. Be sure to log into to OF using the new window that opened automatically.[/]");
-            AnsiConsole.MarkupLine($"[red]The window will close automatically when the authorization process is finished.[/]");
-            AnsiConsole.MarkupLine($"[red]If the problem persists, you may want to try generating the authorization file manually or use the browser extension which is documented here:[/]\n");
+            AnsiConsole.MarkupLine($"\n[red]Authentication failed. Be sure to log into to OF using the new window that opened automatically.[/]");
+            AnsiConsole.MarkupLine($"[red]The window will close automatically when the authentication process is finished.[/]");
+            AnsiConsole.MarkupLine($"[red]If the problem persists, you may want to try generating the auth.json file manually or use the browser extension which is documented here:[/]\n");
             AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth#browser-extension[/]\n");
             AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
             Log.Error(e, "auth invalid after attempt to get auth from browser");
@@ -82,9 +82,9 @@ public class Program
 
         if (auth == null)
         {
-            AnsiConsole.MarkupLine($"\n[red]Authorization failed. Be sure to log into to OF using the new window that opened automatically.[/]");
-            AnsiConsole.MarkupLine($"[red]The window will close automatically when the authorization process is finished.[/]");
-            AnsiConsole.MarkupLine($"[red]If the problem persists, you may want to try generating the authorization file manually or use the browser extension which is documented here:[/]\n");
+            AnsiConsole.MarkupLine($"\n[red]Authentication failed. Be sure to log into to OF using the new window that opened automatically.[/]");
+            AnsiConsole.MarkupLine($"[red]The window will close automatically when the authentication process is finished.[/]");
+            AnsiConsole.MarkupLine($"[red]If the problem persists, you may want to try generating the auth.json file manually or use the browser extension which is documented here:[/]\n");
             AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth#browser-extension[/]\n");
             AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
             Log.Error("auth invalid after attempt to get auth from browser");
@@ -434,7 +434,8 @@ public class Program
             if (validate?.name == null && validate?.username == null)
             {
                 Log.Error("Auth failed");
-                Console.ReadKey();
+                AnsiConsole.MarkupLine($"\n[red]Auth failed. Please try again or use other authentication methods detailed here:[/]\n");
+                AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth[/]\n");                Console.ReadKey();
                 return;
             }
 

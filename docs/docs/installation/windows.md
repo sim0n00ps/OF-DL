@@ -20,8 +20,7 @@ you will need to specify the path to `ffmpeg.exe` in the config file (see the `F
 3. Your folder should contain a folder named `cdm` as well as the following files:
    - OF DL.exe
    - config.json
-   - auth.json
    - rules.json
    - e_sqlite3.dll
    - ffmpeg.exe
-4. Once you have done this, please head to the [Authentication](/docs/config/auth) page to fill out the `auth.json` file.
+4. Once you have done this, run OF DL.exe

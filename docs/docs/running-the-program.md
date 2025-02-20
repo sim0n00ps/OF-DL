@@ -8,11 +8,12 @@ Once you are happy you have filled everything in [auth.json](/docs/config/auth) 
 
 ![CLI welcome banner](/img/welcome_banner.png)
 
-It should locate `auth.json`, `config.json`, `rules.json` and FFmpeg successfully. If anything doesn't get located
+It should locate `config.json`, `rules.json` and FFmpeg successfully. If anything doesn't get located
 successfully, then make sure the files exist or the path is correct.
 
-If the auth info is correct then you should see a message in green text `Logged In successfully as {Your Username} {Your User Id}`.
-However, if the `auth.json` file has been filled out but cannot log in successfully with the credentials provided,
+OF-DL will open a new window, if needed, to allow you to log into your OnlyFans account. The window will automatically close once
+the authorization process has finished. If the auth info is correct then you should see a message in green text
+`Logged In successfully as {Your Username} {Your User Id}`. However, if the authorization has failed,
 then a message in red text will appear `Auth failed, please check the values in auth.json are correct, press any key to exit.`
 This means you need to go back and fill in the `auth.json` file again, this will usually indicate that your `user-agent` has changed or you need to re-copy your `sess` value.
 
@@ -38,6 +39,8 @@ The `Download Purchased Tab` option will download all the media from the purchas
 The `Edit config.json` option allows you to change the config from within the program.
 
 The `Change logging level` option allows you to change the logging level that the program uses when writing logs to files in the `logs` folder.
+
+The `Logout and Exit` option allows you to remove your authentication from OF-DL. This is useful if you use multiple OnlyFans accounts.
 
 After you have made your selection the content should start downloading. Content is downloaded in this order:
 

@@ -376,6 +376,16 @@ Description: If set to `true`, the program will run without any input from the u
 (unless [NonInteractiveModeListName](#noninteractivemodelistname) or [NonInteractiveModePurchasedTab](#noninteractivemodepurchasedtab) are configured).
 If set to `false`, the default behaviour will apply, and you will be able to choose an option from the menu.
 
+:::warning
+
+If NonInteractiveMode is enabled, you will be unable to authenticate OF-DL using the standard authentication method.
+Before you can run OF-DL in NonInteractiveMode, you must either
+
+1. Generate an auth.json file by running OF-DL with NonInteractiveMode disabled and authenticating OF-DL using the standard method **OR**
+2. Generate an auth.json file by using a [legacy authentication method](/docs/config/auth#legacy-methods)
+
+:::
+
 ## NonInteractiveModeListName
 
 Type: `string`
