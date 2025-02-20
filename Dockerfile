@@ -61,6 +61,7 @@ ENV DISPLAY=:0.0 \
 	OFDL_PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
 	OFDL_DOCKER=true
 
+EXPOSE 8080
 WORKDIR /config
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["/app/entrypoint.sh"]

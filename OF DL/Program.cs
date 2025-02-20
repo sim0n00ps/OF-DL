@@ -58,7 +58,7 @@ public class Program
                     AnsiConsole.MarkupLine(
                         "[yellow]In your web browser, navigate to the port forwarded from your docker container.[/]");
                     AnsiConsole.MarkupLine(
-                        "[yellow]For instance, if your docker run command included \"-p 3000:8080\", open your web browser to \"http://localhost:3000\".[/]");
+                        "[yellow]For instance, if your docker run command included \"-p 8080:8080\", open your web browser to \"http://localhost:8080\".[/]");
                     AnsiConsole.MarkupLine("[yellow]Once on that webpage, please use it to log in to your OF account. Do not navigate away from the page.[/]");
                 }
                 else
