@@ -430,13 +430,29 @@ public class Program
             //Check if auth is valid
             var apiHelper = new APIHelper(auth, config);
 
-            Entities.User validate = await apiHelper.GetUserInfo($"/users/me");
-            if (validate?.name == null && validate?.username == null)
+            Entities.User? validate = await apiHelper.GetUserInfo($"/users/me");
+            if (validate == null || (validate?.name == null && validate?.username == null))
             {
                 Log.Error("Auth failed");
-                AnsiConsole.MarkupLine($"\n[red]Auth failed. Please try again or use other authentication methods detailed here:[/]\n");
-                AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth[/]\n");                Console.ReadKey();
-                return;
+
+                auth = null;
+                if (File.Exists("auth.json"))
+                {
+                    File.Delete("auth.json");
+                }
+
+                if (!cliNonInteractive)
+                {
+                    await LoadAuthFromBrowser();
+                }
+
+                if (auth == null)
+                {
+                    AnsiConsole.MarkupLine($"\n[red]Auth failed. Please try again or use other authentication methods detailed here:[/]\n");
+                    AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth[/]\n");
+                    Console.ReadKey();
+                    Environment.Exit(2);
+                }
             }
 
             AnsiConsole.Markup($"[green]Logged In successfully as {validate.name} {validate.username}\n[/]");
