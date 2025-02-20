@@ -22,8 +22,8 @@ public class AuthHelper
         "sess"
     ];
 
-    private const int LoginTimeout = 180000;
-    private const int FeedLoadTimeout = 45000;
+    private const int LoginTimeout = 600000;  // 10 minutes
+    private const int FeedLoadTimeout = 60000; // 1 minute
 
     public async Task SetupBrowser(bool runningInDocker)
     {
