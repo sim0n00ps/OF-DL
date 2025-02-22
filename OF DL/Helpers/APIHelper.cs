@@ -26,8 +26,8 @@ public class APIHelper : IAPIHelper
     private static readonly JsonSerializerSettings m_JsonSerializerSettings;
     private readonly IDBHelper m_DBHelper;
     private readonly Auth auth;
-    private DateTime? cachedDynamicRulesExpiration;
-    private DynamicRules? cachedDynamicRules;
+    private static DateTime? cachedDynamicRulesExpiration;
+    private static DynamicRules? cachedDynamicRules;
 
     static APIHelper()
     {
