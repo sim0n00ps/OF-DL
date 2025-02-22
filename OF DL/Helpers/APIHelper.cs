@@ -26,6 +26,8 @@ public class APIHelper : IAPIHelper
     private static readonly JsonSerializerSettings m_JsonSerializerSettings;
     private readonly IDBHelper m_DBHelper;
     private readonly Auth auth;
+    private DateTime? cachedDynamicRulesExpiration;
+    private DynamicRules? cachedDynamicRules;
 
     static APIHelper()
     {
@@ -50,15 +52,38 @@ public class APIHelper : IAPIHelper
 
         DynamicRules? root;
 
-        //Get rules from GitHub and fallback to local file
-        string? dynamicRulesJSON = GetDynamicRules();
-        if (!string.IsNullOrEmpty(dynamicRulesJSON))
+        //Check if we have a cached version of the dynamic rules
+        if (cachedDynamicRules != null && cachedDynamicRulesExpiration.HasValue &&
+            DateTime.UtcNow < cachedDynamicRulesExpiration)
         {
-            root = JsonConvert.DeserializeObject<DynamicRules>(dynamicRulesJSON);
+            Log.Debug("Using cached dynamic rules");
+            root = cachedDynamicRules;
         }
         else
         {
-            root = JsonConvert.DeserializeObject<DynamicRules>(File.ReadAllText("rules.json"));
+            //Get rules from GitHub and fallback to local file
+            string? dynamicRulesJSON = GetDynamicRules();
+            if (!string.IsNullOrEmpty(dynamicRulesJSON))
+            {
+                Log.Debug("Using dynamic rules from GitHub");
+                root = JsonConvert.DeserializeObject<DynamicRules>(dynamicRulesJSON);
+
+                // Cache the GitHub response for 15 minutes
+                cachedDynamicRules = root;
+                cachedDynamicRulesExpiration = DateTime.UtcNow.AddMinutes(15);
+            }
+            else
+            {
+                Log.Debug("Using dynamic rules from local file");
+                root = JsonConvert.DeserializeObject<DynamicRules>(File.ReadAllText("rules.json"));
+
+                // Cache the dynamic rules from local file to prevent unnecessary disk
+                // operations and frequent call to GitHub. Since the GitHub dynamic rules
+                // are preferred to the local file, the cache time is shorter than when dynamic rules
+                // are successfully retrieved from GitHub.
+                cachedDynamicRules = root;
+                cachedDynamicRulesExpiration = DateTime.UtcNow.AddMinutes(5);
+            }
         }
 
         DateTimeOffset dto = (DateTimeOffset)DateTime.UtcNow;
