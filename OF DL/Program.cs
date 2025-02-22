@@ -352,7 +352,7 @@ public class Program
 
             if (clientIdBlobMissing || devicePrivateKeyMissing)
             {
-                AnsiConsole.Markup("[yellow]device_client_id_blob and/or device_private_key missing, https://cdrm-project.com/ will be used instead for DRM protected videos\n[/]");
+                AnsiConsole.Markup("[yellow]device_client_id_blob and/or device_private_key missing, https://ofdl.tools/ or https://cdrm-project.com/ will be used instead for DRM protected videos\n[/]");
             }
 
             //Check if auth is valid
@@ -486,46 +486,51 @@ public class Program
                                 {
                                     return ValidationResult.Success();
                                 }
+                                if (url == "" || url == "exit" || url == "back") {
+                                    return ValidationResult.Success();
+                                }
                                 Log.Error("Post URL invalid");
                                 return ValidationResult.Error("[red]Please enter a valid post URL[/]");
                             }));
 
-                long post_id = Convert.ToInt64(postUrl.Split("/")[3]);
-                string username = postUrl.Split("/")[4];
+                if (postUrl != "" && postUrl != "exit" && postUrl != "back") {
+                    long post_id = Convert.ToInt64(postUrl.Split("/")[3]);
+                    string username = postUrl.Split("/")[4];
 
-                Log.Debug($"Single Post ID: {post_id.ToString()}");
-                Log.Debug($"Single Post Creator: {username}");
+                    Log.Debug($"Single Post ID: {post_id.ToString()}");
+                    Log.Debug($"Single Post Creator: {username}");
 
-                if (users.ContainsKey(username))
-                {
-                    string path = "";
-                    if (!string.IsNullOrEmpty(Config.DownloadPath))
+                    if (users.ContainsKey(username))
                     {
-                        path = System.IO.Path.Combine(Config.DownloadPath, username);
+                        string path = "";
+                        if (!string.IsNullOrEmpty(Config.DownloadPath))
+                        {
+                            path = System.IO.Path.Combine(Config.DownloadPath, username);
+                        }
+                        else
+                        {
+                            path = $"__user_data__/sites/OnlyFans/{username}";
+                        }
+
+                        Log.Debug($"Download path: {path}");
+
+                        if (!Directory.Exists(path))
+                        {
+                            Directory.CreateDirectory(path);
+                            AnsiConsole.Markup($"[red]Created folder for {username}\n[/]");
+                            Log.Debug($"Created folder for {username}");
+                        }
+                        else
+                        {
+                            AnsiConsole.Markup($"[red]Folder for {username} already created\n[/]");
+                        }
+
+                        await dBHelper.CreateDB(path);
+
+                        var downloadContext = new DownloadContext(Auth, Config, GetCreatorFileNameFormatConfig(Config, username), m_ApiHelper, dBHelper);
+
+                        await DownloadSinglePost(downloadContext, post_id, path, users);
                     }
-                    else
-                    {
-                        path = $"__user_data__/sites/OnlyFans/{username}";
-                    }
-
-                    Log.Debug($"Download path: {path}");
-
-                    if (!Directory.Exists(path))
-                    {
-                        Directory.CreateDirectory(path);
-                        AnsiConsole.Markup($"[red]Created folder for {username}\n[/]");
-                        Log.Debug($"Created folder for {username}");
-                    }
-                    else
-                    {
-                        AnsiConsole.Markup($"[red]Folder for {username} already created\n[/]");
-                    }
-
-                    await dBHelper.CreateDB(path);
-
-                    var downloadContext = new DownloadContext(Auth, Config, GetCreatorFileNameFormatConfig(Config, username), m_ApiHelper, dBHelper);
-
-                    await DownloadSinglePost(downloadContext, post_id, path, users);
                 }
             }
             else if (hasSelectedUsersKVP.Key && hasSelectedUsersKVP.Value != null && hasSelectedUsersKVP.Value.ContainsKey("PurchasedTab"))
@@ -626,60 +631,65 @@ public class Program
                             {
                                 return ValidationResult.Success();
                             }
+                            if (url == "" || url == "back" || url == "exit")
+                            {
+                                return ValidationResult.Success();
+                            }
                             Log.Error("Message URL invalid");
                             return ValidationResult.Error("[red]Please enter a valid message URL[/]");
                         }));
 
-
-                long message_id = Convert.ToInt64(messageUrl.Split("?firstId=")[1]);
-                long user_id = Convert.ToInt64(messageUrl.Split("/")[6]);
-                JObject user = await m_ApiHelper.GetUserInfoById($"/users/list?x[]={user_id.ToString()}");
-                string username = string.Empty;
-
-                Log.Debug($"Message ID: {message_id}");
-                Log.Debug($"User ID: {user_id}");
-
-                if (user is null)
+                if (messageUrl != "" && messageUrl != "exit" && messageUrl != "back")
                 {
-                    username = $"Deleted User - {user_id.ToString()}";
-                    Log.Debug("Content creator not longer exists - ", user_id.ToString());
+                    long message_id = Convert.ToInt64(messageUrl.Split("?firstId=")[1]);
+                    long user_id = Convert.ToInt64(messageUrl.Split("/")[6]);
+                    JObject user = await m_ApiHelper.GetUserInfoById($"/users/list?x[]={user_id.ToString()}");
+                    string username = string.Empty;
+
+                    Log.Debug($"Message ID: {message_id}");
+                    Log.Debug($"User ID: {user_id}");
+
+                    if (user is null)
+                    {
+                        username = $"Deleted User - {user_id.ToString()}";
+                        Log.Debug("Content creator not longer exists - ", user_id.ToString());
+                    }
+                    else if (!string.IsNullOrEmpty(user[user_id.ToString()]["username"].ToString()))
+                    {
+                        username = user[user_id.ToString()]["username"].ToString();
+                        Log.Debug("Content creator: ", username);
+                    }
+
+                    string path = "";
+                    if (!string.IsNullOrEmpty(Config.DownloadPath))
+                    {
+                        path = System.IO.Path.Combine(Config.DownloadPath, username);
+                    }
+                    else
+                    {
+                        path = $"__user_data__/sites/OnlyFans/{username}";
+                    }
+
+                    Log.Debug("Download path: ", path);
+
+                    if (!Directory.Exists(path))
+                    {
+                        Directory.CreateDirectory(path);
+                        AnsiConsole.Markup($"[red]Created folder for {username}\n[/]");
+                        Log.Debug($"Created folder for {username}");
+                    }
+                    else
+                    {
+                        AnsiConsole.Markup($"[red]Folder for {username} already created\n[/]");
+                        Log.Debug($"Folder for {username} already created");
+                    }
+
+                    await dBHelper.CreateDB(path);
+
+                    var downloadContext = new DownloadContext(Auth, Config, GetCreatorFileNameFormatConfig(Config, username), m_ApiHelper, dBHelper);
+
+                    await DownloadPaidMessage(downloadContext, hasSelectedUsersKVP, username, 1, path, message_id);
                 }
-                else if (!string.IsNullOrEmpty(user[user_id.ToString()]["username"].ToString()))
-                {
-                    username = user[user_id.ToString()]["username"].ToString();
-                    Log.Debug("Content creator: ", username);
-                }
-
-                string path = "";
-                if (!string.IsNullOrEmpty(Config.DownloadPath))
-                {
-                    path = System.IO.Path.Combine(Config.DownloadPath, username);
-                }
-                else
-                {
-                    path = $"__user_data__/sites/OnlyFans/{username}";
-                }
-
-                Log.Debug("Download path: ", path);
-
-                if (!Directory.Exists(path))
-                {
-                    Directory.CreateDirectory(path);
-                    AnsiConsole.Markup($"[red]Created folder for {username}\n[/]");
-                    Log.Debug($"Created folder for {username}");
-                }
-                else
-                {
-                    AnsiConsole.Markup($"[red]Folder for {username} already created\n[/]");
-                    Log.Debug($"Folder for {username} already created");
-                }
-
-                await dBHelper.CreateDB(path);
-
-                var downloadContext = new DownloadContext(Auth, Config, GetCreatorFileNameFormatConfig(Config, username), m_ApiHelper, dBHelper);
-
-                await DownloadPaidMessage(downloadContext, hasSelectedUsersKVP, username, 1, path, message_id);
-
             }
             else if (hasSelectedUsersKVP.Key && !hasSelectedUsersKVP.Value.ContainsKey("ConfigChanged"))
             {
@@ -895,11 +905,11 @@ public class Program
                             string decryptionKey;
                             if (clientIdBlobMissing || devicePrivateKeyMissing)
                             {
-                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
+                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyOFDL(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
                             }
                             else
                             {
-                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
+                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyCDM(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
                             }
 
 
@@ -1023,11 +1033,11 @@ public class Program
                             string decryptionKey;
                             if (clientIdBlobMissing || devicePrivateKeyMissing)
                             {
-                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
+                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyOFDL(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
                             }
                             else
                             {
-                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
+                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyCDM(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
                             }
                             Messages.Medium? mediaInfo = messages.MessageMedia.FirstOrDefault(m => m.id == messageKVP.Key);
                             Messages.List? messageInfo = messages.MessageObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
@@ -1266,11 +1276,11 @@ public class Program
                             string decryptionKey;
                             if (clientIdBlobMissing || devicePrivateKeyMissing)
                             {
-                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
+                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyOFDL(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                             }
                             else
                             {
-                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
+                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyCDM(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                             }
                             Archived.Medium? mediaInfo = archived.ArchivedPostMedia.FirstOrDefault(m => m.id == archivedKVP.Key);
                             Archived.List? postInfo = archived.ArchivedPostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
@@ -1401,11 +1411,11 @@ public class Program
                     string decryptionKey;
                     if (clientIdBlobMissing || devicePrivateKeyMissing)
                     {
-                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
+                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyOFDL(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                     }
                     else
                     {
-                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
+                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyCDM(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                     }
                     Post.Medium mediaInfo = posts.PostMedia.FirstOrDefault(m => m.id == postKVP.Key);
                     Post.List postInfo = posts.PostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
@@ -1538,11 +1548,11 @@ public class Program
                     string decryptionKey;
                     if (clientIdBlobMissing || devicePrivateKeyMissing)
                     {
-                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
+                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyOFDL(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                     }
                     else
                     {
-                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
+                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyCDM(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                     }
                     Medium? mediaInfo = purchasedPosts.PaidPostMedia.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
                     Purchased.List? postInfo = purchasedPosts.PaidPostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
@@ -1662,11 +1672,11 @@ public class Program
                     string decryptionKey;
                     if (clientIdBlobMissing || devicePrivateKeyMissing)
                     {
-                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
+                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyOFDL(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                     }
                     else
                     {
-                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
+                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyCDM(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                     }
                     Medium? mediaInfo = purchasedPosts?.PaidPostMedia?.FirstOrDefault(m => m.id == purchasedPostKVP.Key);
                     Purchased.List? postInfo = mediaInfo != null ? purchasedPosts?.PaidPostObjects?.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true) : null;
@@ -1777,11 +1787,11 @@ public class Program
                             string decryptionKey;
                             if (clientIdBlobMissing || devicePrivateKeyMissing)
                             {
-                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
+                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyOFDL(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
                             }
                             else
                             {
-                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
+                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyCDM(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
                             }
 
                             Medium? mediaInfo = paidMessageCollection.PaidMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
@@ -1913,11 +1923,11 @@ public class Program
                     string decryptionKey;
                     if (clientIdBlobMissing || devicePrivateKeyMissing)
                     {
-                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
+                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyOFDL(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                     }
                     else
                     {
-                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
+                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyCDM(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                     }
                     Streams.Medium mediaInfo = streams.StreamMedia.FirstOrDefault(m => m.id == streamKVP.Key);
                     Streams.List streamInfo = streams.StreamObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
@@ -2040,11 +2050,11 @@ public class Program
                             string decryptionKey;
                             if (clientIdBlobMissing || devicePrivateKeyMissing)
                             {
-                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
+                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyOFDL(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
                             }
                             else
                             {
-                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
+                                decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyCDM(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/message/{messageId}?type=widevine", pssh);
                             }
 
                             Medium? mediaInfo = singlePaidMessageCollection.SingleMessageMedia.FirstOrDefault(m => m.id == paidMessageKVP.Key);
@@ -2170,11 +2180,11 @@ public class Program
                     string decryptionKey;
                     if (clientIdBlobMissing || devicePrivateKeyMissing)
                     {
-                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKey(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
+                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyOFDL(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                     }
                     else
                     {
-                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyNew(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
+                        decryptionKey = await downloadContext.ApiHelper.GetDecryptionKeyCDM(drmHeaders, $"https://onlyfans.com/api2/v2/users/media/{mediaId}/drm/post/{postId}?type=widevine", pssh);
                     }
                     SinglePost.Medium mediaInfo = post.SinglePostMedia.FirstOrDefault(m => m.id == postKVP.Key);
                     SinglePost postInfo = post.SinglePostObjects.FirstOrDefault(p => p?.media?.Contains(mediaInfo) == true);
