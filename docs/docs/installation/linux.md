@@ -39,7 +39,7 @@ cd 'OF DL/bin/Release/net8.0'
 ```
 
 - Download the windows release as described on [here](/docs/installation/windows#installation).
-- Add the `auth.json`, `config.json`, and `rules.json` files as well as the `cdm` folder to the `OF DL/bin/Release/net8.0` folder.
+- Add the `config.json` and `rules.json` files as well as the `cdm` folder to the `OF DL/bin/Release/net8.0` folder.
 
 - Run the application
 

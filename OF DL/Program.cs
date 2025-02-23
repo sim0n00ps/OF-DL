@@ -33,7 +33,71 @@ public class Program
     private static Auth? auth = null;
     private static LoggingLevelSwitch levelSwitch = new LoggingLevelSwitch();
 
-    public async static Task Main(string[] args)
+    private static async Task LoadAuthFromBrowser()
+    {
+        bool runningInDocker = Environment.GetEnvironmentVariable("OFDL_DOCKER") != null;
+
+        try
+        {
+            AuthHelper authHelper = new();
+            Task setupBrowserTask = authHelper.SetupBrowser(runningInDocker);
+
+            Task.Delay(1000).Wait();
+            if (!setupBrowserTask.IsCompleted)
+            {
+                AnsiConsole.MarkupLine($"[yellow]Downloading dependencies. Please wait ...[/]");
+            }
+            setupBrowserTask.Wait();
+
+            Task<Auth?> getAuthTask = authHelper.GetAuthFromBrowser();
+            Task.Delay(5000).Wait();
+            if (!getAuthTask.IsCompleted)
+            {
+                if (runningInDocker)
+                {
+                    AnsiConsole.MarkupLine(
+                        "[yellow]In your web browser, navigate to the port forwarded from your docker container.[/]");
+                    AnsiConsole.MarkupLine(
+                        "[yellow]For instance, if your docker run command included \"-p 8080:8080\", open your web browser to \"http://localhost:8080\".[/]");
+                    AnsiConsole.MarkupLine("[yellow]Once on that webpage, please use it to log in to your OF account. Do not navigate away from the page.[/]");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine($"[yellow]In the new window that has opened, please log in to your OF account. Do not close the window or tab. Do not navigate away from the page.[/]");
+                }
+            }
+            auth = await getAuthTask;
+        }
+        catch (Exception e)
+        {
+            AnsiConsole.MarkupLine($"\n[red]Authentication failed. Be sure to log into to OF using the new window that opened automatically.[/]");
+            AnsiConsole.MarkupLine($"[red]The window will close automatically when the authentication process is finished.[/]");
+            AnsiConsole.MarkupLine($"[red]If the problem persists, you may want to try generating the auth.json file manually or use the browser extension which is documented here:[/]\n");
+            AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth#browser-extension[/]\n");
+            AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
+            Log.Error(e, "auth invalid after attempt to get auth from browser");
+
+            Environment.Exit(2);
+        }
+
+        if (auth == null)
+        {
+            AnsiConsole.MarkupLine($"\n[red]Authentication failed. Be sure to log into to OF using the new window that opened automatically.[/]");
+            AnsiConsole.MarkupLine($"[red]The window will close automatically when the authentication process is finished.[/]");
+            AnsiConsole.MarkupLine($"[red]If the problem persists, you may want to try generating the auth.json file manually or use the browser extension which is documented here:[/]\n");
+            AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth#browser-extension[/]\n");
+            AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
+            Log.Error("auth invalid after attempt to get auth from browser");
+
+            Environment.Exit(2);
+        }
+        else
+        {
+            await File.WriteAllTextAsync("auth.json", JsonConvert.SerializeObject(auth, Formatting.Indented));
+        }
+    }
+
+    public static async Task Main(string[] args)
     {
         bool cliNonInteractive = false;
 
@@ -138,7 +202,7 @@ public class Program
                 // Only run the version check if not in DEBUG mode
                 #if !DEBUG
                 Version localVersion = Assembly.GetEntryAssembly()?.GetName().Version; //Only tested with numeric values.
-    
+
                 // Get all releases from GitHub
                 GitHubClient client = new GitHubClient(new ProductHeaderValue("SomeName"));
                 IReadOnlyList<Release> releases = await client.Repository.Release.GetAll("sim0n00ps", "OF-DL");
@@ -179,38 +243,46 @@ public class Program
             if (File.Exists("auth.json"))
             {
                 AnsiConsole.Markup("[green]auth.json located successfully!\n[/]");
+                Log.Debug("Auth file found");
                 try
                 {
-                    auth = JsonConvert.DeserializeObject<Auth>(File.ReadAllText("auth.json"));
+                    auth = JsonConvert.DeserializeObject<Auth>(await File.ReadAllTextAsync("auth.json"));
                     Log.Debug("Auth file found and deserialized");
                 }
-                catch (Exception e)
+                catch (Exception _)
                 {
-                    Console.WriteLine(e);
-                    AnsiConsole.MarkupLine($"\n[red]auth.json is not valid, check your JSON syntax![/]\n");
-                    AnsiConsole.MarkupLine($"[red]If you are struggling with this file, you may want to try the browser extension which is documented here:[/]\n");
-                    AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth#browser-extension[/]\n");
-                    AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
-                    Log.Error("auth.json processing failed.", e.Message);
+                    Log.Information("Auth file found but could not be deserialized");
+                    Log.Debug("Deleting auth.json");
+                    File.Delete("auth.json");
 
-                    if (!cliNonInteractive)
+                    if (cliNonInteractive)
                     {
+                        AnsiConsole.MarkupLine($"\n[red]auth.json has invalid JSON syntax. The file can be generated automatically when OF-DL is run in the standard, interactive mode.[/]\n");
+                        AnsiConsole.MarkupLine($"[red]You may also want to try using the browser extension which is documented here:[/]\n");
+                        AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth#browser-extension[/]\n");
+                        AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
+
                         Console.ReadKey();
+                        Environment.Exit(2);
                     }
-                    Environment.Exit(2);
+
+                    await LoadAuthFromBrowser();
                 }
             }
             else
             {
-                File.WriteAllText("auth.json", JsonConvert.SerializeObject(new Auth(), Formatting.Indented));
-                AnsiConsole.Markup("[red]auth.json does not exist, a default file has been created in the folder you are running the program from[/]");
-                Log.Error("auth.json does not exist");
-
-                if (!cliNonInteractive)
+                if (cliNonInteractive)
                 {
+                    AnsiConsole.MarkupLine($"\n[red]auth.json is missing. The file can be generated automatically when OF-DL is run in the standard, interactive mode.[/]\n");
+                    AnsiConsole.MarkupLine($"[red]You may also want to try using the browser extension which is documented here:[/]\n");
+                    AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth#browser-extension[/]\n");
+                    AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
+
                     Console.ReadKey();
+                    Environment.Exit(2);
                 }
-                Environment.Exit(2);
+
+                await LoadAuthFromBrowser();
             }
 
             //Added to stop cookie being filled with un-needed headers
@@ -358,17 +430,29 @@ public class Program
             //Check if auth is valid
             var apiHelper = new APIHelper(auth, config);
 
-            Entities.User validate = await apiHelper.GetUserInfo($"/users/me");
-            if (validate?.name == null && validate?.username == null)
+            Entities.User? validate = await apiHelper.GetUserInfo($"/users/me");
+            if (validate == null || (validate?.name == null && validate?.username == null))
             {
-                AnsiConsole.MarkupLine($"[red]Auth failed, please check the values in auth.json are correct.[/]\n");
-                AnsiConsole.MarkupLine($"[red]If you have previously been able to auth successfully, the most likely cause of this is that your browser has updated, which will change the values of the USER_AGENT string. The version change to this string is usually very minor and easy to overlook, but even a slight difference will cause an authentication failure.[/]\n");
-                AnsiConsole.MarkupLine($"[red]If you are struggling to authenticate, you may want to try the browser extension which is documented here:[/]\n");
-                AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth#browser-extension[/]\n");
-                AnsiConsole.Markup($"[red]Press any key to exit[/]");
                 Log.Error("Auth failed");
-                Console.ReadKey();
-                return;
+
+                auth = null;
+                if (File.Exists("auth.json"))
+                {
+                    File.Delete("auth.json");
+                }
+
+                if (!cliNonInteractive)
+                {
+                    await LoadAuthFromBrowser();
+                }
+
+                if (auth == null)
+                {
+                    AnsiConsole.MarkupLine($"\n[red]Auth failed. Please try again or use other authentication methods detailed here:[/]\n");
+                    AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth[/]\n");
+                    Console.ReadKey();
+                    Environment.Exit(2);
+                }
             }
 
             AnsiConsole.Markup($"[green]Logged In successfully as {validate.name} {validate.username}\n[/]");
@@ -2470,6 +2554,18 @@ public class Program
                         break;
                     }
                     break;
+                case "[red]Logout and exit[/]":
+                    if (Directory.Exists("chrome-data"))
+                    {
+                        Log.Information("Deleting chrome-data folder");
+                        Directory.Delete("chrome-data", true);
+                    }
+                    if (File.Exists("auth.json"))
+                    {
+                        Log.Information("Deleting auth.json");
+                        File.Delete("auth.json");
+                    }
+                    return (false, null, currentConfig); // Return false to indicate exit
                 case "[red]Exit[/]":
                     return (false, null, currentConfig); // Return false to indicate exit
             }
@@ -2492,6 +2588,7 @@ public class Program
                 "[red]Download Purchased Tab[/]",
                 "[red]Edit config.json[/]",
                 "[red]Change logging level[/]",
+                "[red]Logout and Exit[/]",
                 "[red]Exit[/]"
             };
         }
@@ -2506,6 +2603,7 @@ public class Program
                 "[red]Download Purchased Tab[/]",
                 "[red]Edit config.json[/]",
                 "[red]Change logging level[/]",
+                "[red]Logout and Exit[/]",
                 "[red]Exit[/]"
             };
         }

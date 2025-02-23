@@ -17,10 +17,6 @@ RUN dotnet publish -p:WarningLevel=0 -p:Version=$VERSION -c Release --self-conta
 
 # Generate default auth.json and config.json files
 RUN /src/out/OF\ DL --non-interactive || true && \
-      /src/out/OF\ DL --non-interactive || true && \
-# Remove FFMPEG_PATH (deprecated) from default auth.json
-      jq 'del(.FFMPEG_PATH)' /src/auth.json > /src/updated_auth.json && \
-      mv /src/updated_auth.json /src/auth.json && \
 # Set download path in default config.json to /data
       jq '.DownloadPath = "/data"' /src/config.json > /src/updated_config.json && \
       mv /src/updated_config.json /src/config.json
@@ -33,22 +29,39 @@ RUN apk --no-cache --repository community add \
       bash \
       tini \
       dotnet8-runtime \
-      ffmpeg
+      ffmpeg \
+      udev \
+      ttf-freefont \
+      chromium \
+      supervisor \
+      xvfb \
+      x11vnc \
+      novnc
 
-# Copy release and entrypoint script
+# Redirect webroot to vnc.html instead of displaying directory listing
+RUN echo "<!DOCTYPE html><html><head><meta http-equiv=\"Refresh\" content=\"0; url='vnc.html'\" /></head><body></body></html>" > /usr/share/novnc/index.html
+
+# Copy release
 COPY --from=build /src/out /app
 
 # Create directories for configuration and downloaded files
-RUN mkdir /data /config /default-config
+RUN mkdir /data /config /config/logs /default-config
 
 # Copy default configuration files
 COPY --from=build /src/config.json /default-config
-COPY --from=build /src/auth.json /default-config
 COPY --from=build ["/src/OF DL/rules.json", "/default-config"]
 
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
+ENV DISPLAY=:0.0 \
+	DISPLAY_WIDTH=1024 \
+	DISPLAY_HEIGHT=768 \
+	OFDL_PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
+	OFDL_DOCKER=true
+
+EXPOSE 8080
 WORKDIR /config
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["/app/entrypoint.sh"]

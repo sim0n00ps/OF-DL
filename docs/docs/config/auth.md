@@ -4,13 +4,27 @@ sidebar_position: 1
 
 # Authentication
 
+## Current Method (versions >= 1.8.2)
+
+OF DL allows you to log in to your OnlyFans account directly. This simplifies the authentication process significantly.
+When prompted by the application, log into your OnlyFans account. Do not close the opened window, tab, or navigate away to another webpage.
+The new window will close automatically when the authentication process has finished.
+
+:::info
+
+If you are using docker, follow the special [authentication instructions documented](/docs/installation/docker) to authenticate OF-DL
+
+:::
+
+## Legacy Methods
+
 After you have downloaded the latest release the first thing to do is to fill out the `auth.json` file.
 
-## Browser Extension
+### Browser Extension
 
 You can use a browser extension to help get the required info for the `auth.json` file. The extension supports Google Chrome and Firefox and can be found [here](https://github.com/whimsical-c4lic0/OF-DL-Auth-Helper/) (https://github.com/whimsical-c4lic0/OF-DL-Auth-Helper/).
 
-## Manual Method
+### Manual Method
 
 Open `auth.json` in a text editor of your choice. The default windows notepad is sufficient. When you open `auth.json` for the first time you should see something like this:
 
