@@ -1,10 +1,10 @@
-﻿---
+---
 sidebar_position: 1
 ---
 
 # Authentication
 
-## Current Method (versions >= 1.8.2)
+## Current Method (versions >= 1.9.0)
 
 OF DL allows you to log in to your OnlyFans account directly. This simplifies the authentication process significantly.
 When prompted by the application, log into your OnlyFans account. Do not close the opened window, tab, or navigate away to another webpage.

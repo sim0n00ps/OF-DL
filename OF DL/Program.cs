@@ -205,6 +205,7 @@ public class Program
 
                         hoconConfig.AppendLine("# Performance Settings");
                         hoconConfig.AppendLine("Performance {");
+                        hoconConfig.AppendLine($"  Timeout = {jsonConfig.Timeout}");
                         hoconConfig.AppendLine($"  LimitDownloadRate = {jsonConfig.LimitDownloadRate.ToString().ToLower()}");
                         hoconConfig.AppendLine($"  DownloadLimitInMbPerSec = {jsonConfig.DownloadLimitInMbPerSec}");
                         hoconConfig.AppendLine("}");
@@ -222,11 +223,9 @@ public class Program
                 catch (Exception e)
                 {
                     Console.WriteLine(e);
-                    AnsiConsole.MarkupLine($"\n[red]config.json is not valid, check your JSON syntax![/]\n");
-                    AnsiConsole.MarkupLine($"[red]If you are struggling to get the JSON syntax correct, it is safe to paste this file's contents into a JSON validator like the one located here:[/]\n");
-                    AnsiConsole.MarkupLine($"[link]https://jsonlint.com/[/]\n");
+                    AnsiConsole.MarkupLine($"\n[red]config.conf is not valid, check your syntax![/]\n");
                     AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
-                    Log.Error("config.json processing failed.", e.Message);
+                    Log.Error("config.conf processing failed.", e.Message);
 
                     if (!cliNonInteractive)
                     {
@@ -272,7 +271,7 @@ public class Program
 						DownloadPath = hoconConfig.GetString("Download.DownloadPath"),
 						DownloadOnlySpecificDates = hoconConfig.GetBoolean("Download.DownloadOnlySpecificDates"),
 						DownloadDateSelection = Enum.Parse<DownloadDateSelection>(hoconConfig.GetString("Download.DownloadDateSelection"), true),
-						CustomDate = DateTime.Parse(hoconConfig.GetString("Download.CustomDate")),
+						CustomDate = hoconConfig.GetString("Download.CustomDate") != null ? DateTime.Parse(hoconConfig.GetString("Download.CustomDate")) : null,
 						ShowScrapeSize = hoconConfig.GetBoolean("Download.ShowScrapeSize"),
 
 						// File Settings
@@ -299,7 +298,8 @@ public class Program
 						NonInteractiveModePurchasedTab = hoconConfig.GetBoolean("Interaction.NonInteractiveModePurchasedTab"),
 
 						// Performance Settings
-						LimitDownloadRate = hoconConfig.GetBoolean("Performance.LimitDownloadRate"),
+                        Timeout = hoconConfig.GetInt("Performance.Timeout"),
+                        LimitDownloadRate = hoconConfig.GetBoolean("Performance.LimitDownloadRate"),
 						DownloadLimitInMbPerSec = hoconConfig.GetInt("Performance.DownloadLimitInMbPerSec"),
 
 						// Logging/Debug Settings
@@ -347,9 +347,100 @@ public class Program
 			}
 			else
 			{
-				File.WriteAllText("config.json", JsonConvert.SerializeObject(new Entities.Config(), Formatting.Indented));
-				AnsiConsole.Markup("[red]config.json does not exist, a default file has been created in the folder you are running the program from[/]");
-				Log.Error("config.json does not exist");
+                Entities.Config jsonConfig = new Entities.Config();
+                var hoconConfig = new StringBuilder();
+                hoconConfig.AppendLine("# External Tools");
+                hoconConfig.AppendLine("External {");
+                hoconConfig.AppendLine($"  FFmpegPath = \"{jsonConfig.FFmpegPath}\"");
+                hoconConfig.AppendLine("}");
+
+                hoconConfig.AppendLine("# Download Settings");
+                hoconConfig.AppendLine("Download {");
+                hoconConfig.AppendLine("  Media {");
+                hoconConfig.AppendLine($"    DownloadAvatarHeaderPhoto = {jsonConfig.DownloadAvatarHeaderPhoto.ToString().ToLower()}");
+                hoconConfig.AppendLine($"    DownloadPaidPosts = {jsonConfig.DownloadPaidPosts.ToString().ToLower()}");
+                hoconConfig.AppendLine($"    DownloadPosts = {jsonConfig.DownloadPosts.ToString().ToLower()}");
+                hoconConfig.AppendLine($"    DownloadArchived = {jsonConfig.DownloadArchived.ToString().ToLower()}");
+                hoconConfig.AppendLine($"    DownloadStreams = {jsonConfig.DownloadStreams.ToString().ToLower()}");
+                hoconConfig.AppendLine($"    DownloadStories = {jsonConfig.DownloadStories.ToString().ToLower()}");
+                hoconConfig.AppendLine($"    DownloadHighlights = {jsonConfig.DownloadHighlights.ToString().ToLower()}");
+                hoconConfig.AppendLine($"    DownloadMessages = {jsonConfig.DownloadMessages.ToString().ToLower()}");
+                hoconConfig.AppendLine($"    DownloadPaidMessages = {jsonConfig.DownloadPaidMessages.ToString().ToLower()}");
+                hoconConfig.AppendLine($"    DownloadImages = {jsonConfig.DownloadImages.ToString().ToLower()}");
+                hoconConfig.AppendLine($"    DownloadVideos = {jsonConfig.DownloadVideos.ToString().ToLower()}");
+                hoconConfig.AppendLine($"    DownloadAudios = {jsonConfig.DownloadAudios.ToString().ToLower()}");
+                hoconConfig.AppendLine("  }");
+                hoconConfig.AppendLine($"  IgnoreOwnMessages = {jsonConfig.IgnoreOwnMessages.ToString().ToLower()}");
+                hoconConfig.AppendLine($"  DownloadPostsIncrementally = {jsonConfig.DownloadPostsIncrementally.ToString().ToLower()}");
+                hoconConfig.AppendLine($"  BypassContentForCreatorsWhoNoLongerExist = {jsonConfig.BypassContentForCreatorsWhoNoLongerExist.ToString().ToLower()}");
+                hoconConfig.AppendLine($"  DownloadDuplicatedMedia = {jsonConfig.DownloadDuplicatedMedia.ToString().ToLower()}");
+                hoconConfig.AppendLine($"  SkipAds = {jsonConfig.SkipAds.ToString().ToLower()}");
+                hoconConfig.AppendLine($"  DownloadPath = \"{jsonConfig.DownloadPath}\"");
+                hoconConfig.AppendLine($"  DownloadOnlySpecificDates = {jsonConfig.DownloadOnlySpecificDates.ToString().ToLower()}");
+                hoconConfig.AppendLine($"  DownloadDateSelection = \"{jsonConfig.DownloadDateSelection.ToString().ToLower()}\"");
+                hoconConfig.AppendLine($"  CustomDate = \"{jsonConfig.CustomDate?.ToString("yyyy-MM-dd")}\"");
+                hoconConfig.AppendLine($"  ShowScrapeSize = {jsonConfig.ShowScrapeSize.ToString().ToLower()}");
+                hoconConfig.AppendLine("}");
+
+                hoconConfig.AppendLine("# File Settings");
+                hoconConfig.AppendLine("File {");
+                hoconConfig.AppendLine($"  PaidPostFileNameFormat = \"{jsonConfig.PaidPostFileNameFormat}\"");
+                hoconConfig.AppendLine($"  PostFileNameFormat = \"{jsonConfig.PostFileNameFormat}\"");
+                hoconConfig.AppendLine($"  PaidMessageFileNameFormat = \"{jsonConfig.PaidMessageFileNameFormat}\"");
+                hoconConfig.AppendLine($"  MessageFileNameFormat = \"{jsonConfig.MessageFileNameFormat}\"");
+                hoconConfig.AppendLine($"  RenameExistingFilesWhenCustomFormatIsSelected = {jsonConfig.RenameExistingFilesWhenCustomFormatIsSelected.ToString().ToLower()}");
+                hoconConfig.AppendLine("}");
+
+                hoconConfig.AppendLine("# Creator-Specific Configurations");
+                hoconConfig.AppendLine("CreatorConfigs {");
+                foreach (var creatorConfig in jsonConfig.CreatorConfigs)
+                {
+                    hoconConfig.AppendLine($"  \"{creatorConfig.Key}\" {{");
+                    hoconConfig.AppendLine($"    PaidPostFileNameFormat = \"{creatorConfig.Value.PaidPostFileNameFormat}\"");
+                    hoconConfig.AppendLine($"    PostFileNameFormat = \"{creatorConfig.Value.PostFileNameFormat}\"");
+                    hoconConfig.AppendLine($"    PaidMessageFileNameFormat = \"{creatorConfig.Value.PaidMessageFileNameFormat}\"");
+                    hoconConfig.AppendLine($"    MessageFileNameFormat = \"{creatorConfig.Value.MessageFileNameFormat}\"");
+                    hoconConfig.AppendLine("  }");
+                }
+                hoconConfig.AppendLine("}");
+
+                hoconConfig.AppendLine("# Folder Settings");
+                hoconConfig.AppendLine("Folder {");
+                hoconConfig.AppendLine($"  FolderPerPaidPost = {jsonConfig.FolderPerPaidPost.ToString().ToLower()}");
+                hoconConfig.AppendLine($"  FolderPerPost = {jsonConfig.FolderPerPost.ToString().ToLower()}");
+                hoconConfig.AppendLine($"  FolderPerPaidMessage = {jsonConfig.FolderPerPaidMessage.ToString().ToLower()}");
+                hoconConfig.AppendLine($"  FolderPerMessage = {jsonConfig.FolderPerMessage.ToString().ToLower()}");
+                hoconConfig.AppendLine("}");
+
+                hoconConfig.AppendLine("# Subscription Settings");
+                hoconConfig.AppendLine("Subscriptions {");
+                hoconConfig.AppendLine($"  IncludeExpiredSubscriptions = {jsonConfig.IncludeExpiredSubscriptions.ToString().ToLower()}");
+                hoconConfig.AppendLine($"  IncludeRestrictedSubscriptions = {jsonConfig.IncludeRestrictedSubscriptions.ToString().ToLower()}");
+                hoconConfig.AppendLine($"  IgnoredUsersListName = \"{jsonConfig.IgnoredUsersListName}\"");
+                hoconConfig.AppendLine("}");
+
+                hoconConfig.AppendLine("# Interaction Settings");
+                hoconConfig.AppendLine("Interaction {");
+                hoconConfig.AppendLine($"  NonInteractiveMode = {jsonConfig.NonInteractiveMode.ToString().ToLower()}");
+                hoconConfig.AppendLine($"  NonInteractiveModeListName = \"{jsonConfig.NonInteractiveModeListName}\"");
+                hoconConfig.AppendLine($"  NonInteractiveModePurchasedTab = {jsonConfig.NonInteractiveModePurchasedTab.ToString().ToLower()}");
+                hoconConfig.AppendLine("}");
+
+                hoconConfig.AppendLine("# Performance Settings");
+                hoconConfig.AppendLine("Performance {");
+                hoconConfig.AppendLine($"  Timeout = {jsonConfig.Timeout}");
+                hoconConfig.AppendLine($"  LimitDownloadRate = {jsonConfig.LimitDownloadRate.ToString().ToLower()}");
+                hoconConfig.AppendLine($"  DownloadLimitInMbPerSec = {jsonConfig.DownloadLimitInMbPerSec}");
+                hoconConfig.AppendLine("}");
+
+                hoconConfig.AppendLine("# Logging/Debug Settings");
+                hoconConfig.AppendLine("Logging {");
+                hoconConfig.AppendLine($"  LoggingLevel = \"{jsonConfig.LoggingLevel.ToString().ToLower()}\"");
+                hoconConfig.AppendLine("}");
+
+                File.WriteAllText("config.conf", hoconConfig.ToString());
+                AnsiConsole.Markup("[red]config.conf does not exist, a default file has been created in the folder you are running the program from[/]");
+				Log.Error("config.conf does not exist");
 
 				if (!cliNonInteractive)
 				{
@@ -538,11 +629,11 @@ public class Program
 				// FFmpeg path is set in config.json and is valid
 				ffmpegFound = true;
 				Log.Debug($"FFMPEG found: {config.FFmpegPath}");
-				Log.Debug("FFMPEG path set in config.json");
+				Log.Debug("FFMPEG path set in config.conf");
 			}
 			else if (!string.IsNullOrEmpty(auth!.FFMPEG_PATH) && ValidateFilePath(auth.FFMPEG_PATH))
 			{
-				// FFmpeg path is set in auth.json and is valid (config.json takes precedence and auth.json is only available for backward compatibility)
+				// FFmpeg path is set in auth.json and is valid (config.conf takes precedence and auth.json is only available for backward compatibility)
 				ffmpegFound = true;
 				config.FFmpegPath = auth.FFMPEG_PATH;
 				Log.Debug($"FFMPEG found: {config.FFmpegPath}");
@@ -550,7 +641,7 @@ public class Program
 			}
 			else if (string.IsNullOrEmpty(config.FFmpegPath))
 			{
-				// FFmpeg path is not set in config.json, so we will try to locate it in the PATH or current directory
+				// FFmpeg path is not set in config.conf, so we will try to locate it in the PATH or current directory
 				var ffmpegPath = GetFullPath("ffmpeg");
 				if (ffmpegPath != null)
 				{
@@ -596,7 +687,7 @@ public class Program
 			}
 			else
 			{
-				AnsiConsole.Markup("[red]Cannot locate FFmpeg; please modify config.json with the correct path. Press any key to exit.[/]");
+				AnsiConsole.Markup("[red]Cannot locate FFmpeg; please modify config.conf with the correct path. Press any key to exit.[/]");
 				Log.Error($"Cannot locate FFmpeg with path: {config.FFmpegPath}");
 				if (!config.NonInteractiveMode)
 				{
@@ -2768,6 +2859,7 @@ public class Program
 
                         hoconConfig.AppendLine("# Performance Settings");
                         hoconConfig.AppendLine("Performance {");
+                        hoconConfig.AppendLine($"  Timeout = {newConfig.Timeout}");
                         hoconConfig.AppendLine($"  LimitDownloadRate = {newConfig.LimitDownloadRate.ToString().ToLower()}");
                         hoconConfig.AppendLine($"  DownloadLimitInMbPerSec = {newConfig.DownloadLimitInMbPerSec}");
                         hoconConfig.AppendLine("}");
@@ -2838,8 +2930,97 @@ public class Program
 
 						currentConfig = newConfig;
 
-						string newConfigString = JsonConvert.SerializeObject(newConfig, Formatting.Indented);
-						File.WriteAllText("config.json", newConfigString);
+                        var hoconConfig = new StringBuilder();
+                        hoconConfig.AppendLine("# External Tools");
+                        hoconConfig.AppendLine("External {");
+                        hoconConfig.AppendLine($"  FFmpegPath = \"{newConfig.FFmpegPath}\"");
+                        hoconConfig.AppendLine("}");
+
+                        hoconConfig.AppendLine("# Download Settings");
+                        hoconConfig.AppendLine("Download {");
+                        hoconConfig.AppendLine("  Media {");
+                        hoconConfig.AppendLine($"    DownloadAvatarHeaderPhoto = {newConfig.DownloadAvatarHeaderPhoto.ToString().ToLower()}");
+                        hoconConfig.AppendLine($"    DownloadPaidPosts = {newConfig.DownloadPaidPosts.ToString().ToLower()}");
+                        hoconConfig.AppendLine($"    DownloadPosts = {newConfig.DownloadPosts.ToString().ToLower()}");
+                        hoconConfig.AppendLine($"    DownloadArchived = {newConfig.DownloadArchived.ToString().ToLower()}");
+                        hoconConfig.AppendLine($"    DownloadStreams = {newConfig.DownloadStreams.ToString().ToLower()}");
+                        hoconConfig.AppendLine($"    DownloadStories = {newConfig.DownloadStories.ToString().ToLower()}");
+                        hoconConfig.AppendLine($"    DownloadHighlights = {newConfig.DownloadHighlights.ToString().ToLower()}");
+                        hoconConfig.AppendLine($"    DownloadMessages = {newConfig.DownloadMessages.ToString().ToLower()}");
+                        hoconConfig.AppendLine($"    DownloadPaidMessages = {newConfig.DownloadPaidMessages.ToString().ToLower()}");
+                        hoconConfig.AppendLine($"    DownloadImages = {newConfig.DownloadImages.ToString().ToLower()}");
+                        hoconConfig.AppendLine($"    DownloadVideos = {newConfig.DownloadVideos.ToString().ToLower()}");
+                        hoconConfig.AppendLine($"    DownloadAudios = {newConfig.DownloadAudios.ToString().ToLower()}");
+                        hoconConfig.AppendLine("  }");
+                        hoconConfig.AppendLine($"  IgnoreOwnMessages = {newConfig.IgnoreOwnMessages.ToString().ToLower()}");
+                        hoconConfig.AppendLine($"  DownloadPostsIncrementally = {newConfig.DownloadPostsIncrementally.ToString().ToLower()}");
+                        hoconConfig.AppendLine($"  BypassContentForCreatorsWhoNoLongerExist = {newConfig.BypassContentForCreatorsWhoNoLongerExist.ToString().ToLower()}");
+                        hoconConfig.AppendLine($"  DownloadDuplicatedMedia = {newConfig.DownloadDuplicatedMedia.ToString().ToLower()}");
+                        hoconConfig.AppendLine($"  SkipAds = {newConfig.SkipAds.ToString().ToLower()}");
+                        hoconConfig.AppendLine($"  DownloadPath = \"{newConfig.DownloadPath}\"");
+                        hoconConfig.AppendLine($"  DownloadOnlySpecificDates = {newConfig.DownloadOnlySpecificDates.ToString().ToLower()}");
+                        hoconConfig.AppendLine($"  DownloadDateSelection = \"{newConfig.DownloadDateSelection.ToString().ToLower()}\"");
+                        hoconConfig.AppendLine($"  CustomDate = \"{newConfig.CustomDate?.ToString("yyyy-MM-dd")}\"");
+                        hoconConfig.AppendLine($"  ShowScrapeSize = {newConfig.ShowScrapeSize.ToString().ToLower()}");
+                        hoconConfig.AppendLine("}");
+
+                        hoconConfig.AppendLine("# File Settings");
+                        hoconConfig.AppendLine("File {");
+                        hoconConfig.AppendLine($"  PaidPostFileNameFormat = \"{newConfig.PaidPostFileNameFormat}\"");
+                        hoconConfig.AppendLine($"  PostFileNameFormat = \"{newConfig.PostFileNameFormat}\"");
+                        hoconConfig.AppendLine($"  PaidMessageFileNameFormat = \"{newConfig.PaidMessageFileNameFormat}\"");
+                        hoconConfig.AppendLine($"  MessageFileNameFormat = \"{newConfig.MessageFileNameFormat}\"");
+                        hoconConfig.AppendLine($"  RenameExistingFilesWhenCustomFormatIsSelected = {newConfig.RenameExistingFilesWhenCustomFormatIsSelected.ToString().ToLower()}");
+                        hoconConfig.AppendLine("}");
+
+                        hoconConfig.AppendLine("# Creator-Specific Configurations");
+                        hoconConfig.AppendLine("CreatorConfigs {");
+                        foreach (var creatorConfig in newConfig.CreatorConfigs)
+                        {
+                            hoconConfig.AppendLine($"  \"{creatorConfig.Key}\" {{");
+                            hoconConfig.AppendLine($"    PaidPostFileNameFormat = \"{creatorConfig.Value.PaidPostFileNameFormat}\"");
+                            hoconConfig.AppendLine($"    PostFileNameFormat = \"{creatorConfig.Value.PostFileNameFormat}\"");
+                            hoconConfig.AppendLine($"    PaidMessageFileNameFormat = \"{creatorConfig.Value.PaidMessageFileNameFormat}\"");
+                            hoconConfig.AppendLine($"    MessageFileNameFormat = \"{creatorConfig.Value.MessageFileNameFormat}\"");
+                            hoconConfig.AppendLine("  }");
+                        }
+                        hoconConfig.AppendLine("}");
+
+                        hoconConfig.AppendLine("# Folder Settings");
+                        hoconConfig.AppendLine("Folder {");
+                        hoconConfig.AppendLine($"  FolderPerPaidPost = {newConfig.FolderPerPaidPost.ToString().ToLower()}");
+                        hoconConfig.AppendLine($"  FolderPerPost = {newConfig.FolderPerPost.ToString().ToLower()}");
+                        hoconConfig.AppendLine($"  FolderPerPaidMessage = {newConfig.FolderPerPaidMessage.ToString().ToLower()}");
+                        hoconConfig.AppendLine($"  FolderPerMessage = {newConfig.FolderPerMessage.ToString().ToLower()}");
+                        hoconConfig.AppendLine("}");
+
+                        hoconConfig.AppendLine("# Subscription Settings");
+                        hoconConfig.AppendLine("Subscriptions {");
+                        hoconConfig.AppendLine($"  IncludeExpiredSubscriptions = {newConfig.IncludeExpiredSubscriptions.ToString().ToLower()}");
+                        hoconConfig.AppendLine($"  IncludeRestrictedSubscriptions = {newConfig.IncludeRestrictedSubscriptions.ToString().ToLower()}");
+                        hoconConfig.AppendLine($"  IgnoredUsersListName = \"{newConfig.IgnoredUsersListName}\"");
+                        hoconConfig.AppendLine("}");
+
+                        hoconConfig.AppendLine("# Interaction Settings");
+                        hoconConfig.AppendLine("Interaction {");
+                        hoconConfig.AppendLine($"  NonInteractiveMode = {newConfig.NonInteractiveMode.ToString().ToLower()}");
+                        hoconConfig.AppendLine($"  NonInteractiveModeListName = \"{newConfig.NonInteractiveModeListName}\"");
+                        hoconConfig.AppendLine($"  NonInteractiveModePurchasedTab = {newConfig.NonInteractiveModePurchasedTab.ToString().ToLower()}");
+                        hoconConfig.AppendLine("}");
+
+                        hoconConfig.AppendLine("# Performance Settings");
+                        hoconConfig.AppendLine("Performance {");
+                        hoconConfig.AppendLine($"  Timeout = {newConfig.Timeout}");
+                        hoconConfig.AppendLine($"  LimitDownloadRate = {newConfig.LimitDownloadRate.ToString().ToLower()}");
+                        hoconConfig.AppendLine($"  DownloadLimitInMbPerSec = {newConfig.DownloadLimitInMbPerSec}");
+                        hoconConfig.AppendLine("}");
+
+                        hoconConfig.AppendLine("# Logging/Debug Settings");
+                        hoconConfig.AppendLine("Logging {");
+                        hoconConfig.AppendLine($"  LoggingLevel = \"{newConfig.LoggingLevel.ToString().ToLower()}\"");
+                        hoconConfig.AppendLine("}");
+
+                        File.WriteAllText("config.conf", hoconConfig.ToString());
 
 						if (configChanged)
 						{

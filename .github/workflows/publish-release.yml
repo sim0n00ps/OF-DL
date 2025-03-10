@@ -35,8 +35,8 @@ jobs:
           cd outwin
           ../outlin/OF\ DL --non-interactive || true
           mkdir -p cdm/devices/chrome_1610
-          zip ../OFDLV${{ steps.version.outputs.version }}.zip OF\ DL.exe e_sqlite3.dll rules.json config.json cdm
-          zip ../Config-OFDLV${{ steps.version.outputs.version }}.zip *.json cdm
+          zip ../OFDLV${{ steps.version.outputs.version }}.zip OF\ DL.exe e_sqlite3.dll rules.json config.conf cdm
+          zip ../Config-OFDLV${{ steps.version.outputs.version }}.zip *.conf cdm
           cd ..
 
       - name: Create release

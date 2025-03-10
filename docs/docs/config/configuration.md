@@ -1,10 +1,33 @@
-﻿---
+---
 sidebar_position: 2
 ---
 
 # Configuration
 
-The `config.json` file contains all the options you can change, these options are listed below:
+The `config.conf` file contains all the options you can change, these options are listed below:
+
+# Configuration - External Tools
+
+## FFmpegPath
+
+Type: `string`
+
+Default: `""`
+
+Allowed values: Any valid path or `""`
+
+Description: This is the path to the FFmpeg executable (`ffmpeg.exe` on Windows and `ffmpeg` on Linux/macOS).
+If the path is not set then the program will try to find it in both the same directory as the OF-DL executable as well
+as the PATH environment variable.
+
+:::note
+
+If you are using a Windows path, you will need to escape the backslashes, e.g. `"C:\\ffmpeg\\bin\\ffmpeg.exe"`
+For example, this is not valid: `"C:\some\path\ffmpeg.exe"`, but `"C:/some/path/ffmpeg.exe"` and `"C:\\some\\path\\ffmpeg.exe"` are both valid.
+
+:::
+
+# Configuration - Download Settings
 
 ## DownloadAvatarHeaderPhoto
 
@@ -126,7 +149,7 @@ Allowed values: `true`, `false`
 
 Description: Audios will be downloaded if set to `true`
 
-## IncludeExpiredSubscriptions
+## IgnoreOwnMessages
 
 Type: `boolean`
 
@@ -134,9 +157,9 @@ Default: `false`
 
 Allowed values: `true`, `false`
 
-Description: If set to `true`, expired subscriptions will appear in the user list under the "Custom" menu option.
+Description: By default (or when set to `false`), messages that were sent by yourself will be added to the metadata DB and any media which has been sent by yourself will be downloaded. If set to `true`, the program will not add messages sent by yourself to the metadata DB and will not download any media which has been sent by yourself.
 
-## IncludeRestrictedSubscriptions
+## DownloadPostsIncrementally
 
 Type: `boolean`
 
@@ -144,7 +167,30 @@ Default: `false`
 
 Allowed values: `true`, `false`
 
-Description: If set to `true`, media from restricted creators will be downloaded. If set to `false`, restricted creators will be ignored.
+Description: If set to `true`, only new posts will be downloaded from the date of the last post that was downloaded based off what's in the `user_data.db` file.
+If set to `false`, the default behaviour will apply, and all posts will be gathered and compared against the database to see if they need to be downloaded or not.
+
+## BypassContentForCreatorsWhoNoLongerExist
+
+Type: `boolean`
+
+Default: `false`
+
+Allowed values: `true`, `false`
+
+Description: When a creator no longer exists (their account has been deleted), most of their content will be inaccessible.
+Purchased content, however, will still be accessible by downloading media usisng the "Download Purchased Tab" menu option
+or with the [NonInteractiveModePurchasedTab](#noninteractivemodepurchasedtab) config option when downloading media in non-interactive mode.
+
+## DownloadDuplicatedMedia
+
+Type: `boolean`
+
+Default: `false`
+
+Allowed values: `true`, `false`
+
+Description: By default (or when set to `false`), the program will not download duplicated media. If set to `true`, duplicated media will be downloaded.
 
 ## SkipAds
 
@@ -173,6 +219,43 @@ If you are using a Windows path, you will need to escape the backslashes, e.g. `
 Please make sure your path ends with a `/`
 
 :::
+
+## DownloadOnlySpecificDates
+
+Type: `boolean`
+
+Default: `false`
+
+Allowed values: `true`, `false`
+
+Description: If set to `true`, posts will be downloaded based on the [DownloadDateSelection](#downloaddateselection) and [CustomDate](#customdate) config options.
+If set to `false`, all posts will be downloaded.
+
+## DownloadDateSelection
+
+Type: `string`
+
+Default: `"before"`
+
+Allowed values: `"before"`, `"after"`
+
+Description: [DownloadOnlySpecificDates](#downloadonlyspecificdates) needs to be set to `true` for this to work. This will get all posts from before
+the date if set to `"before"`, and all posts from the date you specify up until the current date if set to `"after"`.
+The date you specify will be in the [CustomDate](#customdate) config option.
+
+## CustomDate
+
+Type: `string`
+
+Default: `null`
+
+Allowed values: Any date in `yyyy-mm-dd` format or `null`
+
+Description: [DownloadOnlySpecificDates](#downloadonlyspecificdates) needs to be set to `true` for this to work.
+This date will be used when you are trying to download between/after a certain date. See [DownloadOnlySpecificDates](#downloadonlyspecificdates) and
+[DownloadDateSelection](#downloaddateselection) for more information.
+
+# Configuration - File Settings
 
 ## PaidPostFileNameFormat
 
@@ -225,16 +308,41 @@ Allowed values: `true`, `false`
 Description: When `true`, any current files downloaded will have the current format applied to them.
 When `false`, only new files will have the current format applied to them.
 
-## Timeout
+# Configuration - Creator-Specific Configurations
 
-Type: `integer`
+## CreatorConfigs
 
-Default: `-1`
+Type: `object`
 
-Allowed values: Any positive integer or `-1`
+Default: `{}`
 
-Description: You won't need to set this, but if you see errors about the configured timeout of 100 seconds elapsing then
-you could set this to be more than 100. It is recommended that you leave this as the default value.
+Allowed values: An array of Creator Config objects
+
+Description: This configuration options allows you to set file name formats for specific creators.
+This is useful if you want to have different file name formats for different creators. The values set here will override the global values set in the config file
+(see [PaidPostFileNameFormat](#paidpostfilenameformat), [PostFileNameFormat](#postfilenameformat),
+[PaidMessageFileNAmeFormat](#paidmessagefilenameformat), and [MessageFileNameFormat](#messagefilenameformat)).
+For more information on the file name formats, see the [custom filename formats](/docs/config/custom-filename-formats) page.
+
+Example:
+```
+"CreatorConfigs": {
+    "creator_one": {
+        "PaidPostFileNameFormat": "{id}_{mediaid}_{filename}",
+        "PostFileNameFormat": "{username}_{id}_{mediaid}_{mediaCreatedAt}",
+        "PaidMessageFileNameFormat": "{id}_{mediaid}_{createdAt}",
+        "MessageFileNameFormat": "{id}_{mediaid}_{filename}"
+    },
+    "creator_two": {
+        "PaidPostFileNameFormat": "{id}_{mediaid}",
+        "PostFileNameFormat": "{username}_{id}_{mediaid}",
+        "PaidMessageFileNameFormat": "{id}_{mediaid}",
+        "MessageFileNameFormat": "{id}_{mediaid}"
+    }
+}
+```
+
+# Configuration - Folder Settings
 
 ## FolderPerPaidPost
 
@@ -280,7 +388,9 @@ Allowed values: `true`, `false`
 Description: A folder will be created for each message (containing all the media for that message) if set to `true`.
 When set to `false`, message media will be downloaded into the `Messages/Free` folder.
 
-## LimitDownloadRate
+# Configuration - Subscription Settings
+
+## IncludeExpiredSubscriptions
 
 Type: `boolean`
 
@@ -288,19 +398,9 @@ Default: `false`
 
 Allowed values: `true`, `false`
 
-Description: If set to `true`, the download rate will be limited to the value set in [DownloadLimitInMbPerSec](#downloadlimitinmbpersec).
+Description: If set to `true`, expired subscriptions will appear in the user list under the "Custom" menu option.
 
-## DownloadLimitInMbPerSec
-
-Type: `integer`
-
-Default: `4`
-
-Allowed values: Any positive integer
-
-Description: The download rate in MB per second. This will only be used if [LimitDownloadRate](#limitdownloadrate) is set to `true`.
-
-## DownloadOnlySpecificDates
+## IncludeRestrictedSubscriptions
 
 Type: `boolean`
 
@@ -308,61 +408,20 @@ Default: `false`
 
 Allowed values: `true`, `false`
 
-Description: If set to `true`, posts will be downloaded based on the [DownloadDateSelection](#downloaddateselection) and [CustomDate](#customdate) config options.
-If set to `false`, all posts will be downloaded.
+Description: If set to `true`, media from restricted creators will be downloaded. If set to `false`, restricted creators will be ignored.
 
-## DownloadDateSelection
+## IgnoredUsersListName
 
 Type: `string`
 
-Default: `"before"`
+Default: `""`
 
-Allowed values: `"before"`, `"after"`
+Allowed values: The name of a list of users you have created on OnlyFans or `""`
 
-Description: [DownloadOnlySpecificDates](#downloadonlyspecificdates) needs to be set to `true` for this to work. This will get all posts from before
-the date if set to `"before"`, and all posts from the date you specify up until the current date if set to `"after"`.
-The date you specify will be in the [CustomDate](#customdate) config option.
+Description: When set to the name of a list, users in the list will be ignored when scraping content.
+If set to `""` (or an invalid list name), no users will be ignored when scraping content.
 
-## CustomDate
-
-Type: `string`
-
-Default: `null`
-
-Allowed values: Any date in `yyyy-mm-dd` format or `null`
-
-Description: [DownloadOnlySpecificDates](#downloadonlyspecificdates) needs to be set to `true` for this to work.
-This date will be used when you are trying to download between/after a certain date. See [DownloadOnlySpecificDates](#downloadonlyspecificdates) and
-[DownloadDateSelection](#downloaddateselection) for more information.
-
-## ShowScrapeSize
-
-Type: `boolean`
-
-Default: `false`
-
-Allowed values: `true`, `false`
-
-Description: If set to `true`, the total scrape size will be shown in bytes when downloading posts, messages, etc.
-When set to `false`, the total number of posts, messages, etc. will be shown.
-
-:::warning
-
-Setting this to `true` will have an impact on performance as it has to go through each piece of media and get the size
-from the server, which is a big task and can sometimes get you rate limited.
-
-:::
-
-## DownloadPostsIncrementally
-
-Type: `boolean`
-
-Default: `false`
-
-Allowed values: `true`, `false`
-
-Description: If set to `true`, only new posts will be downloaded from the date of the last post that was downloaded based off what's in the `user_data.db` file.
-If set to `false`, the default behaviour will apply, and all posts will be gathered and compared against the database to see if they need to be downloaded or not.
+# Configuration - Interaction Settings
 
 ## NonInteractiveMode
 
@@ -410,26 +469,20 @@ Description: When set to `true`, non-interactive mode will only download content
 (when [NonInteractiveMode](#noninteractivemode) is set to `true`). If set to `false`, all users will be scraped
 (unless [NonInteractiveModeListName](#noninteractivemodelistname) is configured).
 
-## FFmpegPath
+# Configuration - Performance Settings
 
-Type: `string`
+## Timeout
 
-Default: `""`
+Type: `integer`
 
-Allowed values: Any valid path or `""`
+Default: `-1`
 
-Description: This is the path to the FFmpeg executable (`ffmpeg.exe` on Windows and `ffmpeg` on Linux/macOS).
-If the path is not set then the program will try to find it in both the same directory as the OF-DL executable as well
-as the PATH environment variable.
+Allowed values: Any positive integer or `-1`
 
-:::note
+Description: You won't need to set this, but if you see errors about the configured timeout of 100 seconds elapsing then
+you could set this to be more than 100. It is recommended that you leave this as the default value.
 
-If you are using a Windows path, you will need to escape the backslashes, e.g. `"C:\\ffmpeg\\bin\\ffmpeg.exe"`
-For example, this is not valid: `"C:\some\path\ffmpeg.exe"`, but `"C:/some/path/ffmpeg.exe"` and `"C:\\some\\path\\ffmpeg.exe"` are both valid.
-
-:::
-
-## BypassContentForCreatorsWhoNoLongerExist
+## LimitDownloadRate
 
 Type: `boolean`
 
@@ -437,62 +490,19 @@ Default: `false`
 
 Allowed values: `true`, `false`
 
-Description: When a creator no longer exists (their account has been deleted), most of their content will be inaccessible.
-Purchased content, however, will still be accessible by downloading media usisng the "Download Purchased Tab" menu option
-or with the [NonInteractiveModePurchasedTab](#noninteractivemodepurchasedtab) config option when downloading media in non-interactive mode.
+Description: If set to `true`, the download rate will be limited to the value set in [DownloadLimitInMbPerSec](#downloadlimitinmbpersec).
 
-## CreatorConfigs
+## DownloadLimitInMbPerSec
 
-Type: `object`
+Type: `integer`
 
-Default: `{}`
+Default: `4`
 
-Allowed values: An array of Creator Config objects
+Allowed values: Any positive integer
 
-Description: This configuration options allows you to set file name formats for specific creators.
-This is useful if you want to have different file name formats for different creators. The values set here will override the global values set in the config file
-(see [PaidPostFileNameFormat](#paidpostfilenameformat), [PostFileNameFormat](#postfilenameformat),
-[PaidMessageFileNAmeFormat](#paidmessagefilenameformat), and [MessageFileNameFormat](#messagefilenameformat)).
-For more information on the file name formats, see the [custom filename formats](/docs/config/custom-filename-formats) page.
+Description: The download rate in MB per second. This will only be used if [LimitDownloadRate](#limitdownloadrate) is set to `true`.
 
-Example:
-```
-"CreatorConfigs": {
-    "creator_one": {
-        "PaidPostFileNameFormat": "{id}_{mediaid}_{filename}",
-        "PostFileNameFormat": "{username}_{id}_{mediaid}_{mediaCreatedAt}",
-        "PaidMessageFileNameFormat": "{id}_{mediaid}_{createdAt}",
-        "MessageFileNameFormat": "{id}_{mediaid}_{filename}"
-    },
-    "creator_two": {
-        "PaidPostFileNameFormat": "{id}_{mediaid}",
-        "PostFileNameFormat": "{username}_{id}_{mediaid}",
-        "PaidMessageFileNameFormat": "{id}_{mediaid}",
-        "MessageFileNameFormat": "{id}_{mediaid}"
-    }
-}
-```
-
-## DownloadDuplicatedMedia
-
-Type: `boolean`
-
-Default: `false`
-
-Allowed values: `true`, `false`
-
-Description: By default (or when set to `false`), the program will not download duplicated media. If set to `true`, duplicated media will be downloaded.
-
-## IgnoredUsersListName
-
-Type: `string`
-
-Default: `""`
-
-Allowed values: The name of a list of users you have created on OnlyFans or `""`
-
-Description: When set to the name of a list, users in the list will be ignored when scraping content.
-If set to `""` (or an invalid list name), no users will be ignored when scraping content.
+# Configuration - Logging/Debug Settings
 
 ## LoggingLevel
 
@@ -504,13 +514,3 @@ Allowed values: `"Verbose"`, `"Debug"`, `"Information"`, `"Warning"`, `"Error"`,
 
 Description: The level of logging that will be saved to the log files in the `logs` folder.
 When requesting help with an issue, it is recommended to set this to `"Verbose"` and provide the log file.
-
-## IgnoreOwnMessages
-
-Type: `boolean`
-
-Default: `false`
-
-Allowed values: `true`, `false`
-
-Description: By default (or when set to `false`), messages that were sent by yourself will be added to the metadata DB and any media which has been sent by yourself will be downloaded. If set to `true`, the program will not add messages sent by yourself to the metadata DB and will not download any media which has been sent by yourself.

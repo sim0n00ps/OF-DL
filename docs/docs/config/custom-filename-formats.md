@@ -1,10 +1,10 @@
-﻿---
+---
 sidebar_position: 3
 ---
 
 # Custom Filename Formats
 
-In the config.json file you can now specify some custom filename formats that will be used when downloading files. I have had to add 4 new fields to the auth.json file, these are:
+In the config.conf file you can now specify some custom filename formats that will be used when downloading files. I have had to add 4 new fields to the auth.json file, these are:
 
 - PaidPostFileNameFormat
 - PostFileNameFormat
