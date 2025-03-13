@@ -271,7 +271,7 @@ public class Program
 						DownloadPath = hoconConfig.GetString("Download.DownloadPath"),
 						DownloadOnlySpecificDates = hoconConfig.GetBoolean("Download.DownloadOnlySpecificDates"),
 						DownloadDateSelection = Enum.Parse<DownloadDateSelection>(hoconConfig.GetString("Download.DownloadDateSelection"), true),
-						CustomDate = hoconConfig.GetString("Download.CustomDate") != null ? DateTime.Parse(hoconConfig.GetString("Download.CustomDate")) : null,
+						CustomDate = !string.IsNullOrWhiteSpace(hoconConfig.GetString("Download.CustomDate")) ? DateTime.Parse(hoconConfig.GetString("Download.CustomDate")) : null,
 						ShowScrapeSize = hoconConfig.GetBoolean("Download.ShowScrapeSize"),
 
 						// File Settings
