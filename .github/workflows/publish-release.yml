@@ -35,8 +35,11 @@ jobs:
           cd outwin
           ../outlin/OF\ DL --non-interactive || true
           mkdir -p cdm/devices/chrome_1610
-          zip ../OFDLV${{ steps.version.outputs.version }}.zip OF\ DL.exe e_sqlite3.dll rules.json config.conf cdm
-          zip ../Config-OFDLV${{ steps.version.outputs.version }}.zip *.conf cdm
+          wget https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip
+          unzip ffmpeg-release-essentials.zip ffmpeg\*/bin/ffmpeg.exe ffmpeg\*/LICENSE
+          mv ffmpeg*/bin/ffmpeg.exe .
+          mv ffmpeg*/LICENSE LICENSE.ffmpeg
+          zip ../OFDLV${{ steps.version.outputs.version }}.zip OF\ DL.exe e_sqlite3.dll rules.json config.conf cdm ffmpeg.exe LICENSE.ffmpeg
           cd ..
 
       - name: Create release
@@ -56,16 +59,6 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./OFDLV${{ steps.version.outputs.version }}.zip
           asset_name: OFDLV${{ steps.version.outputs.version }}.zip
-          asset_content_type: application/zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload config zip
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./Config-OFDLV${{ steps.version.outputs.version }}.zip
-          asset_name: Config-OFDLV${{ steps.version.outputs.version }}.zip
           asset_content_type: application/zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
