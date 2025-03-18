@@ -3,8 +3,7 @@ FROM alpine:3.20 AS build
 ARG VERSION
 
 RUN apk --no-cache --repository community add \
-      dotnet8-sdk \
-      jq==1.7.1-r0
+      dotnet8-sdk
 
 # Copy source code
 COPY ["OF DL.sln", "/src/OF DL.sln"]
@@ -15,11 +14,11 @@ WORKDIR "/src"
 # Build release
 RUN dotnet publish -p:WarningLevel=0 -p:Version=$VERSION -c Release --self-contained true -p:PublishSingleFile=true -o out
 
-# Generate default auth.json and config.json files
+# Generate default config.conf files
 RUN /src/out/OF\ DL --non-interactive || true && \
-# Set download path in default config.json to /data
-      jq '.DownloadPath = "/data"' /src/config.json > /src/updated_config.json && \
-      mv /src/updated_config.json /src/config.json
+# Set download path in default config.conf to /data
+      sed -e 's/DownloadPath = ""/DownloadPath = "\/data"/' /src/config.conf > /src/updated_config.conf && \
+      mv /src/updated_config.conf /src/config.conf
 
 
 FROM alpine:3.20 AS final
@@ -48,7 +47,7 @@ COPY --from=build /src/out /app
 RUN mkdir /data /config /config/logs /default-config
 
 # Copy default configuration files
-COPY --from=build /src/config.json /default-config
+COPY --from=build /src/config.conf /default-config
 COPY --from=build ["/src/OF DL/rules.json", "/default-config"]
 
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
