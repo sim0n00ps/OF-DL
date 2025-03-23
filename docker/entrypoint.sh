@@ -2,8 +2,8 @@
 
 mkdir -p /config/cdm/devices/chrome_1610
 
-if [ ! -f /config/config.json ]; then
-	cp /default-config/config.json /config/config.json
+if [ ! -f /config/config.conf ] && [ ! -f /config/config.json ]; then
+	cp /default-config/config.conf /config/config.conf
 fi
 
 if [ ! -f /config/rules.json ]; then
