@@ -309,7 +309,12 @@ public class Program
 						LoggingLevel = Enum.Parse<LoggingLevel>(hoconConfig.GetString("Logging.LoggingLevel"), true)
 					};
 
-					var creatorConfigsSection = hoconConfig.GetConfig("CreatorConfigs");
+                    ValidateFileNameFormat(config.PaidPostFileNameFormat, "PaidPostFileNameFormat");
+                    ValidateFileNameFormat(config.PostFileNameFormat, "PostFileNameFormat");
+                    ValidateFileNameFormat(config.PaidMessageFileNameFormat, "PaidMessageFileNameFormat");
+                    ValidateFileNameFormat(config.MessageFileNameFormat, "MessageFileNameFormat");
+
+                    var creatorConfigsSection = hoconConfig.GetConfig("CreatorConfigs");
                     if (creatorConfigsSection != null)
                     {
                         foreach (var key in creatorConfigsSection.AsEnumerable())
@@ -325,6 +330,11 @@ public class Program
                                     PaidMessageFileNameFormat = creatorHocon.GetString("PaidMessageFileNameFormat"),
                                     MessageFileNameFormat = creatorHocon.GetString("MessageFileNameFormat")
                                 });
+
+                                ValidateFileNameFormat(config.CreatorConfigs[key.Key].PaidPostFileNameFormat, $"{key.Key}.PaidPostFileNameFormat");
+                                ValidateFileNameFormat(config.CreatorConfigs[key.Key].PostFileNameFormat, $"{key.Key}.PostFileNameFormat");
+                                ValidateFileNameFormat(config.CreatorConfigs[key.Key].PaidMessageFileNameFormat, $"{key.Key}.PaidMessageFileNameFormat");
+                                ValidateFileNameFormat(config.CreatorConfigs[key.Key].MessageFileNameFormat, $"{key.Key}.MessageFileNameFormat");
                             }
                         }
                     }
@@ -3172,4 +3182,15 @@ public class Program
 			File.WriteAllText("auth.json", newAuthString);
 		}
 	}
+
+    public static void ValidateFileNameFormat(string? format, string settingName)
+    {
+        if(!string.IsNullOrEmpty(format) && !format.Contains("{mediaId}") && !format.Contains("{filename}"))
+        {
+            AnsiConsole.Markup($"[red]{settingName} is not unique enough, please make sure you include either '{{mediaId}}' or '{{filename}}' to ensure that files are not overwritten with the same filename.[/]\n");
+            AnsiConsole.Markup("[red]Press any key to continue.[/]\n");
+            Console.ReadKey();
+            Environment.Exit(2);
+        }
+    }
 }
