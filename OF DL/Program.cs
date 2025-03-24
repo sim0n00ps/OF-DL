@@ -3030,7 +3030,7 @@ public class Program
 						break;
 					}
 					break;
-				case "[red]Logout and exit[/]":
+				case "[red]Logout and Exit[/]":
 					if (Directory.Exists("chrome-data"))
 					{
 						Log.Information("Deleting chrome-data folder");
