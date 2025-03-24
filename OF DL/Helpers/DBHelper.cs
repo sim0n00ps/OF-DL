@@ -37,7 +37,7 @@ namespace OF_DL.Helpers
                 connection.Open();
 
                 // create the 'medias' table
-                using (SqliteCommand cmd = new("CREATE TABLE IF NOT EXISTS medias (id INTEGER NOT NULL, media_id INTEGER, post_id INTEGER NOT NULL, link VARCHAR, directory VARCHAR, filename VARCHAR, size INTEGER, api_type VARCHAR, media_type VARCHAR, preview INTEGER, linked VARCHAR, downloaded INTEGER, created_at TIMESTAMP, PRIMARY KEY(id), UNIQUE(media_id));", connection))
+                using (SqliteCommand cmd = new("CREATE TABLE IF NOT EXISTS medias (id INTEGER NOT NULL, media_id INTEGER, post_id INTEGER NOT NULL, link VARCHAR, directory VARCHAR, filename VARCHAR, size INTEGER, api_type VARCHAR, media_type VARCHAR, preview INTEGER, linked VARCHAR, downloaded INTEGER, created_at TIMESTAMP, record_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(id), UNIQUE(media_id));", connection))
                 {
                     await cmd.ExecuteNonQueryAsync();
                 }
@@ -66,6 +66,7 @@ namespace OF_DL.Helpers
                         linked VARCHAR,
                         downloaded INTEGER,
                         created_at TIMESTAMP,
+                        record_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         PRIMARY KEY(id),
                         UNIQUE(media_id, api_type)
                     );
@@ -82,37 +83,37 @@ namespace OF_DL.Helpers
                 }
 
                 // create the 'messages' table
-                using (SqliteCommand cmd = new("CREATE TABLE IF NOT EXISTS messages (id INTEGER NOT NULL, post_id INTEGER NOT NULL, text VARCHAR, price INTEGER, paid INTEGER, archived BOOLEAN, created_at TIMESTAMP, user_id INTEGER, PRIMARY KEY(id), UNIQUE(post_id));", connection))
+                using (SqliteCommand cmd = new("CREATE TABLE IF NOT EXISTS messages (id INTEGER NOT NULL, post_id INTEGER NOT NULL, text VARCHAR, price INTEGER, paid INTEGER, archived BOOLEAN, created_at TIMESTAMP, user_id INTEGER, record_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(id), UNIQUE(post_id));", connection))
                 {
                     await cmd.ExecuteNonQueryAsync();
                 }
 
                 // create the 'posts' table
-                using (SqliteCommand cmd = new("CREATE TABLE IF NOT EXISTS posts (id INTEGER NOT NULL, post_id INTEGER NOT NULL, text VARCHAR, price INTEGER, paid INTEGER, archived BOOLEAN, created_at TIMESTAMP, PRIMARY KEY(id), UNIQUE(post_id));", connection))
+                using (SqliteCommand cmd = new("CREATE TABLE IF NOT EXISTS posts (id INTEGER NOT NULL, post_id INTEGER NOT NULL, text VARCHAR, price INTEGER, paid INTEGER, archived BOOLEAN, created_at TIMESTAMP, record_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(id), UNIQUE(post_id));", connection))
                 {
                     await cmd.ExecuteNonQueryAsync();
                 }
 
                 // create the 'stories' table
-                using (SqliteCommand cmd = new("CREATE TABLE IF NOT EXISTS stories (id INTEGER NOT NULL, post_id INTEGER NOT NULL, text VARCHAR, price INTEGER, paid INTEGER, archived BOOLEAN, created_at TIMESTAMP, PRIMARY KEY(id), UNIQUE(post_id));", connection))
+                using (SqliteCommand cmd = new("CREATE TABLE IF NOT EXISTS stories (id INTEGER NOT NULL, post_id INTEGER NOT NULL, text VARCHAR, price INTEGER, paid INTEGER, archived BOOLEAN, created_at TIMESTAMP, record_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(id), UNIQUE(post_id));", connection))
                 {
                     await cmd.ExecuteNonQueryAsync();
                 }
 
                 // create the 'others' table
-                using (SqliteCommand cmd = new("CREATE TABLE IF NOT EXISTS others (id INTEGER NOT NULL, post_id INTEGER NOT NULL, text VARCHAR, price INTEGER, paid INTEGER, archived BOOLEAN, created_at TIMESTAMP, PRIMARY KEY(id), UNIQUE(post_id));", connection))
+                using (SqliteCommand cmd = new("CREATE TABLE IF NOT EXISTS others (id INTEGER NOT NULL, post_id INTEGER NOT NULL, text VARCHAR, price INTEGER, paid INTEGER, archived BOOLEAN, created_at TIMESTAMP, record_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(id), UNIQUE(post_id));", connection))
                 {
                     await cmd.ExecuteNonQueryAsync();
                 }
 
                 // create the 'products' table
-                using (SqliteCommand cmd = new("CREATE TABLE IF NOT EXISTS products (id INTEGER NOT NULL, post_id INTEGER NOT NULL, text VARCHAR, price INTEGER, paid INTEGER, archived BOOLEAN, created_at TIMESTAMP, title VARCHAR, PRIMARY KEY(id), UNIQUE(post_id));", connection))
+                using (SqliteCommand cmd = new("CREATE TABLE IF NOT EXISTS products (id INTEGER NOT NULL, post_id INTEGER NOT NULL, text VARCHAR, price INTEGER, paid INTEGER, archived BOOLEAN, created_at TIMESTAMP, title VARCHAR, record_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(id), UNIQUE(post_id));", connection))
                 {
                     await cmd.ExecuteNonQueryAsync();
                 }
 
                 // create the 'profiles' table
-                using (SqliteCommand cmd = new("CREATE TABLE IF NOT EXISTS profiles (id INTEGER NOT NULL, user_id INTEGER NOT NULL, username VARCHAR NOT NULL, PRIMARY KEY(id), UNIQUE(username));", connection))
+                using (SqliteCommand cmd = new("CREATE TABLE IF NOT EXISTS profiles (id INTEGER NOT NULL, user_id INTEGER NOT NULL, username VARCHAR NOT NULL, record_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(id), UNIQUE(username));", connection))
                 {
                     await cmd.ExecuteNonQueryAsync();
                 }
@@ -246,6 +247,7 @@ namespace OF_DL.Helpers
             {
                 using SqliteConnection connection = new($"Data Source={folder}/Metadata/user_data.db");
                 connection.Open();
+                await EnsureCreatedAtColumnExists(connection, "messages");
                 using SqliteCommand cmd = new($"SELECT COUNT(*) FROM messages WHERE post_id=@post_id", connection);
                 cmd.Parameters.AddWithValue("@post_id", post_id);
                 int count = Convert.ToInt32(await cmd.ExecuteScalarAsync());
@@ -283,6 +285,7 @@ namespace OF_DL.Helpers
             {
                 using SqliteConnection connection = new($"Data Source={folder}/Metadata/user_data.db");
                 connection.Open();
+                await EnsureCreatedAtColumnExists(connection, "posts");
                 using SqliteCommand cmd = new($"SELECT COUNT(*) FROM posts WHERE post_id=@post_id", connection);
                 cmd.Parameters.AddWithValue("@post_id", post_id);
                 int count = Convert.ToInt32(await cmd.ExecuteScalarAsync());
@@ -319,6 +322,7 @@ namespace OF_DL.Helpers
             {
                 using SqliteConnection connection = new($"Data Source={folder}/Metadata/user_data.db");
                 connection.Open();
+                await EnsureCreatedAtColumnExists(connection, "stories");
                 using SqliteCommand cmd = new($"SELECT COUNT(*) FROM stories WHERE post_id=@post_id", connection);
                 cmd.Parameters.AddWithValue("@post_id", post_id);
                 int count = Convert.ToInt32(await cmd.ExecuteScalarAsync());
@@ -355,7 +359,7 @@ namespace OF_DL.Helpers
             {
                 using SqliteConnection connection = new($"Data Source={folder}/Metadata/user_data.db");
                 connection.Open();
-
+                await EnsureCreatedAtColumnExists(connection, "medias");
                 StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM medias WHERE media_id=@media_id");
                 if (downloadConfig.DownloadDuplicatedMedia)
                 {
@@ -495,6 +499,28 @@ namespace OF_DL.Helpers
                 }
             }
             return mostRecentDate;
+        }
+
+        private async Task EnsureCreatedAtColumnExists(SqliteConnection connection, string tableName)
+        {
+            using SqliteCommand cmd = new($"PRAGMA table_info({tableName});", connection);
+            using var reader = await cmd.ExecuteReaderAsync();
+            bool columnExists = false;
+
+            while (await reader.ReadAsync())
+            {
+                if (reader["name"].ToString() == "record_created_at")
+                {
+                    columnExists = true;
+                    break;
+                }
+            }
+
+            if (!columnExists)
+            {
+                using SqliteCommand alterCmd = new($"ALTER TABLE {tableName} ADD COLUMN record_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;", connection);
+                await alterCmd.ExecuteNonQueryAsync();
+            }
         }
     }
 }
