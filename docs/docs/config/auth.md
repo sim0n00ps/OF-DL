@@ -10,6 +10,13 @@ OF DL allows you to log in to your OnlyFans account directly. This simplifies th
 When prompted by the application, log into your OnlyFans account. Do not close the opened window, tab, or navigate away to another webpage.
 The new window will close automatically when the authentication process has finished.
 
+:::warning
+
+Some users have reported that "Sign in with Google" has not been working with this authentication method.
+If you use the Google sign-in option to log into your OnlyFans account, use one of the [legacy authentication methods](#legacy-methods) described below.
+
+:::
+
 :::info
 
 If you are using docker, follow the special [authentication instructions documented](/docs/installation/docker) to authenticate OF-DL
@@ -18,7 +25,7 @@ If you are using docker, follow the special [authentication instructions documen
 
 ## Legacy Methods
 
-After you have downloaded the latest release the first thing to do is to fill out the `auth.json` file.
+Legacy authentication methods involve creating/editing `auth.json` yourself.
 
 ### Browser Extension
 

@@ -65,8 +65,11 @@ public class Program
 				}
 				else
 				{
-					AnsiConsole.MarkupLine($"[yellow]In the new window that has opened, please log in to your OF account. Do not close the window or tab. Do not navigate away from the page.[/]");
-				}
+                    AnsiConsole.MarkupLine($"[yellow]In the new window that has opened, please log in to your OF account. Do not close the window or tab. Do not navigate away from the page.[/]\n");
+                    AnsiConsole.MarkupLine($"[yellow]Note: Some users have reported that \"Sign in with Google\" has not been working with the new authentication method.[/]");
+                    AnsiConsole.MarkupLine($"[yellow]If you use this method or encounter other issues while logging in, use one of the legacy authentication methods documented here:[/]");
+                    AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth#legacy-methods[/]");
+                }
 			}
 			auth = await getAuthTask;
 		}
@@ -74,8 +77,8 @@ public class Program
 		{
 			AnsiConsole.MarkupLine($"\n[red]Authentication failed. Be sure to log into to OF using the new window that opened automatically.[/]");
 			AnsiConsole.MarkupLine($"[red]The window will close automatically when the authentication process is finished.[/]");
-			AnsiConsole.MarkupLine($"[red]If the problem persists, you may want to try generating the auth.json file manually or use the browser extension which is documented here:[/]\n");
-			AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth#browser-extension[/]\n");
+			AnsiConsole.MarkupLine($"[red]If the problem persists, you may want to try using a legacy authentication method documented here:[/]\n");
+			AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth#legacy-methods[/]\n");
 			AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
 			Log.Error(e, "auth invalid after attempt to get auth from browser");
 
@@ -86,8 +89,8 @@ public class Program
 		{
 			AnsiConsole.MarkupLine($"\n[red]Authentication failed. Be sure to log into to OF using the new window that opened automatically.[/]");
 			AnsiConsole.MarkupLine($"[red]The window will close automatically when the authentication process is finished.[/]");
-			AnsiConsole.MarkupLine($"[red]If the problem persists, you may want to try generating the auth.json file manually or use the browser extension which is documented here:[/]\n");
-			AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth#browser-extension[/]\n");
+			AnsiConsole.MarkupLine($"[red]If the problem persists, you may want to try using a legacy authentication method documented here:[/]\n");
+			AnsiConsole.MarkupLine($"[link]https://sim0n00ps.github.io/OF-DL/docs/config/auth#legacy-methods[/]\n");
 			AnsiConsole.MarkupLine($"[red]Press any key to exit.[/]");
 			Log.Error("auth invalid after attempt to get auth from browser");
 
