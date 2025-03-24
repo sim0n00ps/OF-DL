@@ -25,7 +25,7 @@ If you are using docker, follow the special [authentication instructions documen
 
 ## Legacy Methods
 
-Legacy authentication methods involve creating/editing `auth.json` yourself.
+Legacy authentication methods involve creating/editing `auth.json` file yourself.
 
 ### Browser Extension
 
