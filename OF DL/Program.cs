@@ -3185,7 +3185,7 @@ public class Program
 
     public static void ValidateFileNameFormat(string? format, string settingName)
     {
-        if(!string.IsNullOrEmpty(format) && !format.Contains("{mediaId}") && !format.Contains("{filename}"))
+        if(!string.IsNullOrEmpty(format) && !format.Contains("{mediaId}", StringComparison.OrdinalIgnoreCase) && !format.Contains("{filename}", StringComparison.OrdinalIgnoreCase))
         {
             AnsiConsole.Markup($"[red]{settingName} is not unique enough, please make sure you include either '{{mediaId}}' or '{{filename}}' to ensure that files are not overwritten with the same filename.[/]\n");
             AnsiConsole.Markup("[red]Press any key to continue.[/]\n");
