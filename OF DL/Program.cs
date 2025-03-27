@@ -1018,7 +1018,7 @@ public class Program
 						.ValidationErrorMessage("[red]Please enter a valid message URL[/]")
 						.Validate(url =>
 						{
-							Log.Debug($"Single Message URL: {url}");
+							Log.Debug($"Single Paid Message URL: {url}");
 							Regex regex = new Regex("https://onlyfans\\.com/my/chats/chat/[0-9]+/\\?firstId=[0-9]+$", RegexOptions.IgnoreCase);
 							if (regex.IsMatch(url))
 							{
@@ -2723,7 +2723,7 @@ public class Program
 					break;
 				case "[red]Download Single Post[/]":
 					return (true, new Dictionary<string, int> { { "SinglePost", 0 } }, currentConfig);
-				case "[red]Download Single Message[/]":
+				case "[red]Download Single Paid Message[/]":
 					return (true, new Dictionary<string, int> { { "SingleMessage", 0 } }, currentConfig);
 				case "[red]Download Purchased Tab[/]":
 					return (true, new Dictionary<string, int> { { "PurchasedTab", 0 } }, currentConfig);
@@ -3073,7 +3073,7 @@ public class Program
 				"[red]List[/]",
 				"[red]Custom[/]",
 				"[red]Download Single Post[/]",
-				"[red]Download Single Message[/]",
+				"[red]Download Single Paid Message[/]",
 				"[red]Download Purchased Tab[/]",
 				"[red]Edit config.conf[/]",
 				"[red]Change logging level[/]",
@@ -3088,7 +3088,7 @@ public class Program
 				"[red]Select All[/]",
 				"[red]Custom[/]",
 				"[red]Download Single Post[/]",
-				"[red]Download Single Message[/]",
+				"[red]Download Single Paid Message[/]",
 				"[red]Download Purchased Tab[/]",
 				"[red]Edit config.conf[/]",
 				"[red]Change logging level[/]",
