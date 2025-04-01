@@ -67,8 +67,24 @@ public class AuthHelper
     {
         try
         {
-
-            await using IBrowser? browser = await Puppeteer.LaunchAsync(_options);
+            IBrowser? browser;
+            try
+            {
+                browser = await Puppeteer.LaunchAsync(_options);
+            }
+            catch (ProcessException e)
+            {
+                if (e.Message.Contains("Failed to launch browser") && Directory.Exists(_options.UserDataDir))
+                {
+                    Log.Error("Failed to launch browser. Deleting chrome-data directory and trying again.");
+                    Directory.Delete(_options.UserDataDir, true);
+                    browser = await Puppeteer.LaunchAsync(_options);
+                }
+                else
+                {
+                    throw;
+                }
+            }
 
             if (browser == null)
             {
