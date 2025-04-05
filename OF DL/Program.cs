@@ -868,6 +868,7 @@ public class Program
 
 			if (hasSelectedUsersKVP.Key && hasSelectedUsersKVP.Value != null && hasSelectedUsersKVP.Value.ContainsKey("SinglePost"))
 			{
+				AnsiConsole.Markup("[red]To find an individual post URL, click on the ... at the top right corner of the post and select 'Copy link to post'.\n\nTo return to the main menu, enter 'back' or 'exit' when prompted for the URL.\n\n[/]");
 				string postUrl = AnsiConsole.Prompt(
 						new TextPrompt<string>("[red]Please enter a post URL: [/]")
 							.ValidationErrorMessage("[red]Please enter a valid post URL[/]")
@@ -1013,6 +1014,7 @@ public class Program
 			}
 			else if (hasSelectedUsersKVP.Key && hasSelectedUsersKVP.Value != null && hasSelectedUsersKVP.Value.ContainsKey("SingleMessage"))
 			{
+				AnsiConsole.Markup("[red]To find an individual message URL, note that you can only do so for PPV messages that you have unlocked. Go the main OnlyFans timeline, click on the Purchased tab, find the relevant message, click on the ... at the top right corner of the message, and select 'Copy link to message'. For all other messages, you cannot scrape them individually, you must scrape all messages from that creator.\n\nTo return to the main menu, enter 'back' or 'exit' when prompted for the URL.\n\n[/]");
 				string messageUrl = AnsiConsole.Prompt(
 					new TextPrompt<string>("[red]Please enter a message URL: [/]")
 						.ValidationErrorMessage("[red]Please enter a valid message URL[/]")
