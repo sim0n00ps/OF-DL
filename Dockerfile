@@ -40,11 +40,11 @@ RUN apk --no-cache --repository community add \
 # Redirect webroot to vnc.html instead of displaying directory listing
 RUN echo "<!DOCTYPE html><html><head><meta http-equiv=\"Refresh\" content=\"0; url='vnc.html'\" /></head><body></body></html>" > /usr/share/novnc/index.html
 
-# Copy release
-COPY --from=build /src/out /app
-
 # Create directories for configuration and downloaded files
 RUN mkdir /data /config /config/logs /default-config
+
+# Copy release
+COPY --from=build /src/out /app
 
 # Copy default configuration files
 COPY --from=build /src/config.conf /default-config
