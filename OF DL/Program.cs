@@ -2945,6 +2945,11 @@ public class Program
 
 						currentConfig = newConfig;
 
+                                                // Dump new config in the log file
+					        Log.Debug("Configuration:");
+					        string configString = JsonConvert.SerializeObject(currentConfig, Formatting.Indented);
+					        Log.Debug(configString);
+
                         var hoconConfig = new StringBuilder();
                         hoconConfig.AppendLine("# External Tools");
                         hoconConfig.AppendLine("External {");
