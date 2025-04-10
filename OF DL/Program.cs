@@ -1750,7 +1750,7 @@ public class Program
 	{
 		Log.Debug($"Calling DownloadFreePosts - {user.Key}");
 
-		AnsiConsole.Markup($"[red]Getting Posts\n[/]");
+		AnsiConsole.Markup($"[red]Getting Posts (this may take a long time, depending on the number of Posts the creator has)\n[/]");
 		//Dictionary<long, string> posts = await apiHelper.GetMedia(MediaType.Posts, $"/users/{user.Value}/posts", null, path, auth, paid_post_ids);
 		PostCollection posts = await downloadContext.ApiHelper.GetPosts($"/users/{user.Value}/posts", path, downloadContext.DownloadConfig!, paid_post_ids);
 		int oldPostCount = 0;
