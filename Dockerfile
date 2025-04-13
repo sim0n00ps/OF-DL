@@ -1,6 +1,6 @@
 FROM alpine:3.20 AS build
 
-ARG VERSION
+ARG VERSION=1.0.0
 
 RUN apk --no-cache --repository community add \
       dotnet8-sdk
