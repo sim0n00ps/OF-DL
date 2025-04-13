@@ -11,6 +11,7 @@ using OF_DL.Entities.Stories;
 using OF_DL.Entities.Streams;
 using OF_DL.Enumurations;
 using Serilog;
+using Spectre.Console;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
@@ -722,7 +723,7 @@ public class APIHelper : IAPIHelper
     }
 
 
-    public async Task<PaidPostCollection> GetPaidPosts(string endpoint, string folder, string username, IDownloadConfig config, List<long> paid_post_ids)
+    public async Task<PaidPostCollection> GetPaidPosts(string endpoint, string folder, string username, IDownloadConfig config, List<long> paid_post_ids, StatusContext ctx)
     {
         Log.Debug($"Calling GetPaidPosts - {username}");
 
@@ -741,6 +742,9 @@ public class APIHelper : IAPIHelper
 
             var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
             paidPosts = JsonConvert.DeserializeObject<Purchased>(body, m_JsonSerializerSettings);
+            ctx.Status($"[red]Getting Paid Posts\n[/] [red]Found {paidPosts.list.Count}[/]");
+            ctx.Spinner(Spinner.Known.Dots);
+            ctx.SpinnerStyle(Style.Parse("blue"));
             if (paidPosts != null && paidPosts.hasMore)
             {
                 getParams["offset"] = paidPosts.list.Count.ToString();
@@ -753,6 +757,9 @@ public class APIHelper : IAPIHelper
                     newPaidPosts = JsonConvert.DeserializeObject<Purchased>(loopbody, m_JsonSerializerSettings);
 
                     paidPosts.list.AddRange(newPaidPosts.list);
+                    ctx.Status($"[red]Getting Paid Posts\n[/] [red]Found {paidPosts.list.Count}[/]");
+                    ctx.Spinner(Spinner.Known.Dots);
+                    ctx.SpinnerStyle(Style.Parse("blue"));
                     if (!newPaidPosts.hasMore)
                     {
                         break;
@@ -883,7 +890,7 @@ public class APIHelper : IAPIHelper
     }
 
 
-    public async Task<PostCollection> GetPosts(string endpoint, string folder, IDownloadConfig config, List<long> paid_post_ids)
+    public async Task<PostCollection> GetPosts(string endpoint, string folder, IDownloadConfig config, List<long> paid_post_ids, StatusContext ctx)
     {
         Log.Debug($"Calling GetPosts - {endpoint}");
 
@@ -924,9 +931,11 @@ public class APIHelper : IAPIHelper
 
             var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient());
             posts = JsonConvert.DeserializeObject<Post>(body, m_JsonSerializerSettings);
+            ctx.Status($"[red]Getting Posts (this may take a long time, depending on the number of Posts the creator has)\n[/] [red]Found {posts.list.Count}[/]");
+            ctx.Spinner(Spinner.Known.Dots);
+            ctx.SpinnerStyle(Style.Parse("blue"));
             if (posts != null && posts.hasMore)
             {
-
                 UpdateGetParamsForDateSelection(
                     downloadDateSelection,
                     ref getParams,
@@ -940,6 +949,9 @@ public class APIHelper : IAPIHelper
                     newposts = JsonConvert.DeserializeObject<Post>(loopbody, m_JsonSerializerSettings);
 
                     posts.list.AddRange(newposts.list);
+                    ctx.Status($"[red]Getting Posts (this may take a long time, depending on the number of Posts the creator has)\n[/] [red]Found {posts.list.Count}[/]");
+                    ctx.Spinner(Spinner.Known.Dots);
+                    ctx.SpinnerStyle(Style.Parse("blue"));
                     if (!newposts.hasMore)
                     {
                         break;
@@ -1175,7 +1187,7 @@ public class APIHelper : IAPIHelper
         return null;
     }
 
-    public async Task<StreamsCollection> GetStreams(string endpoint, string folder, IDownloadConfig config, List<long> paid_post_ids)
+    public async Task<StreamsCollection> GetStreams(string endpoint, string folder, IDownloadConfig config, List<long> paid_post_ids, StatusContext ctx)
     {
         Log.Debug($"Calling GetStreams - {endpoint}");
 
@@ -1204,6 +1216,9 @@ public class APIHelper : IAPIHelper
 
             var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, new HttpClient());
             streams = JsonConvert.DeserializeObject<Streams>(body, m_JsonSerializerSettings);
+            ctx.Status($"[red]Getting Streams\n[/] [red]Found {streams.list.Count}[/]");
+            ctx.Spinner(Spinner.Known.Dots);
+            ctx.SpinnerStyle(Style.Parse("blue"));
             if (streams != null && streams.hasMore)
             {
 
@@ -1220,6 +1235,9 @@ public class APIHelper : IAPIHelper
                     newstreams = JsonConvert.DeserializeObject<Streams>(loopbody, m_JsonSerializerSettings);
 
                     streams.list.AddRange(newstreams.list);
+                    ctx.Status($"[red]Getting Streams\n[/] [red]Found {streams.list.Count}[/]");
+                    ctx.Spinner(Spinner.Known.Dots);
+                    ctx.SpinnerStyle(Style.Parse("blue"));
                     if (!newstreams.hasMore)
                     {
                         break;
@@ -1317,7 +1335,7 @@ public class APIHelper : IAPIHelper
     }
 
 
-    public async Task<ArchivedCollection> GetArchived(string endpoint, string folder, IDownloadConfig config)
+    public async Task<ArchivedCollection> GetArchived(string endpoint, string folder, IDownloadConfig config, StatusContext ctx)
     {
         Log.Debug($"Calling GetArchived - {endpoint}");
 
@@ -1349,6 +1367,9 @@ public class APIHelper : IAPIHelper
 
             var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
             archived = JsonConvert.DeserializeObject<Archived>(body, m_JsonSerializerSettings);
+            ctx.Status($"[red]Getting Archived Posts\n[/] [red]Found {archived.list.Count}[/]");
+            ctx.Spinner(Spinner.Known.Dots);
+            ctx.SpinnerStyle(Style.Parse("blue"));
             if (archived != null && archived.hasMore)
             {
                 UpdateGetParamsForDateSelection(
@@ -1363,6 +1384,9 @@ public class APIHelper : IAPIHelper
                     newarchived = JsonConvert.DeserializeObject<Archived>(loopbody, m_JsonSerializerSettings);
 
                     archived.list.AddRange(newarchived.list);
+                    ctx.Status($"[red]Getting Archived Posts\n[/] [red]Found {archived.list.Count}[/]");
+                    ctx.Spinner(Spinner.Known.Dots);
+                    ctx.SpinnerStyle(Style.Parse("blue"));
                     if (!newarchived.hasMore)
                     {
                         break;
@@ -1451,7 +1475,7 @@ public class APIHelper : IAPIHelper
     }
 
 
-    public async Task<MessageCollection> GetMessages(string endpoint, string folder, IDownloadConfig config)
+    public async Task<MessageCollection> GetMessages(string endpoint, string folder, IDownloadConfig config, StatusContext ctx)
     {
         Log.Debug($"Calling GetMessages - {endpoint}");
 
@@ -1468,6 +1492,9 @@ public class APIHelper : IAPIHelper
 
             var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
             messages = JsonConvert.DeserializeObject<Messages>(body, m_JsonSerializerSettings);
+            ctx.Status($"[red]Getting Messages\n[/] [red]Found {messages.list.Count}[/]");
+            ctx.Spinner(Spinner.Known.Dots);
+            ctx.SpinnerStyle(Style.Parse("blue"));
             if (messages.hasMore)
             {
                 getParams["id"] = messages.list[^1].id.ToString();
@@ -1479,6 +1506,9 @@ public class APIHelper : IAPIHelper
                     newmessages = JsonConvert.DeserializeObject<Messages>(loopbody, m_JsonSerializerSettings);
 
                     messages.list.AddRange(newmessages.list);
+                    ctx.Status($"[red]Getting Messages\n[/] [red]Found {messages.list.Count}[/]");
+                    ctx.Spinner(Spinner.Known.Dots);
+                    ctx.SpinnerStyle(Style.Parse("blue"));
                     if (!newmessages.hasMore)
                     {
                         break;
@@ -1759,7 +1789,7 @@ public class APIHelper : IAPIHelper
     }
 
 
-    public async Task<PaidMessageCollection> GetPaidMessages(string endpoint, string folder, string username, IDownloadConfig config)
+    public async Task<PaidMessageCollection> GetPaidMessages(string endpoint, string folder, string username, IDownloadConfig config, StatusContext ctx)
     {
         Log.Debug($"Calling GetPaidMessages - {username}");
 
@@ -1778,6 +1808,9 @@ public class APIHelper : IAPIHelper
 
             var body = await BuildHeaderAndExecuteRequests(getParams, endpoint, GetHttpClient(config));
             paidMessages = JsonConvert.DeserializeObject<Purchased>(body, m_JsonSerializerSettings);
+            ctx.Status($"[red]Getting Paid Messages\n[/] [red]Found {paidMessages.list.Count}[/]");
+            ctx.Spinner(Spinner.Known.Dots);
+            ctx.SpinnerStyle(Style.Parse("blue"));
             if (paidMessages != null && paidMessages.hasMore)
             {
                 getParams["offset"] = paidMessages.list.Count.ToString();
@@ -1801,6 +1834,9 @@ public class APIHelper : IAPIHelper
                         newpaidMessages = JsonConvert.DeserializeObject<Purchased>(loopbody, m_JsonSerializerSettings);
                     }
                     paidMessages.list.AddRange(newpaidMessages.list);
+                    ctx.Status($"[red]Getting Paid Messages\n[/] [red]Found {paidMessages.list.Count}[/]");
+                    ctx.Spinner(Spinner.Known.Dots);
+                    ctx.SpinnerStyle(Style.Parse("blue"));
                     if (!newpaidMessages.hasMore)
                     {
                         break;

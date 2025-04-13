@@ -21,6 +21,7 @@ using System.Text.RegularExpressions;
 using static OF_DL.Entities.Messages.Messages;
 using Akka.Configuration;
 using System.Text;
+using static Akka.Actor.ProviderSelection;
 
 namespace OF_DL;
 
@@ -1251,9 +1252,13 @@ public class Program
 	{
 		Log.Debug($"Calling DownloadPaidMessages - {user.Key}");
 
-		AnsiConsole.Markup($"[red]Getting Paid Messages\n[/]");
-		//Dictionary<long, string> purchased = await apiHelper.GetMedia(MediaType.PaidMessages, "/posts/paid", user.Key, path, auth, paid_post_ids);
-		PaidMessageCollection paidMessageCollection = await downloadContext.ApiHelper.GetPaidMessages("/posts/paid", path, user.Key, downloadContext.DownloadConfig!);
+        PaidMessageCollection paidMessageCollection = new PaidMessageCollection();
+
+        await AnsiConsole.Status()
+        .StartAsync("[red]Getting Paid Messages[/]", async ctx =>
+        {
+            paidMessageCollection = await downloadContext.ApiHelper.GetPaidMessages("/posts/paid", path, user.Key, downloadContext.DownloadConfig!, ctx);
+        });
 		int oldPaidMessagesCount = 0;
 		int newPaidMessagesCount = 0;
 		if (paidMessageCollection != null && paidMessageCollection.PaidMessages.Count > 0)
@@ -1380,8 +1385,13 @@ public class Program
 	{
 		Log.Debug($"Calling DownloadMessages - {user.Key}");
 
-		AnsiConsole.Markup($"[red]Getting Messages\n[/]");
-		MessageCollection messages = await downloadContext.ApiHelper.GetMessages($"/chats/{user.Value}/messages", path, downloadContext.DownloadConfig!);
+        MessageCollection messages = new MessageCollection();
+
+        await AnsiConsole.Status()
+        .StartAsync("[red]Getting Messages[/]", async ctx =>
+        {
+            messages = await downloadContext.ApiHelper.GetMessages($"/chats/{user.Value}/messages", path, downloadContext.DownloadConfig!, ctx);
+        });
 		int oldMessagesCount = 0;
 		int newMessagesCount = 0;
 		if (messages != null && messages.Messages.Count > 0)
@@ -1622,9 +1632,14 @@ public class Program
 	{
 		Log.Debug($"Calling DownloadArchived - {user.Key}");
 
-		AnsiConsole.Markup($"[red]Getting Archived Posts\n[/]");
-		//Dictionary<long, string> archived = await apiHelper.GetMedia(MediaType.Archived, $"/users/{user.Value}/posts", null, path, auth, paid_post_ids);
-		ArchivedCollection archived = await downloadContext.ApiHelper.GetArchived($"/users/{user.Value}/posts", path, downloadContext.DownloadConfig!);
+        ArchivedCollection archived = new ArchivedCollection();
+
+        await AnsiConsole.Status()
+        .StartAsync("[red]Getting Archived Posts[/]", async ctx =>
+        {
+            archived = await downloadContext.ApiHelper.GetArchived($"/users/{user.Value}/posts", path, downloadContext.DownloadConfig!, ctx);
+        });
+		 
 		int oldArchivedCount = 0;
 		int newArchivedCount = 0;
 		if (archived != null && archived.ArchivedPosts.Count > 0)
@@ -1750,9 +1765,14 @@ public class Program
 	{
 		Log.Debug($"Calling DownloadFreePosts - {user.Key}");
 
-		AnsiConsole.Markup($"[red]Getting Posts (this may take a long time, depending on the number of Posts the creator has)\n[/]");
-		//Dictionary<long, string> posts = await apiHelper.GetMedia(MediaType.Posts, $"/users/{user.Value}/posts", null, path, auth, paid_post_ids);
-		PostCollection posts = await downloadContext.ApiHelper.GetPosts($"/users/{user.Value}/posts", path, downloadContext.DownloadConfig!, paid_post_ids);
+        PostCollection posts = new PostCollection();
+
+        await AnsiConsole.Status()
+        .StartAsync("[red]Getting Posts (this may take a long time, depending on the number of Posts the creator has)[/]", async ctx =>
+        {
+            posts = await downloadContext.ApiHelper.GetPosts($"/users/{user.Value}/posts", path, downloadContext.DownloadConfig!, paid_post_ids, ctx);
+        });
+		
 		int oldPostCount = 0;
 		int newPostCount = 0;
 		if (posts == null || posts.Posts.Count <= 0)
@@ -1883,12 +1903,16 @@ public class Program
 
 	private static async Task<int> DownloadPaidPosts(IDownloadContext downloadContext, KeyValuePair<bool, Dictionary<string, int>> hasSelectedUsersKVP, KeyValuePair<string, int> user, int paidPostCount, string path)
 	{
-		AnsiConsole.Markup($"[red]Getting Paid Posts\n[/]");
+        Log.Debug($"Calling DownloadPaidPosts - {user.Key}");
 
-		Log.Debug($"Calling DownloadPaidPosts - {user.Key}");
+        PaidPostCollection purchasedPosts = new PaidPostCollection();
 
-		//Dictionary<long, string> purchasedPosts = await apiHelper.GetMedia(MediaType.PaidPosts, "/posts/paid", user.Key, path, auth, paid_post_ids);
-		PaidPostCollection purchasedPosts = await downloadContext.ApiHelper.GetPaidPosts("/posts/paid", path, user.Key, downloadContext.DownloadConfig!, paid_post_ids);
+        await AnsiConsole.Status()
+        .StartAsync("[red]Getting Paid Posts[/]", async ctx =>
+        {
+            purchasedPosts = await downloadContext.ApiHelper.GetPaidPosts("/posts/paid", path, user.Key, downloadContext.DownloadConfig!, paid_post_ids, ctx);
+        });
+
 		int oldPaidPostCount = 0;
 		int newPaidPostCount = 0;
 		if (purchasedPosts == null || purchasedPosts.PaidPosts.Count <= 0)
@@ -2263,8 +2287,14 @@ public class Program
 	{
 		Log.Debug($"Calling DownloadStreams - {user.Key}");
 
-		AnsiConsole.Markup($"[red]Getting Streams\n[/]");
-		StreamsCollection streams = await downloadContext.ApiHelper.GetStreams($"/users/{user.Value}/posts/streams", path, downloadContext.DownloadConfig!, paid_post_ids);
+        StreamsCollection streams = new StreamsCollection();
+
+        await AnsiConsole.Status()
+        .StartAsync("[red]Getting Streams[/]", async ctx =>
+        {
+            streams = await downloadContext.ApiHelper.GetStreams($"/users/{user.Value}/posts/streams", path, downloadContext.DownloadConfig!, paid_post_ids, ctx);
+        });
+		
 		int oldStreamsCount = 0;
 		int newStreamsCount = 0;
 		if (streams == null || streams.Streams.Count <= 0)
