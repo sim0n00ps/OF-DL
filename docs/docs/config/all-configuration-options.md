@@ -2,7 +2,7 @@
 sidebar_position: 3
 ---
 
-# All Configuration
+# All Configuration Options
 
 This page contains detailed information for each configuration option supported by OF-DL. For information about the structure of the `config.conf` file or a simple list of these configuration options, go to the [configuration page](/docs/config/configuration).
 
