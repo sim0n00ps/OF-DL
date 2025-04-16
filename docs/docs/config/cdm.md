@@ -1,5 +1,5 @@
 ﻿---
-sidebar_position: 4
+sidebar_position: 5
 ---
 
 # CDM (optional, but recommended)
@@ -12,13 +12,13 @@ Two files need to be generated, called `device_client_id_blob` and `device_priva
 
 You can find a tutorial on how to do this [here](https://forum.videohelp.com/threads/408031-Dumping-Your-own-L3-CDM-with-Android-Studio).
 
-I have also made some [batch scripts](https://github.com/sim0n00ps/L3-Dumping) to run the commands included in the guide linked above that can save you some time and makes the process a little simpler. 
+I have also made some [batch scripts](https://github.com/sim0n00ps/L3-Dumping) to run the commands included in the guide linked above that can save you some time and makes the process a little simpler.
 
 ## Discord Method
 
 Generating these keys can be complicated, so the team (shout out to Masaki here) have set up a bot on the Discord server to help securely deliver these keys to users who need them. You can join the discord sever [here](https://discord.com/invite/6bUW8EJ53j)
 
-After joining, visit the bot [here](https://discord.com/channels/1198332760947966094/1333835216313122887) (the pinned post in the `#ofdl` support forum) 
+After joining, visit the bot [here](https://discord.com/channels/1198332760947966094/1333835216313122887) (the pinned post in the `#ofdl` support forum)
 
 ## After install
 
